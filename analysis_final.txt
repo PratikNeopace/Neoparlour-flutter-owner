@@ -1,0 +1,181 @@
+﻿Analyzing neo_parlour_owner...                                  
+
+   info - Don't invoke 'print' in production code - lib\core\api_client.dart:20:5 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\api_client.dart:50:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\api_client.dart:52:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\core\api_client.dart:55:7 - avoid_print
+   info - Unnecessary braces in a string interpolation - lib\core\utils\date_time_utils.dart:17:13 - unnecessary_brace_in_string_interps
+   info - Use the null-aware operator '?.' rather than an explicit 'null' comparison - lib\data\models\appointment_response.dart:82:58 - prefer_null_aware_operators
+   info - The constant name 'PIECE' isn't a lowerCamelCase identifier - lib\data\models\inventory_model.dart:2:3 - constant_identifier_names
+   info - The constant name 'ML' isn't a lowerCamelCase identifier - lib\data\models\inventory_model.dart:3:3 - constant_identifier_names
+   info - The constant name 'LITER' isn't a lowerCamelCase identifier - lib\data\models\inventory_model.dart:4:3 - constant_identifier_names
+   info - The constant name 'KG' isn't a lowerCamelCase identifier - lib\data\models\inventory_model.dart:5:3 - constant_identifier_names
+   info - The constant name 'GRAM' isn't a lowerCamelCase identifier - lib\data\models\inventory_model.dart:6:3 - constant_identifier_names
+   info - The constant name 'BOTTLE' isn't a lowerCamelCase identifier - lib\data\models\inventory_model.dart:7:3 - constant_identifier_names
+warning - Unused import: 'dart:convert' - lib\data\models\offer_model.dart:1:8 - unused_import
+   info - The constant name 'FIXED' isn't a lowerCamelCase identifier - lib\data\models\offer_model.dart:3:21 - constant_identifier_names
+   info - The constant name 'PERCENTAGE' isn't a lowerCamelCase identifier - lib\data\models\offer_model.dart:3:28 - constant_identifier_names
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\analytics_service.dart:88:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\analytics_service.dart:118:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:23:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:24:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:25:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:27:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:28:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:29:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:30:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:33:9 - use_null_aware_elements
+warning - The value of the field '_apiClient' isn't used - lib\data\services\invoice_service.dart:5:19 - unused_field
+warning - Unused import: 'package:neo_parlour_owner/modules/pages/Owner/attendance_screen.dart' - lib\main.dart:11:8 - unused_import
+warning - Unused import: 'package:neo_parlour_owner/modules/pages/Owner/inventory_add_items_screen.dart' - lib\main.dart:12:8 - unused_import
+warning - Unused import: 'package:neo_parlour_owner/modules/pages/Owner/inventory_details_screen.dart' - lib\main.dart:13:8 - unused_import
+warning - Unused import: 'package:neo_parlour_owner/modules/pages/Owner/add_services_screen.dart' - lib\main.dart:14:8 - unused_import
+warning - Unused import: 'package:neo_parlour_owner/modules/pages/Owner/schedule_screen.dart' - lib\main.dart:15:8 - unused_import
+warning - Unused import: 'package:neo_parlour_owner/modules/pages/Staff/leave_request_staff_screen.dart' - lib\main.dart:16:8 - unused_import
+warning - Unused import: 'modules/pages/Owner/analytics_one_screen.dart' - lib\main.dart:19:8 - unused_import
+warning - Unused import: 'modules/pages/Owner/analytics_two_screen.dart' - lib\main.dart:20:8 - unused_import
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_offers_screen.dart:90:28 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_offers_screen.dart:352:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_offers_screen.dart:352:103 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_offers_screen.dart:365:45 - deprecated_member_use
+warning - The value of the local variable 'size' isn't used - lib\modules\pages\Owner\add_package_screen.dart:15:11 - unused_local_variable
+warning - The declaration '_buildDropdownField' isn't referenced - lib\modules\pages\Owner\add_package_screen.dart:216:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_package_screen.dart:262:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_package_screen.dart:264:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_package_screen.dart:281:45 - deprecated_member_use
+warning - The declaration '_buildChartPlaceholder' isn't referenced - lib\modules\pages\Owner\add_package_screen.dart:302:10 - unused_element
+warning - The value of the local variable 'size' isn't used - lib\modules\pages\Owner\add_product_screen.dart:15:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_product_screen.dart:280:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_product_screen.dart:282:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_product_screen.dart:299:45 - deprecated_member_use
+warning - The declaration '_buildChartPlaceholder' isn't referenced - lib\modules\pages\Owner\add_product_screen.dart:321:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_services_screen.dart:208:65 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_services_screen.dart:253:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_services_screen.dart:256:30 - use_build_context_synchronously
+warning - The declaration '_confirmDelete' isn't referenced - lib\modules\pages\Owner\add_services_screen.dart:267:16 - unused_element
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_services_screen.dart:286:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_services_screen.dart:287:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_services_screen.dart:289:30 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_services_screen.dart:549:63 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\modules\pages\Owner\add_services_screen.dart:560:121 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\modules\pages\Owner\add_services_screen.dart:560:125 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\modules\pages\Owner\add_services_screen.dart:561:134 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\modules\pages\Owner\add_services_screen.dart:561:138 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_services_screen.dart:576:66 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_services_screen.dart:576:96 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_services_screen.dart:649:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_services_screen.dart:650:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_services_screen.dart:652:30 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_services_screen.dart:736:63 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_staff_screen.dart:172:65 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_staff_screen.dart:267:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\add_staff_screen.dart:272:30 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\modules\pages\Owner\add_staff_screen.dart:463:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\add_staff_screen.dart:614:43 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\analytics_main_screen.dart:63:54 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_main_screen.dart:139:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_main_screen.dart:141:45 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\modules\pages\Owner\analytics_main_screen.dart:743:37 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\modules\pages\Owner\analytics_main_screen.dart:748:37 - curly_braces_in_flow_control_structures
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_one_screen.dart:135:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_one_screen.dart:137:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_one_screen.dart:154:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_two_screen.dart:159:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_two_screen.dart:228:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_two_screen.dart:285:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_two_screen.dart:347:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_two_screen.dart:349:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\analytics_two_screen.dart:384:39 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\appointment_history_screen.dart:128:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\appointment_history_screen.dart:146:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\appointment_history_screen.dart:247:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\assigned_staff_screen.dart:98:33 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\modules\pages\Owner\assigned_staff_screen.dart:257:35 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\modules\pages\Owner\assigned_staff_screen.dart:258:42 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\modules\pages\Owner\assigned_staff_screen.dart:264:42 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\attendance_screen.dart:92:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\change_password_screen.dart:59:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\change_password_screen.dart:60:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\change_password_screen.dart:105:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\create_invoice_screen.dart:187:145 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\create_invoice_screen.dart:187:207 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\create_invoice_screen.dart:195:121 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\modules\pages\Owner\drawer_screen.dart:13:26 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\modules\pages\Owner\drawer_screen.dart:13:30 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\modules\pages\Owner\drawer_screen.dart:14:44 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\edit_profile_screen.dart:50:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\edit_profile_screen.dart:51:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\edit_profile_screen.dart:106:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\feedback_screen.dart:160:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\feedback_screen.dart:183:45 - deprecated_member_use
+warning - The value of the local variable 'size' isn't used - lib\modules\pages\Owner\home_service_screen.dart:18:11 - unused_local_variable
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\modules\pages\Owner\home_service_screen.dart:70:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\home_service_screen.dart:197:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\home_service_screen.dart:220:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\inventory_add_items_screen.dart:109:65 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\inventory_add_items_screen.dart:145:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\modules\pages\Owner\inventory_details_screen.dart:322:43 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\modules\pages\Owner\inventory_details_screen.dart:323:50 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\modules\pages\Owner\inventory_details_screen.dart:329:50 - use_build_context_synchronously
+   info - Unnecessary use of 'toList' in a spread - lib\modules\pages\Owner\inventory_details_screen.dart:380:16 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\inventory_main_screen.dart:82:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\inventory_main_screen.dart:84:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\inventory_main_screen.dart:105:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\invoice_success_screen.dart:77:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\invoice_success_screen.dart:91:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\leave_request_screen.dart:89:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\leave_request_screen.dart:113:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\manage_screen.dart:123:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\notification_screen.dart:81:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\notification_screen.dart:83:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\notification_screen.dart:98:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\notification_screen.dart:130:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\notification_screen.dart:173:28 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\notification_screen.dart:225:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\offer_screen.dart:145:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\offer_screen.dart:147:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\offer_screen.dart:164:45 - deprecated_member_use
+warning - The value of the field '_stats' isn't used - lib\modules\pages\Owner\owner_home_screen.dart:200:36 - unused_field
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\owner_home_screen.dart:314:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\owner_home_screen.dart:316:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\owner_home_screen.dart:539:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\owner_login.dart:109:52 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\revenue_screen.dart:49:54 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\schedule_screen.dart:159:45 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\modules\pages\Owner\schedule_screen.dart:387:7 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\service_main_screen.dart:81:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\service_main_screen.dart:83:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\service_main_screen.dart:104:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\setting_screen.dart:146:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\setting_screen.dart:162:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\staff_main_screen.dart:81:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\staff_main_screen.dart:83:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\staff_main_screen.dart:104:45 - deprecated_member_use
+   info - 'color' is deprecated and shouldn't be used. Use colorFilter instead - lib\modules\pages\Owner\subscription_screen.dart:147:120 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\subscription_screen.dart:275:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\subscription_screen.dart:297:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Owner\widgets\staff_revenue_dialog.dart:133:87 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\appointment_staff_screen.dart:158:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\appointment_staff_screen.dart:181:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\inventory_staff_screen.dart:199:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\inventory_staff_screen.dart:213:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\inventory_staff_screen.dart:364:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\inventory_staff_screen.dart:365:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\leave_request_staff_screen.dart:145:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\leave_request_staff_screen.dart:146:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_analytics_screen.dart:101:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_analytics_screen.dart:103:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_analytics_screen.dart:128:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_analytics_screen.dart:189:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_analytics_screen.dart:194:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_analytics_screen.dart:222:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_analytics_screen.dart:263:55 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_analytics_screen.dart:336:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_home_screen.dart:62:145 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_home_screen.dart:62:187 - deprecated_member_use
+   info - The import of 'package:flutter/gestures.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\modules\pages\Staff\staff_login.dart:1:8 - unnecessary_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\pages\Staff\staff_login.dart:109:52 - deprecated_member_use
+   info - The private field _offerRevenueMap could be 'final' - lib\providers\analytics_provider.dart:11:20 - prefer_final_fields
+   info - The private field _staffRevenueMap could be 'final' - lib\providers\analytics_provider.dart:12:20 - prefer_final_fields
+warning - The value of the local variable 'updated' isn't used - lib\providers\staff_provider.dart:54:13 - unused_local_variable
+

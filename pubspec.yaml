@@ -1,0 +1,75 @@
+name: neo_parlour_owner
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0+2
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^8.0.2
+  flutter_svg: ^2.2.4
+  dio: ^5.9.2
+  provider: ^6.1.5+1
+  shared_preferences: ^2.5.5
+  intl: ^0.19.0
+  image_picker: ^1.2.1
+  fl_chart: ^0.70.2
+  url_launcher: ^6.3.1
+  http: ^1.6.0
+  path_provider: ^2.1.5
+  open_file: ^3.5.10
+  share_plus: ^13.1.0
+  permission_handler: ^12.0.1
+  firebase_core: ^4.7.0
+  firebase_messaging: ^16.2.0
+  flutter_local_notifications: ^21.0.0
+  razorpay_flutter: ^1.4.5
+  file_picker: ^12.0.0-beta.1
+  another_flushbar: ^2.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/Images/SplashScreen/
+    - assets/Images/LoginScreen/
+    - assets/Images/RegisterScreen/
+    - assets/Images/ManageScreen/
+    - assets/Images/BottomNavigationScreen/
+    - assets/Images/DrawerScreen/
+    - assets/Images/ScheduleScreen/
+    - assets/Images/HistoryScreen/
+    - assets/Images/ServicesScreen/
+    - assets/Images/Services/Services/female/
+    - assets/Images/Services/Services/male/
+    - assets/Images/StaffAnalyticsScreen/
+    - assets/Images/EmailLoginScreen/
+    - assets/Images/ChangePasswordScreen/
+    - assets/Images/EditProfileScreen/
+    - assets/Images/AddProductScreen/
+    - assets/Images/AddPackageScreen/
+    - assets/Images/AddOffersScreen/
+    - assets/Images/AddStaffScreen/
+    - assets/Images/SubscriptionScreen/
+    - assets/Images/HomeServicesScreen/
+    - assets/Images/LeaveRequestScreen/
+    - assets/Images/FeedbackScreen/
+    - assets/Images/CreateInvoiceScreen/
+    - assets/Images/AttendanceScreen/
+    - assets/Images/InventoryScreen/
+    - assets/Images/HomeScreen/
+    - assets/Images/NotificationScreen/
+    - assets/Images/AppointmentScreen/
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/icon/app_icon.png"
