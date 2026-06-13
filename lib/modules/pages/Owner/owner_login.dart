@@ -1,5 +1,6 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:flutter/gestures.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,6 @@ import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_register_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_login.dart';
-import 'package:neo_parlour_owner/modules/pages/email_login_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/forgot_password_screen.dart';
 
 class SalonOwnerLoginScreen extends StatefulWidget {
@@ -31,6 +31,31 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
     salonIdController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+
+  Future<void> openOwnerTerms() async {
+    final Uri url = Uri.parse(
+      'https://www.neoparlour.com/owner/terms-and-conditions',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  Future<void> openOwnerPrivacy() async {
+    final Uri url = Uri.parse(
+      'https://www.neoparlour.com/owner/privacy-policy',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -111,7 +136,7 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0XFFFF7A58).withOpacity(0.25),
+                    color: const Color(0XFFFF7A58).withValues(alpha: 0.25),
                     blurRadius: 40,
                     spreadRadius: 5,
                     offset: const Offset(0, -10),
@@ -219,12 +244,49 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              "I agree to the Privacy Policy, Terms of Use And Terms of Service",
-                              style: TextStyle(
-                                color: Color(0XFF909090),
-                                fontSize: 11,
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  color: Color(0XFF909090),
+                                  fontSize: 11,
+                                  fontFamily: 'Inter',
+                                ),
+                                children: [
+                                  const TextSpan(text: "I agree to the "),
+                                  TextSpan(
+                                    text: "Privacy Policy",
+                                    style: const TextStyle(
+                                      color: Color(0XFFFF0B01),
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = openOwnerPrivacy,
+                                  ),
+                                  const TextSpan(text: ", "),
+                                  TextSpan(
+                                    text: "Terms of Use",
+                                    style: const TextStyle(
+                                      color: Color(0XFFFF0B01),
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = openOwnerTerms,
+                                  ),
+                                  const TextSpan(text: " And "),
+                                  TextSpan(
+                                    text: "Terms of Service",
+                                    style: const TextStyle(
+                                      color: Color(0XFFFF0B01),
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = openOwnerTerms,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -419,27 +481,5 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
   }
 
   /// SOCIAL ICON
-  Widget _socialIcon(String imageIcon, Color bgColor) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const EmailLoginScreen()),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 15),
-        height: 45,
-        width: 45,
-        decoration: BoxDecoration(
-          color: bgColor,
-          shape: BoxShape.circle,
-          border: bgColor == Colors.white
-              ? Border.all(color: const Color(0XFFE0E0E0))
-              : null,
-        ),
-        child: Center(child: SvgPicture.asset(imageIcon, height: 22)),
-      ),
-    );
-  }
+
 }

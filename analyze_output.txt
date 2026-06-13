@@ -1,0 +1,61 @@
+Analyzing neo_parlour_owner 5...                                
+
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/core/utils/download_mobile.dart:20:13 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/core/utils/download_mobile.dart:20:19 • deprecated_member_use
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/core/utils/download_mobile.dart:29:15 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/core/utils/download_mobile.dart:29:21 • deprecated_member_use
+   info • 'dart:html' is deprecated and shouldn't be used. Use package:web and dart:js_interop instead • lib/core/utils/download_web.dart:2:1 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_offers_screen.dart:102:27 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_package_screen.dart:139:25 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_product_screen.dart:595:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_services_screen.dart:344:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_services_screen.dart:347:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_services_screen.dart:754:44 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_services_screen.dart:755:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_services_screen.dart:757:29 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/modules/pages/Owner/add_staff_screen.dart:303:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/modules/pages/Owner/add_staff_screen.dart:305:9 • avoid_print
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_staff_screen.dart:333:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/add_staff_screen.dart:336:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/analytics_main_screen.dart:69:54 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/assigned_staff_screen.dart:289:35 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/assigned_staff_screen.dart:290:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/assigned_staff_screen.dart:294:41 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/edit_profile_screen.dart:222:30 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/edit_profile_screen.dart:227:57 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/edit_profile_screen.dart:228:37 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/edit_profile_screen.dart:711:49 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/home_service_screen.dart:239:73 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/home_service_screen.dart:241:73 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/inventory_add_items_screen.dart:172:44 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/inventory_details_screen.dart:315:43 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/inventory_details_screen.dart:316:49 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Owner/inventory_details_screen.dart:320:49 • use_build_context_synchronously
+   info • Unnecessary use of 'toList' in a spread • lib/modules/pages/Owner/inventory_details_screen.dart:369:16 • unnecessary_to_list_in_spreads
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/new_subscription_screen.dart:82:11 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/new_subscription_screen.dart:152:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/revenue_screen.dart:49:54 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/schedule_screen.dart:591:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Owner/subscription_screen.dart:152:56 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Staff/appointment_staff_screen.dart:508:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:539:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:570:54 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:571:68 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:581:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:586:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:626:54 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:627:68 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:636:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/appointment_staff_screen.dart:641:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Staff/staff_home_screen.dart:468:21 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/modules/pages/Staff/staff_home_screen.dart:997:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1028:7 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1062:54 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1064:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1076:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1080:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1123:54 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1125:9 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1136:29 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/modules/pages/Staff/staff_home_screen.dart:1140:29 • use_build_context_synchronously
+

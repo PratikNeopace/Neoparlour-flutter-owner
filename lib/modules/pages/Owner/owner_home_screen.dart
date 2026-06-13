@@ -164,7 +164,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
           salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
         );
         if (mounted) {
-          FlushbarHelper.show(context, "Appointment rescheduled successfully");
+          FlushbarHelper.show(context, "Appointment rescheduled successfully", isSuccess: true);
           _refreshData();
         }
       } catch (e) {
@@ -226,7 +226,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
           salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
         );
         if (mounted) {
-          FlushbarHelper.show(context, "Appointment cancelled successfully");
+          FlushbarHelper.show(context, "Appointment cancelled successfully", isSuccess: true);
           _refreshData();
         }
       } catch (e) {
@@ -294,7 +294,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
           salonId: int.tryParse(authProvider.user?.tenantName ?? ''),
         );
         if (mounted) {
-          FlushbarHelper.show(context, "Staff assigned successfully");
+          FlushbarHelper.show(context, "Staff assigned successfully", isSuccess: true);
           _refreshData();
         }
       } catch (e) {
@@ -305,51 +305,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
     }
   }
 
-  // Mock data for the static overview cards (will be made dynamic in future APIs)
-  final List<Map<String, dynamic>> _stats = [
-    {
-      "title": "Revenue",
-      "subtitle": "12% From Yesterday",
-      "value": "₹ 450",
-      "icon": "assets/Images/HomeScreen/revenue_icon.svg",
-      "valueColor": const Color(0XFFFF0B01),
-    },
-    {
-      "title": "Booking Scheduled",
-      "subtitle": "1 Remaining Today",
-      "value": "00",
-      "icon": "assets/Images/HomeScreen/today_overview.svg",
-      "valueColor": const Color(0XFFFF0B01),
-    },
-    {
-      "title": "Offer Analytics",
-      "subtitle": "Requires Attention",
-      "value": "00",
-      "icon": "assets/Images/HomeScreen/offer_anaytics_icon.svg",
-      "valueColor": const Color(0XFFFF0B01),
-    },
-    {
-      "title": "Staff Analytics",
-      "subtitle": "Full Capacity",
-      "value": "00",
-      "icon": "assets/Images/HomeScreen/staff_analytics_icon.svg",
-      "valueColor": const Color(0XFFFF0B01),
-    },
-    {
-      "title": "Staff Attendance",
-      "subtitle": "Requires Attention",
-      "value": "07",
-      "icon": "assets/Images/HomeScreen/staff_attendance_icon.svg",
-      "valueColor": const Color(0XFFFF0B01),
-    },
-    {
-      "title": "Leave Requests",
-      "subtitle": "Requires Attention",
-      "value": "20",
-      "icon": "assets/Images/HomeScreen/leave_request_icon.svg",
-      "valueColor": const Color(0XFFFF0B01),
-    },
-  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -433,9 +389,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.8),
+                    const Color(0XFFFF3502).withValues(alpha: 0.8),
                   ],
                 ),
               ),
@@ -696,7 +652,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                           stat['icon'],
                           height: 40,
                           colorFilter: ColorFilter.mode(
-                            const Color(0XFFE0E0E0).withOpacity(0.5),
+                            const Color(0XFFE0E0E0).withValues(alpha: 0.5),
                             BlendMode.srcIn,
                           ),
                         ),

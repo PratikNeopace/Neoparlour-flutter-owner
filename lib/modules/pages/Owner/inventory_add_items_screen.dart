@@ -1,4 +1,5 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
+import 'package:neo_parlour_owner/core/utils/error_handler.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -135,7 +136,7 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFFF8F8F8),
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: const Color(0XFF909090).withOpacity(0.3)),
+              border: Border.all(color: const Color(0XFF909090).withValues(alpha: 0.3)),
             ),
             child: SvgPicture.asset(icon, width: 30, height: 30),
           ),
@@ -147,10 +148,50 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
   }
 
   void _saveInventory() async {
-    if (_nameController.text.isEmpty || _quantityController.text.isEmpty || _costController.text.isEmpty) {
-      FlushbarHelper.show(context, "Please fill all required fields");
+    if (_nameController.text.trim().isEmpty) {
+      FlushbarHelper.show(context, "Item Name is required");
       return;
     }
+
+    final quantityStr = _quantityController.text.trim();
+    if (quantityStr.isEmpty) {
+      FlushbarHelper.show(context, "Quantity is required");
+      return;
+    }
+    final quantity = int.tryParse(quantityStr);
+    if (quantity == null) {
+      FlushbarHelper.show(context, "Please enter a valid quantity");
+      return;
+    }
+    if (quantity < 0) {
+      FlushbarHelper.show(context, "Quantity cannot be negative");
+      return;
+    }
+    if (quantity > 1000000) {
+      FlushbarHelper.show(context, "Quantity cannot exceed 1,000,000");
+      return;
+    }
+
+    final costStr = _costController.text.trim();
+    if (costStr.isEmpty) {
+      FlushbarHelper.show(context, "Cost price is required");
+      return;
+    }
+    final cost = double.tryParse(costStr);
+    if (cost == null) {
+      FlushbarHelper.show(context, "Please enter a valid cost price");
+      return;
+    }
+    if (cost < 0) {
+      FlushbarHelper.show(context, "Cost price cannot be negative");
+      return;
+    }
+    if (cost > 1000000) {
+      FlushbarHelper.show(context, "Cost price cannot exceed 1,000,000");
+      return;
+    }
+
+    final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
 
     String? imageBase64;
     if (_imageFile != null) {
@@ -159,19 +200,19 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
     }
 
     final request = InventoryRequest(
-      name: _nameController.text,
+      name: _nameController.text.trim(),
       category: _selectedCategory,
       productType: _selectedCategory,
-      currentStock: int.tryParse(_quantityController.text) ?? 0,
-      costPrice: double.tryParse(_costController.text) ?? 0.0,
+      currentStock: quantity,
+      costPrice: cost,
       unitType: _selectedUnitType,
       imageBase64: imageBase64,
     );
 
     try {
-      await Provider.of<InventoryProvider>(context, listen: false).addInventory(request);
+      await inventoryProvider.addInventory(request);
       if (mounted) {
-        FlushbarHelper.show(context, "Item added successfully");
+        FlushbarHelper.show(context, "Item added successfully", isSuccess: true);
         _nameController.clear();
         _quantityController.clear();
         _costController.clear();
@@ -183,7 +224,8 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        FlushbarHelper.show(context, "Error: $e");
+        final errorMsg = ErrorHandler.parseError(e);
+        FlushbarHelper.show(context, "Error: $errorMsg");
       }
     }
   }

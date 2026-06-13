@@ -17,6 +17,7 @@ class AuthResponse {
   final String? cityName;
   final String? areaName;
   final String? imageBase64;
+  final String? imageUrl;
   final double? homeServiceCharges;
   final String? fcmToken;
   final String? openingTime;
@@ -45,6 +46,7 @@ class AuthResponse {
     this.cityName,
     this.areaName,
     this.imageBase64,
+    this.imageUrl,
     this.homeServiceCharges,
     this.fcmToken,
     this.active,
@@ -77,6 +79,7 @@ class AuthResponse {
       cityName: json['cityName'],
       areaName: json['areaName'],
       imageBase64: json['imageBase64'],
+      imageUrl: json['imageUrl'],
       homeServiceCharges: (json['homeServiceCharges'] as num?)?.toDouble(),
       fcmToken: json['fcmToken'],
       active: json['active'],
@@ -107,6 +110,7 @@ class AuthResponse {
     String? cityName,
     String? areaName,
     String? imageBase64,
+    String? imageUrl,
     double? homeServiceCharges,
     String? fcmToken,
     bool? active,
@@ -135,6 +139,7 @@ class AuthResponse {
       cityName: cityName ?? this.cityName,
       areaName: areaName ?? this.areaName,
       imageBase64: imageBase64 ?? this.imageBase64,
+      imageUrl: imageUrl ?? this.imageUrl,
       homeServiceCharges: homeServiceCharges ?? this.homeServiceCharges,
       fcmToken: fcmToken ?? this.fcmToken,
       active: active ?? this.active,
@@ -164,6 +169,7 @@ class AuthResponse {
       'cityName': cityName,
       'areaName': areaName,
       'imageBase64': imageBase64,
+      'imageUrl': imageUrl,
       'homeServiceCharges': homeServiceCharges,
       'fcmToken': fcmToken,
       'active': active,

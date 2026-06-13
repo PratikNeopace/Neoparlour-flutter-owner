@@ -17,7 +17,12 @@ Future<void> downloadFileBytes(List<int> bytes, String filename) async {
     
     if (result.type != ResultType.done) {
       // If opening fails, fallback to sharing
-      await Share.shareXFiles([XFile(file.path)], text: filename);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: filename,
+        ),
+      );
     }
   } catch (e) {
     debugPrint('Error saving/opening file: $e');
@@ -26,7 +31,12 @@ Future<void> downloadFileBytes(List<int> bytes, String filename) async {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/$filename');
       if (await file.exists()) {
-        await Share.shareXFiles([XFile(file.path)], text: filename);
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(file.path)],
+            text: filename,
+          ),
+        );
       }
     } catch (innerE) {
       debugPrint('Fallback sharing failed: $innerE');

@@ -63,7 +63,8 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    final userId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.id;
     if (userId == null) return;
     try {
       final verifyResponse = await _subscriptionService.verifyPayment(
@@ -74,8 +75,8 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
       );
       
       if (mounted) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await authProvider.refreshToken();
+        if (!mounted) return;
         
         _showTopFlushBar(verifyResponse['message'] ?? 'Subscription activated successfully!', isSuccess: true);
         Navigator.pushReplacement(
@@ -137,7 +138,8 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
       _showTopFlushBar('Please enter a coupon code.');
       return;
     }
-    final userId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.id;
     if (userId == null) {
       _showTopFlushBar('User not logged in.');
       return;
@@ -149,7 +151,6 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
           planCode: planCode, userId: userId, couponCode: couponCode.trim());
       
       if (orderData['status']?.toString().toLowerCase() == 'active') {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await authProvider.refreshToken();
         if (mounted) {
           _showTopFlushBar('Coupon applied! Subscription activated successfully!', isSuccess: true);
@@ -260,7 +261,7 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: const Center(
                 child: CircularProgressIndicator(color: Color(0XFFFF0B01)),
               ),
@@ -288,7 +289,7 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
         borderRadius: BorderRadius.circular(16.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

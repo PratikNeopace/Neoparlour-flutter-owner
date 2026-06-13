@@ -106,7 +106,7 @@ class OfferUsageDialog extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(color: const Color(0XFFFF0B01), width: 1.5),
-                                    color: const Color(0XFFFF0B01).withOpacity(0.05),
+                                    color: const Color(0XFFFF0B01).withValues(alpha: 0.05),
                                   ),
                                   child: Text(
                                     usage.usedCount.toString(),

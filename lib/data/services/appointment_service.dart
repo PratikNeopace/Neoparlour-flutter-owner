@@ -21,18 +21,18 @@ class AppointmentService {
   }) async {
     try {
       final queryParameters = {
-        if (mobile != null) 'mobile': mobile,
-        if (staffName != null) 'staffName': staffName,
-        if (staffId != null) 'staffId': staffId,
-        if (status != null) 'status': status,
-        if (salonId != null) 'salonId': salonId,
-        if (fromDate != null) 'fromDate': fromDate,
-        if (toDate != null) 'toDate': toDate,
-        if (minAmount != null) 'minAmount': minAmount,
-        if (maxAmount != null) 'maxAmount': maxAmount,
+        'mobile': ?mobile,
+        'staffName': ?staffName,
+        'staffId': ?staffId,
+        'status': ?status,
+        'salonId': ?salonId,
+        'fromDate': ?fromDate,
+        'toDate': ?toDate,
+        'minAmount': ?minAmount,
+        'maxAmount': ?maxAmount,
         'page': page,
         'size': size,
-        if (sort != null) 'sort': sort,
+        'sort': ?sort,
       };
 
       final response = await _apiClient.get(

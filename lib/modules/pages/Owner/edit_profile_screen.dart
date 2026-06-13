@@ -6,6 +6,8 @@ import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/providers/salon_provider.dart';
 import 'package:neo_parlour_owner/core/utils/download_helper.dart';
 import 'package:neo_parlour_owner/modules/pages/email_login_screen.dart';
+import 'package:neo_parlour_owner/widgets/premium_image.dart';
+import 'package:http/http.dart' as http;
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -28,7 +30,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String _openingTime = '09:00';
   String _closingTime = '21:00';
   String _salonCode = '';
-  String _salonEmail = '';
+
   String _salonPhone = '';
   bool _isEditing = false;
   bool _isLoadingData = false;
@@ -84,7 +86,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _openingTime = salon.openingTime ?? '09:00';
           _closingTime = salon.closingTime ?? '21:00';
           _salonCode = salon.salonCode ?? '';
-          _salonEmail = salon.email ?? '';
+
           _salonPhone = salon.phone ?? '';
         } else {
           // Fallback to user data if salon profile fetch fails
@@ -148,7 +150,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final success = await authProvider.updateProfile(data);
     if (success && mounted) {
       final roleName = (user.role == 'SALON_OWNER' || user.role == 'OWNER') ? "Owner" : "Staff";
-      FlushbarHelper.show(context, "$roleName profile updated successfully");
+      FlushbarHelper.show(context, "$roleName profile updated successfully", isSuccess: true);
       setState(() => _isEditing = false);
       _loadProfile();
     } else if (mounted) {
@@ -191,7 +193,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final success = await salonProvider.updateSalonProfile(data);
     if (success && mounted) {
-      FlushbarHelper.show(context, "Salon profile updated successfully");
+      FlushbarHelper.show(context, "Salon profile updated successfully", isSuccess: true);
       setState(() => _isEditing = false);
       _loadProfile();
     } else if (mounted) {
@@ -201,20 +203,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _confirmDeleteAccount() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text("Delete Account"),
         content: const Text("Are you sure you want to delete your account? This action cannot be undone."),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              final success = await Provider.of<AuthProvider>(context, listen: false).deleteAccount();
+              Navigator.pop(dialogContext);
+              final success = await authProvider.deleteAccount();
               if (success && mounted) {
                 // Return to login or splash
                 Navigator.of(context).pushAndRemoveUntil(
@@ -222,7 +225,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   (route) => false,
                 );
               } else if (mounted) {
-                final error = Provider.of<AuthProvider>(context, listen: false).errorMessage ?? "Deletion failed";
+                final error = authProvider.errorMessage ?? "Deletion failed";
                 FlushbarHelper.show(context, error);
               }
             },
@@ -350,8 +353,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
-                                    const Color(0XFF8B8B8B).withOpacity(0.4),
-                                    const Color(0XFFFF3502).withOpacity(0.2),
+                                    const Color(0XFF8B8B8B).withValues(alpha: 0.4),
+                                    const Color(0XFFFF3502).withValues(alpha: 0.2),
                                   ],
                                 ),
                               ),
@@ -428,7 +431,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: GestureDetector(
                             onTap: () => Navigator.pop(context),
                             child: CircleAvatar(
-                              backgroundColor: Colors.white.withOpacity(0.4),
+                              backgroundColor: Colors.white.withValues(alpha: 0.4),
                               child: const Icon(
                                 Icons.chevron_left,
                                 size: 30,
@@ -647,7 +650,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_isEditing) return const SizedBox.shrink(); // Hide QR when editing
 
     return Consumer<SalonProvider>(
-      builder: (context, provider, child) {
+      builder: (consumerContext, provider, child) {
         if (provider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -669,12 +672,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, spreadRadius: 2),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, spreadRadius: 2),
                 ],
               ),
               child: Column(
                 children: [
-                  Image.memory(qr.qrCode, width: 200, height: 200),
+                  qr.qrCodeUrl != null && qr.qrCodeUrl!.isNotEmpty
+                      ? PremiumImageWidget(
+                          imageUrl: qr.qrCodeUrl,
+                          width: 200,
+                          height: 200,
+                        )
+                      : Image.memory(qr.qrCode, width: 200, height: 200),
                   const SizedBox(height: 8),
                   Text(
                     qr.salonCode,
@@ -687,10 +696,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: () async {
-                      await downloadFileBytes(
-                        qr.qrCode,
-                        "salon_qr_${qr.salonCode}.png",
-                      );
+                      if (qr.qrCodeUrl != null && qr.qrCodeUrl!.isNotEmpty) {
+                        try {
+                          final response = await http.get(Uri.parse(qr.qrCodeUrl!));
+                          if (response.statusCode == 200) {
+                            await downloadFileBytes(
+                              response.bodyBytes,
+                              "salon_qr_${qr.salonCode}.png",
+                            );
+                          } else {
+                            throw Exception("Failed to download image");
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            FlushbarHelper.show(context, "Error downloading QR: $e");
+                          }
+                        }
+                      } else {
+                        await downloadFileBytes(
+                          qr.qrCode,
+                          "salon_qr_${qr.salonCode}.png",
+                        );
+                      }
                     },
                     icon: const Icon(Icons.download, size: 18),
                     label: const Text("DOWNLOAD QR"),
@@ -742,7 +769,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           fontSize: 14,
         ),
         filled: !effectiveReadOnly,
-        fillColor: const Color(0XFFF9F9F9).withOpacity(0.5),
+        fillColor: const Color(0XFFF9F9F9).withValues(alpha: 0.5),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(9),
           borderSide: BorderSide(
@@ -774,7 +801,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           width: !_isEditing ? 0.5 : 0.8,
         ),
         borderRadius: BorderRadius.circular(9),
-        color: _isEditing ? const Color(0XFFF9F9F9).withOpacity(0.5) : null,
+        color: _isEditing ? const Color(0XFFF9F9F9).withValues(alpha: 0.5) : null,
       ),
       child: IgnorePointer(
         ignoring: !_isEditing,
@@ -867,7 +894,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           width: !_isEditing ? 0.5 : 0.8,
         ),
         borderRadius: BorderRadius.circular(9),
-        color: _isEditing ? const Color(0XFFF9F9F9).withOpacity(0.5) : null,
+        color: _isEditing ? const Color(0XFFF9F9F9).withValues(alpha: 0.5) : null,
       ),
       child: IgnorePointer(
         ignoring: !_isEditing,

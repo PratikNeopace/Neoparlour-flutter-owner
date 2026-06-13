@@ -10,7 +10,7 @@ class AuthService {
       final response = await _apiClient.post('auth/login', data: {
         'username': username,
         'password': password,
-        if (fcmToken != null) 'fcmToken': fcmToken,
+        'fcmToken': ?fcmToken,
       });
 
       if (response.statusCode == 200 || response.statusCode == 201) {

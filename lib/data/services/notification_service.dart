@@ -25,8 +25,8 @@ class NotificationService {
     try {
       final queryParameters = {
         'salonId': salonId,
-        if (status != null) 'status': status,
-        if (type != null) 'type': type,
+        'status': ?status,
+        'type': ?type,
         'page': page,
         'size': size,
       };
@@ -49,10 +49,10 @@ class NotificationService {
   }
 
   Future<void> initFCM() async {
-  print("Requesting FCM permissions...");
+  debugPrint("Requesting FCM permissions...");
   await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
-  print("Initializing Local Notifications...");
+  debugPrint("Initializing Local Notifications...");
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -63,17 +63,17 @@ class NotificationService {
   await _localNotifications.initialize(
     settings: settings,
     onDidReceiveNotificationResponse: (NotificationResponse response) {
-      print("Notification tapped: ${response.payload}");
+      debugPrint("Notification tapped: ${response.payload}");
     },
   );
 
-  print("Requesting Android permissions...");
+  debugPrint("Requesting Android permissions...");
   await _localNotifications
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
       ?.requestNotificationsPermission();
 
-  print("Creating Notification Channel...");
+  debugPrint("Creating Notification Channel...");
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'owner_channel',
     'Owner Notifications',
@@ -86,7 +86,7 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
-  print("Getting FCM Token...");
+  debugPrint("Getting FCM Token...");
   try {
     String? vapidKey;
     if (kIsWeb) {
@@ -94,13 +94,13 @@ class NotificationService {
     }
 
     final token = await _fcm.getToken(vapidKey: vapidKey);
-    print("FCM TOKEN (RAW) => $token");
+    debugPrint("FCM TOKEN (RAW) => $token");
 
     if (token != null) {
       await _registerToken(token);
     }
   } catch (e) {
-    print("NON-FATAL: Error getting FCM token: $e");
+    debugPrint("NON-FATAL: Error getting FCM token: $e");
   }
 
 
@@ -119,13 +119,13 @@ Future<void> _registerToken(String token) async {
         "auth/users/$userId",
         data: {"fcmToken": token},
       );
-      print("FCM Token registered successfully for user $userId");
+      debugPrint("FCM Token registered successfully for user $userId");
     } else {
       // Fallback for registration flow
-      print("No user ID found, skipping token registration");
+      debugPrint("No user ID found, skipping token registration");
     }
   } catch (e) {
-    print("Token registration failed: $e");
+    debugPrint("Token registration failed: $e");
   }
 }
 

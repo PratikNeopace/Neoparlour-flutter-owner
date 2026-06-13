@@ -47,6 +47,8 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final provider = Provider.of<AnalyticsProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final salonId = int.tryParse(authProvider.user?.tenantName ?? '');
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -66,8 +68,6 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
       },
     );
     if (picked != null) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salonId = int.tryParse(authProvider.user?.tenantName ?? '');
       if (isStartDate) {
         provider.setDateRange(picked, provider.graphEndDate, salonId: salonId);
       } else {
@@ -156,9 +156,9 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.8),
+                    const Color(0XFFFF3502).withValues(alpha: 0.8),
                   ],
                 ),
               ),
@@ -592,7 +592,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0XFFFF0B01).withOpacity(0.1),
+                          color: const Color(0XFFFF0B01).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.local_offer, color: Color(0XFFFF0B01), size: 20),
@@ -745,7 +745,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0XFFFF0B01).withOpacity(0.1),
+                          color: const Color(0XFFFF0B01).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.person, color: Color(0XFFFF0B01), size: 20),
@@ -773,8 +773,8 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: attendance.status.toUpperCase() == 'PRESENT'
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.red.withOpacity(0.1),
+                                  ? Colors.green.withValues(alpha: 0.1)
+                                  : Colors.red.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: Text(
@@ -947,13 +947,15 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                           if (provider.viewType == 'day') {
                             if (index % 4 != 0 &&
                                 index !=
-                                    provider.revenuePoints.length - 1)
+                                    provider.revenuePoints.length - 1) {
                               return const SizedBox();
+                            }
                           } else if (provider.viewType == 'month') {
                             if (index % 7 != 0 &&
                                 index !=
-                                    provider.revenuePoints.length - 1)
+                                    provider.revenuePoints.length - 1) {
                               return const SizedBox();
+                            }
                           }
 
                           return SideTitleWidget(

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
@@ -18,7 +19,7 @@ class ApiClient {
         },
       ),
     );
-    print('DEBUG: ApiClient initialized with baseUrl: $baseUrl');
+    debugPrint('DEBUG: ApiClient initialized with baseUrl: $baseUrl');
 
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -48,12 +49,12 @@ class ApiClient {
 
   Future<Response> get(String endpoint, {Map<String, dynamic>? queryParameters, Options? options}) async {
     try {
-      print('DEBUG: API GET request to $endpoint with params $queryParameters');
+      debugPrint('DEBUG: API GET request to $endpoint with params $queryParameters');
       final response = await dio.get(endpoint, queryParameters: queryParameters, options: options);
-      print('DEBUG: API Response status: ${response.statusCode}');
+      debugPrint('DEBUG: API Response status: ${response.statusCode}');
       return response;
     } catch (e) {
-      print('DEBUG: API GET request failed: $e');
+      debugPrint('DEBUG: API GET request failed: $e');
       rethrow;
     }
   }
@@ -74,7 +75,18 @@ class ApiClient {
     }
   }
 
+  Future<Response> patch(String endpoint, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
+    try {
+      return await dio.patch(endpoint, data: data, queryParameters: queryParameters, options: options);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   static String handleDioError(DioException e) {
+    if (e.response?.statusCode == 500) {
+      return "Something went wrong on the server. Please try again later.";
+    }
     String message = 'Something went wrong';
     if (e.response != null && e.response!.data != null) {
       final data = e.response!.data;

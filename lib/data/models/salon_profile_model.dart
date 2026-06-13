@@ -12,6 +12,8 @@ class SalonProfileModel {
   final String? weeklyOffDay;
   final double? homeServiceCharges;
   final String? qrCodeBase64;
+  final String? qrCodeUrl;
+  final String? imageUrl;
   final bool? active;
   final List<dynamic>? holidays;
   final String? createdAt;
@@ -30,6 +32,8 @@ class SalonProfileModel {
     this.weeklyOffDay,
     this.homeServiceCharges,
     this.qrCodeBase64,
+    this.qrCodeUrl,
+    this.imageUrl,
     this.active,
     this.holidays,
     this.createdAt,
@@ -50,6 +54,8 @@ class SalonProfileModel {
       weeklyOffDay: json['weeklyOffDay'],
       homeServiceCharges: (json['homeServiceCharges'] as num?)?.toDouble(),
       qrCodeBase64: json['qrCodeBase64'],
+      qrCodeUrl: json['qrCodeUrl'],
+      imageUrl: json['imageUrl'] ?? json['logoUrl'] ?? json['applicationLogoUrl'],
       active: json['active'],
       holidays: json['holidays'],
       createdAt: json['createdAt'],
@@ -71,6 +77,8 @@ class SalonProfileModel {
       'weeklyOffDay': weeklyOffDay,
       'homeServiceCharges': homeServiceCharges,
       'qrCodeBase64': qrCodeBase64,
+      'qrCodeUrl': qrCodeUrl,
+      'imageUrl': imageUrl,
       'active': active,
       'holidays': holidays,
       'createdAt': createdAt,

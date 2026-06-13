@@ -107,4 +107,17 @@ class ProductProvider with ChangeNotifier {
       return false;
     }
   }
+
+  ProductModel? _editingProduct;
+  ProductModel? get editingProduct => _editingProduct;
+
+  void setEditingProduct(ProductModel product) {
+    _editingProduct = product;
+    notifyListeners();
+  }
+
+  void clearEditingProduct() {
+    _editingProduct = null;
+    notifyListeners();
+  }
 }

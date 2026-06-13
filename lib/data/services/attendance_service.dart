@@ -60,8 +60,8 @@ class AttendanceService {
     final response = await _apiClient.get(
       'staff-attendance/leave/search',
       queryParameters: {
-        if (status != null) 'status': status,
-        if (staffId != null) 'staffId': staffId,
+        'status': ?status,
+        'staffId': ?staffId,
         'page': page,
         'size': 10,
         'sortBy': 'createdAt',
@@ -93,7 +93,7 @@ class AttendanceService {
     final response = await _apiClient.get(
       'staff-attendance/search',
       queryParameters: {
-        if (staffId != null) 'staffId': staffId,
+        'staffId': ?staffId,
         'page': page,
         'size': size,
         'sortBy': 'attendanceDate',

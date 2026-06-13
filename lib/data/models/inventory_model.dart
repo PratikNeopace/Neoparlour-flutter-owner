@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 enum UnitType {
   PIECE,
   ML,
@@ -29,6 +31,7 @@ class InventoryRequest {
   final double? unitSize;
   final String? unitLabel;
   final String? imageBase64;
+  final String? imageUrl;
 
   InventoryRequest({
     required this.name,
@@ -41,6 +44,7 @@ class InventoryRequest {
     this.unitSize,
     this.unitLabel,
     this.imageBase64,
+    this.imageUrl,
   });
 
   Map<String, dynamic> toJson() {
@@ -55,6 +59,7 @@ class InventoryRequest {
       'unitSize': unitSize,
       'unitLabel': unitLabel,
       'imageBase64': imageBase64,
+      'imageUrl': imageUrl,
     };
   }
 }
@@ -73,6 +78,7 @@ class InventoryResponse {
   final String? unitLabel;
   final double? totalConsumed;
   final String? imageBase64;
+  final String? imageUrl;
   final DateTime? createdAt;
 
   InventoryResponse({
@@ -89,6 +95,7 @@ class InventoryResponse {
     this.unitLabel,
     this.totalConsumed,
     this.imageBase64,
+    this.imageUrl,
     this.createdAt,
   });
 
@@ -106,6 +113,7 @@ class InventoryResponse {
     String? unitLabel,
     double? totalConsumed,
     String? imageBase64,
+    String? imageUrl,
     DateTime? createdAt,
   }) {
     return InventoryResponse(
@@ -122,11 +130,15 @@ class InventoryResponse {
       unitLabel: unitLabel ?? this.unitLabel,
       totalConsumed: totalConsumed ?? this.totalConsumed,
       imageBase64: imageBase64 ?? this.imageBase64,
+      imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
   factory InventoryResponse.fromJson(Map<String, dynamic> json) {
+    final String? imgField = json['imageBase64'] ?? json['imageUrl'] ?? json['image'];
+    final bool isUrl = imgField != null && imgField.startsWith('http');
+    
     return InventoryResponse(
       id: json['id'],
       salonId: json['salonId'],
@@ -153,7 +165,8 @@ class InventoryResponse {
       unitSize: json['unitSize'] != null ? (json['unitSize'] as num).toDouble() : null,
       unitLabel: json['unitLabel'],
       totalConsumed: json['totalConsumed'] != null ? (json['totalConsumed'] as num).toDouble() : null,
-      imageBase64: json['imageBase64'],
+      imageBase64: isUrl ? null : imgField,
+      imageUrl: isUrl ? imgField : json['imageUrl'],
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
   }

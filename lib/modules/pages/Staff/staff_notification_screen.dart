@@ -158,9 +158,9 @@ class _StaffNotificationScreenState extends State<StaffNotificationScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.7),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -173,7 +173,7 @@ class _StaffNotificationScreenState extends State<StaffNotificationScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.4),
+              backgroundColor: Colors.white.withValues(alpha: 0.4),
               child: const Icon(Icons.chevron_left, color: Colors.black),
             ),
           ),
@@ -196,7 +196,7 @@ class _StaffNotificationScreenState extends State<StaffNotificationScreen> {
               color: const Color(0XFFFF0B01),
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 6)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 6)),
               ],
             ),
             child: const Icon(Icons.notifications, color: Colors.white, size: 28),
@@ -270,7 +270,7 @@ class _StaffNotificationScreenState extends State<StaffNotificationScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         decoration: BoxDecoration(
-          color: statusColor.withOpacity(0.08),
+          color: statusColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
           border: hasBorder ? Border.all(color: statusColor, width: 2) : null,
         ),
@@ -305,7 +305,7 @@ class _StaffNotificationScreenState extends State<StaffNotificationScreen> {
                           ],
                         ),
                       ),
-                      Icon(Icons.close, size: 24, color: statusColor.withOpacity(0.8)),
+                      Icon(Icons.close, size: 24, color: statusColor.withValues(alpha: 0.8)),
                     ],
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
+import 'package:neo_parlour_owner/core/utils/error_handler.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,7 @@ import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:neo_parlour_owner/providers/service_provider.dart';
 import 'package:neo_parlour_owner/data/models/service_model.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
+import 'package:neo_parlour_owner/widgets/premium_image.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 
 class AddServiceScreen extends StatefulWidget {
@@ -250,7 +252,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFFF8F8F8),
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: const Color(0XFF909090).withOpacity(0.3)),
+              border: Border.all(color: const Color(0XFF909090).withValues(alpha: 0.3)),
             ),
             child: SvgPicture.asset(icon, width: 30, height: 30),
           ),
@@ -281,8 +283,16 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       return false;
     }
     final price = double.tryParse(priceStr);
-    if (price == null || price <= 0) {
-      _showError("Please enter a valid price greater than 0");
+    if (price == null) {
+      _showError("Please enter a valid price");
+      return false;
+    }
+    if (price <= 0) {
+      _showError("Price must be greater than 0");
+      return false;
+    }
+    if (price > 1000000) {
+      _showError("Price cannot exceed 1,000,000");
       return false;
     }
 
@@ -291,8 +301,16 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       return false;
     }
     final duration = int.tryParse(durationStr);
-    if (duration == null || duration <= 0) {
-      _showError("Please enter a valid duration in minutes");
+    if (duration == null) {
+      _showError("Please enter a valid integer for duration");
+      return false;
+    }
+    if (duration <= 0) {
+      _showError("Duration must be greater than 0");
+      return false;
+    }
+    if (duration > 1440) {
+      _showError("Duration cannot exceed 1,440 minutes (24 hours)");
       return false;
     }
 
@@ -323,8 +341,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       if (finalImage == null && editingService == null) {
         // Try to get automatic image for new service
         finalImage = _getServiceImagePath(_nameController.text, _selectedGender);
-      } else if (finalImage == null) {
-        finalImage = editingService?.image;
+      } else {
+        finalImage ??= editingService?.image;
       }
 
       final serviceData = NeoService(
@@ -340,46 +358,24 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
       if (editingService != null) {
         await serviceProvider.updateService(serviceData);
-        FlushbarHelper.show(context, "Service updated successfully!");
+        if (!mounted) return;
+        FlushbarHelper.show(context, "Service updated successfully!", isSuccess: true);
       } else {
         await serviceProvider.addService(serviceData);
-        FlushbarHelper.show(context, "Service added successfully!");
+        if (!mounted) return;
+        FlushbarHelper.show(context, "Service added successfully!", isSuccess: true);
       }
       
       _clearForm();
     } catch (e) {
       if (mounted) {
-        FlushbarHelper.show(context, "Error: $e");
+        final errorMsg = ErrorHandler.parseError(e);
+        FlushbarHelper.show(context, "Error: $errorMsg");
       }
     }
   }
 
-  Future<void> _confirmDelete(int id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Service"),
-        content: const Text("Are you sure you want to delete this service?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("CANCEL")),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text("DELETE"),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await Provider.of<ServiceProvider>(context, listen: false).deleteService(id);
-        FlushbarHelper.show(context, "Service deleted successfully!");
-      } catch (e) {
-        FlushbarHelper.show(context, "Error deleting: $e");
-      }
-    }
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -485,11 +481,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                         ? Image.network(_imageFile!.path, fit: BoxFit.cover)
                                         : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
                                     )
-                                  : provider.editingService != null && provider.editingService!.image != null 
+                                  : provider.editingService != null && (provider.editingService!.imageUrl != null || provider.editingService!.image != null)
                                       ? ClipRRect(
                                           borderRadius: BorderRadius.circular(9),
-                                          child: provider.editingService!.image!.startsWith('http')
-                                            ? Image.network(provider.editingService!.image!, fit: BoxFit.cover)
+                                          child: provider.editingService!.imageUrl != null && provider.editingService!.imageUrl!.isNotEmpty
+                                            ? PremiumImageWidget(imageUrl: provider.editingService!.imageUrl, width: double.infinity, height: 120)
                                             : provider.editingService!.image!.startsWith('assets/')
                                               ? Image.asset(provider.editingService!.image!, fit: BoxFit.cover)
                                               : Image.memory(base64Decode(provider.editingService!.image!), fit: BoxFit.cover),
@@ -668,7 +664,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                 color: isActive ? Colors.white : Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  if (isActive) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                  if (isActive) BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
                 ],
               ),
               child: Opacity(
@@ -677,13 +673,18 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: service.image != null && service.image!.isNotEmpty
-                        ? (service.image!.startsWith('http')
-                            ? Image.network(service.image!, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholderImage())
-                            : service.image!.startsWith('assets/')
-                                ? Image.asset(service.image!, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholderImage())
-                                : Image.memory(base64Decode(service.image!), width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _buildPlaceholderImage()))
-                        : _buildPlaceholderImage(),
+                      child: (service.imageUrl != null && service.imageUrl!.isNotEmpty)
+                        ? PremiumImageWidget(
+                            imageUrl: service.imageUrl,
+                            width: 50,
+                            height: 50,
+                            borderRadius: BorderRadius.circular(8),
+                          )
+                        : (service.image != null && service.image!.isNotEmpty)
+                          ? (service.image!.startsWith('assets/')
+                              ? Image.asset(service.image!, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage())
+                              : Image.memory(base64Decode(service.image!), width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage()))
+                          : _buildPlaceholderImage(),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -697,7 +698,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: isActive ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                                  color: isActive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -752,6 +753,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   }
 
   Future<void> _confirmDeactivate(int id) async {
+    final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -770,9 +772,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
     if (confirmed == true) {
       try {
-        await Provider.of<ServiceProvider>(context, listen: false).deleteService(id);
-        FlushbarHelper.show(context, "Service deactivated.");
+        await serviceProvider.deleteService(id);
+        if (!mounted) return;
+        FlushbarHelper.show(context, "Service deactivated.", isSuccess: true);
       } catch (e) {
+        if (!mounted) return;
         FlushbarHelper.show(context, "Error: $e");
       }
     }
@@ -857,7 +861,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
           left: 16,
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: CircleAvatar(backgroundColor: Colors.white.withOpacity(0.5), child: const Icon(Icons.arrow_back_ios_new, size: 18)),
+            child: CircleAvatar(backgroundColor: Colors.white.withValues(alpha: 0.5), child: const Icon(Icons.arrow_back_ios_new, size: 18)),
           ),
         ),
       ],

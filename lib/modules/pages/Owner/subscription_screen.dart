@@ -67,7 +67,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    final userId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.id;
     if (userId == null) return;
     try {
       final verifyResponse = await _subscriptionService.verifyPayment(
@@ -78,8 +79,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       );
       
       if (mounted) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await authProvider.refreshToken();
+        if (!mounted) return;
         
         _showTopFlushBar(verifyResponse['message'] ?? 'Subscription activated successfully!', isSuccess: true);
       }
@@ -137,7 +138,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       _showTopFlushBar('Please enter a coupon code.');
       return;
     }
-    final userId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.id;
     if (userId == null) {
       _showTopFlushBar('User not logged in.');
       return;
@@ -149,7 +151,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           planCode: planCode, userId: userId, couponCode: couponCode.trim());
       
       if (orderData['status']?.toString().toLowerCase() == 'active') {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await authProvider.refreshToken();
         if (mounted) {
           _showTopFlushBar('Coupon applied! Subscription activated successfully!', isSuccess: true);
@@ -269,7 +270,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: const Center(
                 child: CircularProgressIndicator(color: Color(0XFFFF0B01)),
               ),
@@ -419,7 +420,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Center(
             child: Column(
               children: [
-                SvgPicture.asset("assets/Images/SubscriptionScreen/floating_icon_subscription.svg",height:50,width:50, color:Colors.black),
+                 SvgPicture.asset("assets/Images/SubscriptionScreen/floating_icon_subscription.svg",height:50,width:50, colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn)),
                 SizedBox(height: 10),
                 Text(
                   amountText,
@@ -574,7 +575,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
                     const Color(0XFFFF3502),
                   ],
@@ -596,7 +597,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           top: MediaQuery.of(context).padding.top + 10,
           left: 16,
           child: CircleAvatar(
-            backgroundColor: Colors.white.withOpacity(0.5),
+            backgroundColor: Colors.white.withValues(alpha: 0.5),
             child: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
                   size: 18, color: Colors.black),

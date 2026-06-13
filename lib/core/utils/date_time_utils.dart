@@ -14,7 +14,7 @@ class DateTimeUtils {
       iso = iso.substring(0, iso.length - 1);
     }
     
-    return "${iso}+05:30";
+    return "$iso+05:30";
   }
 
   /// Returns current time in IST ISO string format.

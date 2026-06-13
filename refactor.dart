@@ -9,7 +9,7 @@ void main() async {
 
     String content = await file.readAsString();
     if (content.contains('RefreshIndicator(')) {
-      print('Updating \${file.path}...');
+      stdout.writeln('Updating ${file.path}...');
       
       content = content.replaceAll('RefreshIndicator(', 'CustomRefreshIndicator(');
 

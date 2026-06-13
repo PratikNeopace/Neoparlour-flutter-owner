@@ -152,7 +152,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
               ),
             ),
             child: Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               padding: const EdgeInsets.only(left: 25, bottom: 60),
               alignment: Alignment.bottomLeft,
               child: const Text("HISTORY", style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w500)),
@@ -170,7 +170,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
             ),
           ),
@@ -282,7 +282,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), 
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1), 
+                  color: color.withValues(alpha: 0.1), 
                   borderRadius: BorderRadius.circular(3)
                   ),
                 child: Text(

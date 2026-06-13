@@ -160,7 +160,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
                     const Color(0XFFFF3502),
                   ],
@@ -183,7 +183,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
             ),
           ),
@@ -285,7 +285,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               try {
                                 await provider.rejectFeedback(feedback.id!);
                                 if (context.mounted) {
-                                  FlushbarHelper.show(context, "Feedback rejected successfully!");
+                                  FlushbarHelper.show(context, "Feedback rejected successfully!", isSuccess: true);
                                 }
                               } catch (e) {
                                 if (context.mounted) {
@@ -310,7 +310,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               try {
                                 await provider.approveFeedback(feedback.id!);
                                 if (context.mounted) {
-                                  FlushbarHelper.show(context, "Feedback approved successfully!");
+                                  FlushbarHelper.show(context, "Feedback approved successfully!", isSuccess: true);
                                 }
                               } catch (e) {
                                 if (context.mounted) {

@@ -27,6 +27,8 @@ class _RevenueScreenState extends State<RevenueScreen> {
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final provider = Provider.of<AnalyticsProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final salonId = int.tryParse(authProvider.user?.tenantName ?? '');
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -46,8 +48,6 @@ class _RevenueScreenState extends State<RevenueScreen> {
       },
     );
     if (picked != null) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final salonId = int.tryParse(authProvider.user?.tenantName ?? '');
       if (isStartDate) {
         provider.setDateRange(picked, provider.graphEndDate, salonId: salonId);
       } else {

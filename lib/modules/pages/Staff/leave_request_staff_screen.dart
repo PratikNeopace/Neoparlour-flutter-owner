@@ -110,7 +110,7 @@ class _LeaveRequestStaffScreenState extends State<LeaveRequestStaffScreen> {
       final errorMsg =
           context.read<AttendanceProvider>().errorMessage ??
           "Failed to submit leave request";
-      print("Leave Request Failure: $errorMsg");
+      debugPrint("Leave Request Failure: $errorMsg");
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           FlushbarHelper.show(context, errorMsg);
@@ -292,8 +292,8 @@ class _LeaveRequestStaffScreenState extends State<LeaveRequestStaffScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
-                    const Color(0XFFFF3502).withOpacity(0.7),
+                    Colors.black.withValues(alpha: 0.3),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -314,7 +314,7 @@ class _LeaveRequestStaffScreenState extends State<LeaveRequestStaffScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(
                 Icons.arrow_back_ios_new,
                 size: 18,
@@ -334,7 +334,7 @@ class _LeaveRequestStaffScreenState extends State<LeaveRequestStaffScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withValues(alpha: 0.25),
                   blurRadius: 10,
                   offset: const Offset(0, 6),
                 ),

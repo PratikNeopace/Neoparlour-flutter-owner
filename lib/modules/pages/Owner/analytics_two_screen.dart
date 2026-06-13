@@ -172,7 +172,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )
@@ -241,7 +241,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
         border: Border.all(color: const Color(0XFFE0E0E0), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 5,
             offset: const Offset(0, 2),
           )
@@ -298,7 +298,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0XFFFF0B01).withOpacity(0.1),
+                  color: const Color(0XFFFF0B01).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
@@ -360,9 +360,9 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.8)
+                    const Color(0XFFFF3502).withValues(alpha: 0.8)
                   ],
                 ),
               ),
@@ -397,7 +397,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )

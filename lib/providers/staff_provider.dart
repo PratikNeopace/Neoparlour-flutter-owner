@@ -89,7 +89,7 @@ class StaffProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final updated = await _service.updateStaff(staff);
+      await _service.updateStaff(staff);
       await fetchStaff(); // Automatically refresh list
     } on DioException catch (e) {
       _errorMessage = ApiClient.handleDioError(e);
@@ -114,7 +114,7 @@ class StaffProvider extends ChangeNotifier {
     // Optimistic Update
     bool found = false;
     _staffMembers = _staffMembers.map((s) {
-      if ((id != null && s.id == id)) {
+      if (s.id == id) {
         found = true;
         return s.copyWith(active: active);
       }
@@ -131,7 +131,7 @@ class StaffProvider extends ChangeNotifier {
     } on DioException catch (e) {
       // Revert on failure
       _staffMembers = _staffMembers.map((s) {
-        if ((id != null && s.id == id)) {
+        if (s.id == id) {
           return s.copyWith(active: !active);
         }
         return s;
@@ -141,7 +141,7 @@ class StaffProvider extends ChangeNotifier {
     } catch (e) {
       // Revert on failure
       _staffMembers = _staffMembers.map((s) {
-        if ((id != null && s.id == id)) {
+        if (s.id == id) {
           return s.copyWith(active: !active);
         }
         return s;

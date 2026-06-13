@@ -1,9 +1,7 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_login.dart';
-import 'package:neo_parlour_owner/modules/pages/email_login_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/forgot_password_screen.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
@@ -107,7 +105,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0XFFFF7A58).withOpacity(0.25),
+                    color: const Color(0XFFFF7A58).withValues(alpha: 0.25),
                     blurRadius: 40,
                     spreadRadius: 5,
                     offset: const Offset(0, -10),
@@ -346,29 +344,5 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     );
   }
 
-  Widget _socialIcon(String imageIcon, Color bgColor) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const EmailLoginScreen()),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 15),
-        height: 45,
-        width: 45,
-        decoration: BoxDecoration(
-          color: bgColor,
-          shape: BoxShape.circle,
-          border: bgColor == Colors.white
-              ? Border.all(color: const Color(0XFFE0E0E0))
-              : null,
-        ),
-        child: Center(
-          child: SvgPicture.asset(imageIcon, height: 22, width: 22),
-        ),
-      ),
-    );
-  }
+  
 }

@@ -52,9 +52,13 @@ class _LeaveRequestsScreenState extends State<LeaveRequestsScreen> with SingleTi
     if (authProvider.user == null) return;
 
     String? status;
-    if (index == 0) status = 'PENDING';
-    else if (index == 1) status = 'APPROVED';
-    else if (index == 2) status = 'REJECTED';
+    if (index == 0) {
+      status = 'PENDING';
+    } else if (index == 1) {
+      status = 'APPROVED';
+    } else if (index == 2) {
+      status = 'REJECTED';
+    }
 
     context.read<AttendanceProvider>().fetchStaffLeaveRequests(
       staffId: authProvider.user!.id,
@@ -175,7 +179,7 @@ class _LeaveRequestsScreenState extends State<LeaveRequestsScreen> with SingleTi
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -191,7 +195,7 @@ class _LeaveRequestsScreenState extends State<LeaveRequestsScreen> with SingleTi
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(

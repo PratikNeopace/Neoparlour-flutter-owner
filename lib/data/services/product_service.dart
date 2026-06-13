@@ -78,9 +78,8 @@ class ProductService {
 
   Future<void> toggleProductStatus(int id, bool active) async {
     try {
-      final response = await _apiClient.put(
+      final response = await _apiClient.patch(
         'products/$id/toggle',
-        queryParameters: {'active': active},
       );
       if (response.statusCode != 200) {
         throw Exception('Failed to update product status');

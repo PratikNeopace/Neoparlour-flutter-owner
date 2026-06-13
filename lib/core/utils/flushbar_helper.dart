@@ -20,7 +20,7 @@ class FlushbarHelper {
       message: message,
       flushbarPosition: FlushbarPosition.TOP,
       backgroundColor:
-          isSuccess ? Colors.green.shade700 : Colors.red.shade700,
+          isSuccess ? Colors.green : Colors.red,
 
       // ✅ Correct responsive positioning
       margin: const EdgeInsets.symmetric(horizontal: 16)

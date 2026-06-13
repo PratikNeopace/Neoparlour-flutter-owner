@@ -114,7 +114,7 @@ class _UsageDetailsDialogState extends State<UsageDetailsDialog> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: usage.isFinished ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                                  color: usage.isFinished ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(

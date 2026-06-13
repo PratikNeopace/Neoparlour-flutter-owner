@@ -1,4 +1,5 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
+import 'package:neo_parlour_owner/core/utils/error_handler.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/providers/product_provider.dart';
 import 'package:neo_parlour_owner/data/models/product_model.dart';
+import 'package:neo_parlour_owner/widgets/premium_image.dart';
 
 class AddProductScreen extends StatefulWidget {
   final bool showAsTab;
@@ -42,6 +44,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   String _productType = 'RETAIL';
   bool _isActive = true;
+  int? _lastSyncedProductId;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -49,6 +53,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().fetchProducts();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final productProvider = Provider.of<ProductProvider>(context);
+    final editingProduct = productProvider.editingProduct;
+
+    if (widget.initialTabIndex == 0 && editingProduct != null && editingProduct.id != _lastSyncedProductId) {
+      _lastSyncedProductId = editingProduct.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _populateFields(editingProduct);
+      });
+    } else if (editingProduct == null && _lastSyncedProductId != null) {
+       _lastSyncedProductId = null;
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _clearForm();
+      });
+    }
   }
 
   @override
@@ -60,7 +83,34 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _restockLevelController.dispose();
     _priceController.dispose();
     _discountPriceController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _populateFields(ProductModel product) {
+    setState(() {
+      _nameController.text = product.name;
+      _categoryController.text = product.category ?? '';
+      _descriptionController.text = product.description ?? '';
+      _stockController.text = product.stock?.toString() ?? '';
+      _restockLevelController.text = product.restockLevel?.toString() ?? '';
+      _priceController.text = product.price.toString();
+      _discountPriceController.text = product.discountPrice?.toString() ?? '';
+      _productType = product.productType ?? 'RETAIL';
+      _isActive = product.active;
+      _mainImageBytes = null;
+      _additionalImagesBytes.clear();
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutQuart,
+        );
+      }
+    });
   }
 
   Future<void> _pickMainImage(ImageSource source) async {
@@ -88,8 +138,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final priceStr = _priceController.text.trim();
     final discountStr = _discountPriceController.text.trim();
     final stockStr = _stockController.text.trim();
+    final restockStr = _restockLevelController.text.trim();
 
-    if (_mainImageBytes == null) {
+    final productProvider = Provider.of<ProductProvider>(context, listen: false);
+    final isEditing = productProvider.editingProduct != null;
+    final hasExistingImage = isEditing && 
+        ((productProvider.editingProduct!.imageUrl != null && productProvider.editingProduct!.imageUrl!.isNotEmpty) ||
+         (productProvider.editingProduct!.imageBase64 != null && productProvider.editingProduct!.imageBase64!.isNotEmpty));
+
+    if (_mainImageBytes == null && !hasExistingImage) {
       _showError("Main Product Image is compulsory");
       return false;
     }
@@ -104,15 +161,31 @@ class _AddProductScreenState extends State<AddProductScreen> {
       return false;
     }
     final price = double.tryParse(priceStr);
-    if (price == null || price <= 0) {
-      _showError("Please enter a valid price greater than 0");
+    if (price == null) {
+      _showError("Please enter a valid price");
+      return false;
+    }
+    if (price <= 0) {
+      _showError("Price must be greater than 0");
+      return false;
+    }
+    if (price > 1000000) {
+      _showError("Price cannot exceed 1,000,000");
       return false;
     }
 
     if (discountStr.isNotEmpty) {
       final discount = double.tryParse(discountStr);
-      if (discount == null || discount < 0) {
+      if (discount == null) {
         _showError("Please enter a valid discount price");
+        return false;
+      }
+      if (discount < 0) {
+        _showError("Discount price must be greater than or equal to 0");
+        return false;
+      }
+      if (discount > 1000000) {
+        _showError("Discount price cannot exceed 1,000,000");
         return false;
       }
       if (discount >= price) {
@@ -123,8 +196,32 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     if (stockStr.isNotEmpty) {
       final stock = int.tryParse(stockStr);
-      if (stock == null || stock < 0) {
-        _showError("Please enter a valid stock quantity");
+      if (stock == null) {
+        _showError("Please enter a valid integer for stock quantity");
+        return false;
+      }
+      if (stock < 0) {
+        _showError("Stock quantity cannot be negative");
+        return false;
+      }
+      if (stock > 1000000) {
+        _showError("Stock quantity cannot exceed 1,000,000");
+        return false;
+      }
+    }
+
+    if (restockStr.isNotEmpty) {
+      final restock = int.tryParse(restockStr);
+      if (restock == null) {
+        _showError("Please enter a valid integer for restock level");
+        return false;
+      }
+      if (restock < 0) {
+        _showError("Restock level cannot be negative");
+        return false;
+      }
+      if (restock > 1000000) {
+        _showError("Restock level cannot exceed 1,000,000");
         return false;
       }
     }
@@ -151,11 +248,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ? int.parse(_restockLevelController.text.trim()) 
           : null;
 
-      final mainImageBase64 = base64Encode(_mainImageBytes!);
+      final mainImageBase64 = _mainImageBytes != null ? base64Encode(_mainImageBytes!) : null;
       List<String> additionalImagesBase64 = _additionalImagesBytes.map((bytes) => base64Encode(bytes)).toList();
 
+      final productProvider = Provider.of<ProductProvider>(context, listen: false);
+      final editingProduct = productProvider.editingProduct;
+
       final product = ProductModel(
-        salonId: 1, 
+        id: editingProduct?.id,
+        salonId: editingProduct?.salonId ?? 1, 
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
         price: price,
@@ -164,31 +265,40 @@ class _AddProductScreenState extends State<AddProductScreen> {
         stock: stock,
         restockLevel: restockLevel,
         productType: _productType,
-        imageBase64: mainImageBase64,
-        additionalImagesBase64: additionalImagesBase64,
-        active: _isActive,
+        imageBase64: mainImageBase64 ?? editingProduct?.imageBase64,
+        imageUrl: editingProduct?.imageUrl,
+        additionalImagesBase64: additionalImagesBase64.isNotEmpty ? additionalImagesBase64 : editingProduct?.additionalImagesBase64,
+        additionalImageUrls: editingProduct?.additionalImageUrls,
+        active: editingProduct?.active ?? _isActive,
       );
 
-      final success = await context.read<ProductProvider>().addProduct(product);
+      final success = editingProduct != null
+          ? await productProvider.updateProduct(product)
+          : await productProvider.addProduct(product);
 
       if (success) {
         if (mounted) {
-          FlushbarHelper.show(context, "Product added successfully!", isSuccess: true);
+          FlushbarHelper.show(
+            context,
+            editingProduct != null ? "Product updated successfully!" : "Product added successfully!",
+            isSuccess: true,
+          );
           if (!widget.showAsTab) {
             Navigator.pop(context);
           } else {
             _clearForm();
-            context.read<ProductProvider>().fetchProducts();
+            productProvider.fetchProducts();
           }
         }
       } else {
         if (mounted) {
-          _showError("Failed to add product");
+          _showError(editingProduct != null ? "Failed to update product" : "Failed to add product");
         }
       }
     } catch (e) {
       if (mounted) {
-        _showError("Error saving product: $e");
+        final errorMsg = ErrorHandler.parseError(e);
+        _showError("Error saving product: $errorMsg");
       }
     }
   }
@@ -206,7 +316,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _additionalImagesBytes.clear();
       _productType = 'RETAIL';
       _isActive = true;
+      _lastSyncedProductId = null;
     });
+    Provider.of<ProductProvider>(context, listen: false).clearEditingProduct();
   }
 
   @override
@@ -249,6 +361,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 },
                 color: const Color(0XFFFF0B01),
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
@@ -279,36 +392,89 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Widget _buildFormSection() {
+    final productProvider = Provider.of<ProductProvider>(context);
+    final isEditing = productProvider.editingProduct != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (!widget.showAsTab) ...[
           Row(
-            children: const [
-              Icon(Icons.add, size: 20),
-              SizedBox(width: 4),
-              Text("ADD PRODUCTS", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+            children: [
+              Icon(
+                isEditing ? Icons.edit_note_rounded : Icons.add_circle_outline_rounded,
+                size: 24,
+                color: isEditing ? Colors.blue : Colors.black,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isEditing ? "EDITING PRODUCT" : "ADD PRODUCTS",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: isEditing ? Colors.blue : Colors.black,
+                ),
+              ),
+              if (isEditing) ...[
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: _clearForm,
+                  icon: const Icon(Icons.close, size: 16),
+                  label: const Text("Cancel Edit"),
+                  style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+                ),
+              ],
             ],
           ),
-          const Divider(color: Color(0XFFFF0B01), thickness: 2, endIndent: 200),
+          Divider(
+            color: isEditing ? Colors.blue : const Color(0XFFFF0B01),
+            thickness: 2,
+            endIndent: isEditing ? 100 : 200,
+          ),
+          const SizedBox(height: 20),
+        ] else if (isEditing) ...[
+          Row(
+            children: [
+              const Icon(Icons.edit_note_rounded, size: 24, color: Colors.blue),
+              const SizedBox(width: 8),
+              const Text(
+                "EDITING PRODUCT",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.blue,
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _clearForm,
+                icon: const Icon(Icons.close, size: 16),
+                label: const Text("Cancel Edit"),
+                style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const Divider(color: Colors.blue, thickness: 2, endIndent: 100),
           const SizedBox(height: 20),
         ],
 
         const Text("Main Product Image", style: TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 10),
         Container(
-          height: _mainImageBytes != null ? 150 : 70,
+          height: (_mainImageBytes != null || (isEditing && ((productProvider.editingProduct!.imageUrl != null && productProvider.editingProduct!.imageUrl!.isNotEmpty) || (productProvider.editingProduct!.imageBase64 != null && productProvider.editingProduct!.imageBase64!.isNotEmpty)))) ? 150 : 70,
           width: double.infinity,
           decoration: BoxDecoration(
             border: Border.all(color: const Color(0XFF909090)),
             borderRadius: BorderRadius.circular(9),
-            image: _mainImageBytes != null
-                ? DecorationImage(image: MemoryImage(_mainImageBytes!), fit: BoxFit.cover)
-                : null,
           ),
-          child: _mainImageBytes == null
-              ? Center(child: SvgPicture.asset("assets/Images/AddProductScreen/inside_camera.svg", width: 28, height: 28))
-              : null,
+          clipBehavior: Clip.hardEdge,
+          child: _mainImageBytes != null
+              ? Image.memory(_mainImageBytes!, fit: BoxFit.cover)
+              : (isEditing && ((productProvider.editingProduct!.imageUrl != null && productProvider.editingProduct!.imageUrl!.isNotEmpty) || (productProvider.editingProduct!.imageBase64 != null && productProvider.editingProduct!.imageBase64!.isNotEmpty)))
+                  ? (productProvider.editingProduct!.imageUrl != null && productProvider.editingProduct!.imageUrl!.isNotEmpty
+                      ? PremiumImageWidget(imageUrl: productProvider.editingProduct!.imageUrl, width: double.infinity, height: 150)
+                      : Image.memory(base64Decode(productProvider.editingProduct!.imageBase64!), fit: BoxFit.cover))
+                  : Center(child: SvgPicture.asset("assets/Images/AddProductScreen/inside_camera.svg", width: 28, height: 28)),
         ),
         const SizedBox(height: 10),
         Row(
@@ -423,30 +589,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         _buildTextField("Discount Price", "assets/Images/AddProductScreen/rate_icon.svg", controller: _discountPriceController, keyboardType: TextInputType.number),
         const SizedBox(height: 20),
 
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0XFFF8F8F8),
-            border: Border.all(color: const Color(0XFF909090)),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Active", style: TextStyle(fontSize: 16, color: Color(0xFF606060))),
-              Switch(
-                value: _isActive,
-                onChanged: (val) {
-                  setState(() {
-                    _isActive = val;
-                  });
-                },
-                activeColor: const Color(0XFFFF0B01),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 10),
 
         Consumer<ProductProvider>(
           builder: (context, provider, child) {
@@ -462,7 +605,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     ),
                     child: provider.isLoading
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text("SAVE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        : Text(provider.editingProduct != null ? "UPDATE" : "SAVE", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 15),
@@ -505,9 +648,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
           itemCount: provider.products.length,
           itemBuilder: (context, index) {
             final product = provider.products[index];
+            final isActive = product.active;
             Widget imageWidget = const Icon(Icons.shopping_bag_outlined, color: Color(0XFFFF0B01));
             
-            if (product.imageBase64 != null && product.imageBase64!.isNotEmpty) {
+            if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
+              imageWidget = PremiumImageWidget(
+                imageUrl: product.imageUrl,
+                width: 50,
+                height: 50,
+                borderRadius: BorderRadius.circular(8),
+              );
+            } else if (product.imageBase64 != null && product.imageBase64!.isNotEmpty) {
               try {
                 imageWidget = Image.memory(
                   base64Decode(product.imageBase64!),
@@ -523,72 +674,86 @@ class _AddProductScreenState extends State<AddProductScreen> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isActive ? Colors.white : Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                  if (isActive) BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
                 ],
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: const Color(0XFFFF0B01).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
+              child: Opacity(
+                opacity: isActive ? 1.0 : 0.6,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0XFFFF0B01).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: imageWidget,
                     ),
-                    clipBehavior: Clip.hardEdge,
-                    child: imageWidget,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text(product.category ?? "No Category", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                        Text("\u{20B9}${product.price}", style: const TextStyle(color: Color(0XFFFF0B01), fontWeight: FontWeight.bold)),
-                      ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: Text(product.name, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold))),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: isActive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isActive ? "ACTIVE" : "INACTIVE",
+                                  style: TextStyle(
+                                    color: isActive ? Colors.green : Colors.red,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(product.category ?? "No Category", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text("\u{20B9}${product.price}", style: const TextStyle(color: Color(0XFFFF0B01), fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => _confirmDelete(product.id),
-                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                  ),
-                ],
+                    IconButton(
+                      onPressed: () {
+                        context.read<ProductProvider>().setEditingProduct(product);
+                        DefaultTabController.of(context).animateTo(0);
+                      },
+                      icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
+                      tooltip: "Edit",
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        if (product.id != null) {
+                          context.read<ProductProvider>().toggleProductStatus(product.id!, !isActive);
+                        }
+                      },
+                      icon: Icon(
+                        isActive ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        color: isActive ? Colors.orange : Colors.green,
+                        size: 20,
+                      ),
+                      tooltip: isActive ? "Deactivate" : "Activate",
+                    ),
+                  ],
+                ),
               ),
             );
           },
         );
       },
     );
-  }
-
-  void _confirmDelete(int? id) async {
-    if (id == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Product"),
-        content: const Text("Are you sure you want to delete this product?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("CANCEL")),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text("DELETE"),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      final success = await context.read<ProductProvider>().deleteProduct(id);
-      if (success && mounted) {
-        FlushbarHelper.show(context, 'Product deleted successfully');
-      }
-    }
   }
 
   Widget _buildIconLabel(String icon, String label, {VoidCallback? onTap}) {
@@ -686,9 +851,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.7)
+                    const Color(0XFFFF3502).withValues(alpha: 0.7)
                   ],
                 ),
               ),
@@ -705,7 +870,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
             ),
           ),

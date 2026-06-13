@@ -207,7 +207,7 @@ class _InventoryStaffScreenState extends State<InventoryStaffScreen>
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -221,7 +221,7 @@ class _InventoryStaffScreenState extends State<InventoryStaffScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0XFFFF0B01).withOpacity(0.08),
+                  color: const Color(0XFFFF0B01).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.inventory_2, color: Color(0XFFFF0B01), size: 24),
@@ -371,7 +371,7 @@ class _InventoryStaffScreenState extends State<InventoryStaffScreen>
                 );
                 if (context.mounted) {
                   Navigator.pop(context);
-                  FlushbarHelper.show(context, "Product opened successfully");
+                  FlushbarHelper.show(context, "Product opened successfully", isSuccess: true);
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -450,7 +450,7 @@ class _InventoryStaffScreenState extends State<InventoryStaffScreen>
               items: staffProvider.staffMembers.map((staff) {
                 return DropdownMenuItem<int>(
                   value: staff.id,
-                  child: Text(staff.name ?? 'Unknown Staff'),
+                  child: Text(staff.name),
                 );
               }).toList(),
               onChanged: (val) => setState(() => _selectedToStaffId = val),
@@ -532,7 +532,7 @@ class _InventoryStaffScreenState extends State<InventoryStaffScreen>
       );
 
       if (!mounted) return;
-      FlushbarHelper.show(context, "Inventory swap request submitted successfully!");
+      FlushbarHelper.show(context, "Inventory swap request submitted successfully!", isSuccess: true);
       setState(() {
         _selectedFromInventoryId = null;
         _selectedToStaffId = null;
@@ -568,8 +568,8 @@ class _InventoryStaffScreenState extends State<InventoryStaffScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
-                    const Color(0XFFFF3502).withOpacity(0.7)
+                    Colors.black.withValues(alpha: 0.3),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7)
                   ],
                 ),
               ),
@@ -597,7 +597,7 @@ class _InventoryStaffScreenState extends State<InventoryStaffScreen>
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(
                 Icons.arrow_back_ios_new,
                 size: 18,

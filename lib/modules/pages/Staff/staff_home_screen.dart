@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -212,8 +213,8 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
-                    const Color(0XFFFF3502).withOpacity(0.7),
+                    Colors.black.withValues(alpha: 0.3),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -343,7 +344,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
     }
     final success = await context.read<AttendanceProvider>().checkIn(staffId);
     if (success && mounted) {
-      FlushbarHelper.show(context, "Checked in successfully");
+      FlushbarHelper.show(context, "Checked in successfully", isSuccess: true);
     } else if (mounted) {
       final errorMsg =
           context.read<AttendanceProvider>().errorMessage ??
@@ -360,7 +361,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
     }
     final success = await context.read<AttendanceProvider>().checkOut(staffId);
     if (success && mounted) {
-      FlushbarHelper.show(context, "Checked out successfully");
+      FlushbarHelper.show(context, "Checked out successfully", isSuccess: true);
     } else if (mounted) {
       final errorMsg =
           context.read<AttendanceProvider>().errorMessage ??
@@ -388,7 +389,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -459,10 +460,10 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const LeaveRequestStaffScreen(),
+                  builder: (_) => const LeaveRequestStaffScreen(),
                 ),
               ).then((value) {
-                if (value == true && mounted) {
+                if (value == true && context.mounted) {
                   FlushbarHelper.show(
                     context,
                     "Request sent to owner successfully",
@@ -545,7 +546,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      apt.customerName ?? "Customer Name",
+                      apt.customerName.isEmpty ? "Customer Name" : apt.customerName,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -693,10 +694,10 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: _getStatusColor(apt.status).withOpacity(0.1),
+                color: _getStatusColor(apt.status).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(50),
                 border: Border.all(
-                  color: _getStatusColor(apt.status).withOpacity(0.5),
+                  color: _getStatusColor(apt.status).withValues(alpha: 0.5),
                 ),
               ),
               alignment: Alignment.center,
@@ -942,11 +943,12 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                                 salonId: salonId,
                                 staffId: staffId,
                               );
-                          if (context.mounted) {
+                           if (context.mounted) {
                             Navigator.pop(context);
                             FlushbarHelper.show(
                               context,
                               "Appointment completed successfully!",
+                              isSuccess: true,
                             );
                           }
                         } catch (e) {
@@ -971,8 +973,12 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
   }
 
   Future<void> _handleReschedule(Appointment appointment) async {
+    final localContext = context;
+    final authProvider = Provider.of<AuthProvider>(localContext, listen: false);
+    final appointmentProvider = Provider.of<AppointmentProvider>(localContext, listen: false);
+
     final DateTime? pickedDate = await showDatePicker(
-      context: context,
+      context: localContext,
       initialDate: appointment.appointmentAt.toLocal(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
@@ -991,9 +997,10 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
     );
 
     if (pickedDate == null) return;
+    if (!localContext.mounted) return;
 
     final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
+      context: localContext,
       initialTime: TimeOfDay.fromDateTime(appointment.appointmentAt.toLocal()),
       builder: (context, child) {
         return Theme(
@@ -1019,13 +1026,13 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
       pickedTime.minute,
     );
 
-    if (!context.mounted) return;
+    if (!localContext.mounted) return;
 
     final TextEditingController reasonController = TextEditingController();
 
     final String? reason = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: localContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text("Reschedule Reason"),
         content: TextField(
           controller: reasonController,
@@ -1039,11 +1046,11 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, reasonController.text),
+            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
             child: const Text(
               "RESCHEDULE",
               style: TextStyle(color: Color(0XFFFF0B01)),
@@ -1055,15 +1062,9 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
 
     if (reason == null || reason.isEmpty) return;
 
-    if (!context.mounted) return;
+    if (!localContext.mounted) return;
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(
-        context,
-        listen: false,
-      );
-
       await appointmentProvider.rescheduleAppointment(
         appointmentId: appointment.id,
         newDateTime: newDateTime,
@@ -1071,22 +1072,25 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
         salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
       );
 
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Appointment rescheduled successfully!");
+      if (localContext.mounted) {
+        FlushbarHelper.show(localContext, "Appointment rescheduled successfully!", isSuccess: true);
       }
     } catch (e) {
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Error: $e");
+      if (localContext.mounted) {
+        FlushbarHelper.show(localContext, "Error: $e");
       }
     }
   }
 
   Future<void> _handleCancel(Appointment appointment) async {
+    final localContext = context;
+    final authProvider = Provider.of<AuthProvider>(localContext, listen: false);
+    final appointmentProvider = Provider.of<AppointmentProvider>(localContext, listen: false);
     final TextEditingController reasonController = TextEditingController();
 
     final String? reason = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: localContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text("Cancellation Reason"),
         content: TextField(
           controller: reasonController,
@@ -1100,11 +1104,11 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("BACK", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, reasonController.text),
+            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
             child: const Text(
               "CANCEL APPOINTMENT",
               style: TextStyle(color: Color(0XFFFF0B01)),
@@ -1116,27 +1120,21 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
 
     if (reason == null || reason.isEmpty) return;
 
-    if (!context.mounted) return;
+    if (!localContext.mounted) return;
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(
-        context,
-        listen: false,
-      );
-
       await appointmentProvider.cancelAppointment(
         appointmentId: appointment.id,
         reason: reason,
         salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
       );
 
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Appointment cancelled!");
+      if (localContext.mounted) {
+        FlushbarHelper.show(localContext, "Appointment cancelled!", isSuccess: true);
       }
     } catch (e) {
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Error: $e");
+      if (localContext.mounted) {
+        FlushbarHelper.show(localContext, "Error: $e");
       }
     }
   }
@@ -1308,9 +1306,9 @@ class _LiveAttendanceTimerState extends State<LiveAttendanceTimer> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0XFFFF0B01).withOpacity(0.1),
+        color: const Color(0XFFFF0B01).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0XFFFF0B01).withOpacity(0.2)),
+        border: Border.all(color: const Color(0XFFFF0B01).withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

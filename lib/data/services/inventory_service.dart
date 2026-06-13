@@ -360,7 +360,7 @@ class InventoryService {
         'staff-inventory/$staffInventoryId/open',
         queryParameters: {
           'openQuantity': openQuantity,
-          if (notes != null) 'notes': notes,
+          'notes': ?notes,
         },
       );
       if (response.statusCode == 201 || response.statusCode == 200) {

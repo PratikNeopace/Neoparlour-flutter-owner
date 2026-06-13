@@ -151,9 +151,9 @@ class _StaffAnalyticsScreenState extends State<StaffAnalyticsScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.2),
+                    Colors.black.withValues(alpha: 0.2),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.7),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -178,7 +178,7 @@ class _StaffAnalyticsScreenState extends State<StaffAnalyticsScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
             ),
           ),
@@ -252,12 +252,12 @@ class _StaffAnalyticsScreenState extends State<StaffAnalyticsScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,7 +285,7 @@ class _StaffAnalyticsScreenState extends State<StaffAnalyticsScreen> {
                   height: 9,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -366,7 +366,7 @@ class _StaffAnalyticsScreenState extends State<StaffAnalyticsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
@@ -402,7 +402,7 @@ class _StaffAnalyticsScreenState extends State<StaffAnalyticsScreen> {
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -420,7 +420,7 @@ class _StaffAnalyticsScreenState extends State<StaffAnalyticsScreen> {
                         lineTouchData: LineTouchData(
                           enabled: true,
                           touchTooltipData: LineTouchTooltipData(
-                            getTooltipColor: (spot) => const Color(0XFF7A3FDB).withOpacity(0.9),
+                            getTooltipColor: (spot) => const Color(0XFF7A3FDB).withValues(alpha: 0.9),
                             getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                               return touchedBarSpots.map((barSpot) {
                                 return LineTooltipItem(
@@ -520,7 +520,7 @@ class _StaffAnalyticsScreenState extends State<StaffAnalyticsScreen> {
                             ),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: const Color(0XFF7A3FDB).withOpacity(0.1),
+                              color: const Color(0XFF7A3FDB).withValues(alpha: 0.1),
                             ),
                           ),
                         ],
@@ -897,7 +897,7 @@ class _InventoryDetailsDialogState extends State<InventoryDetailsDialog> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0XFFFF0B01).withOpacity(0.1),
+                  color: const Color(0XFFFF0B01).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -914,11 +914,11 @@ class _InventoryDetailsDialogState extends State<InventoryDetailsDialog> {
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildInfoColumn("Allocated", "${item.allocatedQuantity.toStringAsFixed(1)}"),
+              _buildInfoColumn("Allocated", item.allocatedQuantity.toStringAsFixed(1)),
               const SizedBox(width: 24),
-              _buildInfoColumn("Remaining", "${item.remainingQuantity?.toStringAsFixed(1) ?? '0.0'}"),
+              _buildInfoColumn("Remaining", item.remainingQuantity?.toStringAsFixed(1) ?? '0.0'),
               const SizedBox(width: 24),
-              _buildInfoColumn("Used", "${item.usedQuantity?.toStringAsFixed(1) ?? '0.0'}"),
+              _buildInfoColumn("Used", item.usedQuantity?.toStringAsFixed(1) ?? '0.0'),
             ],
           ),
           const SizedBox(height: 12),

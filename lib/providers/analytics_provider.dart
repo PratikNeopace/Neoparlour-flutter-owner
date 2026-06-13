@@ -8,8 +8,8 @@ class AnalyticsProvider with ChangeNotifier {
   List<RevenuePointDTO> _revenuePoints = [];
   double _totalRevenue = 0.0;
   DashboardResponse? _dashboardData;
-  Map<int, double> _offerRevenueMap = {};
-  Map<int, double> _staffRevenueMap = {};
+  final Map<int, double> _offerRevenueMap = {};
+  final Map<int, double> _staffRevenueMap = {};
   bool _isLoading = false;
   bool _isOfferRevenueLoading = false;
   bool _isStaffRevenueLoading = false;

@@ -17,14 +17,12 @@ class AnalyticsService {
     try {
       final queryParams = {
         'viewType': viewType,
-        if (salonId != null) 'salonId': salonId,
-        if (fromDate != null)
-          'fromDate': DateFormat('yyyy-MM-dd').format(fromDate),
-        if (toDate != null)
-          'toDate': DateFormat('yyyy-MM-dd').format(toDate),
-        if (staffId != null) 'staffId': staffId.toString(),
-        if (offerId != null) 'offerId': offerId.toString(),
-        if (onlyOffers != null) 'onlyOffers': onlyOffers.toString(),
+        'salonId': ?salonId,
+        'fromDate': ?(fromDate != null ? DateFormat('yyyy-MM-dd').format(fromDate) : null),
+        'toDate': ?(toDate != null ? DateFormat('yyyy-MM-dd').format(toDate) : null),
+        'staffId': ?staffId?.toString(),
+        'offerId': ?offerId?.toString(),
+        'onlyOffers': ?onlyOffers?.toString(),
       };
 
       final response = await _apiClient.get(
@@ -53,13 +51,12 @@ class AnalyticsService {
   }) async {
     try {
       final queryParams = {
-        if (fromDate != null)
-          'fromDate': DateFormat('yyyy-MM-dd').format(fromDate),
-        if (toDate != null) 'toDate': DateFormat('yyyy-MM-dd').format(toDate),
-        if (salonId != null) 'salonId': salonId,
-        if (staffId != null) 'staffId': staffId.toString(),
-        if (offerId != null) 'offerId': offerId.toString(),
-        if (onlyOffers != null) 'onlyOffers': onlyOffers.toString(),
+        'fromDate': ?(fromDate != null ? DateFormat('yyyy-MM-dd').format(fromDate) : null),
+        'toDate': ?(toDate != null ? DateFormat('yyyy-MM-dd').format(toDate) : null),
+        'salonId': ?salonId,
+        'staffId': ?staffId?.toString(),
+        'offerId': ?offerId?.toString(),
+        'onlyOffers': ?onlyOffers?.toString(),
       };
 
       final response = await _apiClient.get(
@@ -85,11 +82,10 @@ class AnalyticsService {
   }) async {
     try {
       final queryParams = {
-        if (viewType != null) 'viewType': viewType,
-        if (fromDate != null)
-          'fromDate': DateFormat('yyyy-MM-dd').format(fromDate),
-        if (toDate != null) 'toDate': DateFormat('yyyy-MM-dd').format(toDate),
-        if (salonId != null) 'salonId': salonId,
+        'viewType': ?viewType,
+        'fromDate': ?(fromDate != null ? DateFormat('yyyy-MM-dd').format(fromDate) : null),
+        'toDate': ?(toDate != null ? DateFormat('yyyy-MM-dd').format(toDate) : null),
+        'salonId': ?salonId,
       };
 
       final response = await _apiClient.get(
@@ -115,11 +111,10 @@ class AnalyticsService {
   }) async {
     try {
       final queryParams = {
-        if (viewType != null) 'viewType': viewType,
-        if (fromDate != null)
-          'fromDate': DateFormat('yyyy-MM-dd').format(fromDate),
-        if (toDate != null) 'toDate': DateFormat('yyyy-MM-dd').format(toDate),
-        if (salonId != null) 'salonId': salonId,
+        'viewType': ?viewType,
+        'fromDate': ?(fromDate != null ? DateFormat('yyyy-MM-dd').format(fromDate) : null),
+        'toDate': ?(toDate != null ? DateFormat('yyyy-MM-dd').format(toDate) : null),
+        'salonId': ?salonId,
       };
 
       final response = await _apiClient.get(
@@ -145,9 +140,8 @@ class AnalyticsService {
     try {
       final queryParams = {
         'viewType': viewType,
-        if (fromDate != null)
-          'fromDate': DateFormat('yyyy-MM-dd').format(fromDate),
-        if (toDate != null) 'toDate': DateFormat('yyyy-MM-dd').format(toDate),
+        'fromDate': ?(fromDate != null ? DateFormat('yyyy-MM-dd').format(fromDate) : null),
+        'toDate': ?(toDate != null ? DateFormat('yyyy-MM-dd').format(toDate) : null),
       };
 
       final response = await _apiClient.get(

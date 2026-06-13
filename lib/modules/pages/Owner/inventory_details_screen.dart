@@ -10,6 +10,7 @@ import 'package:neo_parlour_owner/providers/staff_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/assigned_staff_screen.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
+import 'package:neo_parlour_owner/widgets/premium_image.dart';
 
 class InventoryDetailsScreen extends StatefulWidget {
   const InventoryDetailsScreen({super.key});
@@ -113,19 +114,26 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
             ),
             child: Row(
               children: [
-                item.imageBase64 != null && item.imageBase64!.isNotEmpty
-                    ? Container(
+                (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+                    ? PremiumImageWidget(
+                        imageUrl: item.imageUrl,
                         width: 30,
                         height: 30,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: MemoryImage(base64Decode(item.imageBase64!)),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                        shape: BoxShape.circle,
                       )
-                    : const Icon(Icons.inventory_2_outlined, color: Colors.white),
+                    : (item.imageBase64 != null && item.imageBase64!.isNotEmpty)
+                        ? Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                image: MemoryImage(base64Decode(item.imageBase64!)),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.inventory_2_outlined, color: Colors.white),
                 const SizedBox(width: 10),
                 Text(
                   item.name,
@@ -211,14 +219,15 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
     int? selectedStaffId;
     final quantityController = TextEditingController();
     final notesController = TextEditingController();
+    final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setDialogState) {
+          builder: (statefulContext, setDialogState) {
             return Consumer<StaffProvider>(
-              builder: (context, staffProvider, _) {
+              builder: (consumerContext, staffProvider, _) {
                 return AlertDialog(
                   title: Text("Assign ${item.name}"),
                   content: SingleChildScrollView(
@@ -278,7 +287,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                       child: const Text("CANCEL"),
                     ),
                     ElevatedButton(
@@ -302,10 +311,12 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                         );
 
                         try {
-                          await Provider.of<InventoryProvider>(context, listen: false).assignInventory(request);
+                          await inventoryProvider.assignInventory(request);
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext);
+                          }
                           if (mounted) {
-                            Navigator.pop(context);
-                            FlushbarHelper.show(context, "Inventory assigned successfully");
+                            FlushbarHelper.show(context, "Inventory assigned successfully", isSuccess: true);
                           }
                         } catch (e) {
                           if (mounted) {
@@ -358,7 +369,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                 value: value,
                 child: Text(name),
               );
-            }).toList(),
+            }),
           ],
           onChanged: (newValue) {
             setState(() {

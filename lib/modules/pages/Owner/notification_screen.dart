@@ -326,7 +326,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     try {
                       final msg = await provider.approveLeaveRequest(req.id);
                       if (context.mounted) {
-                        FlushbarHelper.show(context, msg);
+                        FlushbarHelper.show(context, msg, isSuccess: true);
                       }
                     } catch (e) {
                       if (context.mounted) {
@@ -349,7 +349,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     try {
                       final msg = await provider.rejectLeaveRequest(req.id);
                       if (context.mounted) {
-                        FlushbarHelper.show(context, msg);
+                        FlushbarHelper.show(context, msg, isSuccess: true);
                       }
                     } catch (e) {
                       if (context.mounted) {
@@ -412,7 +412,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     try {
                       final msg = await provider.approveSwapRequest(req.id);
                       if (context.mounted) {
-                        FlushbarHelper.show(context, msg);
+                        FlushbarHelper.show(context, msg, isSuccess: true);
                       }
                     } catch (e) {
                       if (context.mounted) {
@@ -435,7 +435,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     try {
                       final msg = await provider.rejectSwapRequest(req.id);
                       if (context.mounted) {
-                        FlushbarHelper.show(context, msg);
+                        FlushbarHelper.show(context, msg, isSuccess: true);
                       }
                     } catch (e) {
                       if (context.mounted) {
@@ -508,7 +508,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                           child: ChoiceChip(
                             label: Text(status),
                             selected: isSelected,
-                            selectedColor: const Color(0XFFFF0B01).withOpacity(0.1),
+                            selectedColor: const Color(0XFFFF0B01).withValues(alpha: 0.1),
                             labelStyle: TextStyle(
                               color: isSelected ? const Color(0XFFFF0B01) : Colors.black87,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -617,7 +617,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: showActions ? const Color(0xFFFFA000).withOpacity(0.2) : Colors.green.withOpacity(0.2),
+                  color: showActions ? const Color(0xFFFFA000).withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -664,7 +664,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                       try {
                         final msg = await provider.approveOrder(order.id);
                         if (context.mounted) {
-                          FlushbarHelper.show(context, msg);
+                          FlushbarHelper.show(context, msg, isSuccess: true);
                         }
                       } catch (e) {
                         if (context.mounted) {
@@ -687,7 +687,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                       try {
                         final msg = await provider.rejectOrder(order.id);
                         if (context.mounted) {
-                          FlushbarHelper.show(context, msg);
+                          FlushbarHelper.show(context, msg, isSuccess: true);
                         }
                       } catch (e) {
                         if (context.mounted) {
@@ -732,9 +732,9 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.7),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -747,7 +747,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.4),
+              backgroundColor: Colors.white.withValues(alpha: 0.4),
               child: const Icon(Icons.chevron_left, color: Colors.black),
             ),
           ),
@@ -770,7 +770,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
               color: const Color(0XFFFF0B01),
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 6)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 6)),
               ],
             ),
             child: const Icon(Icons.notifications, color: Colors.white, size: 28),
@@ -844,7 +844,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         decoration: BoxDecoration(
-          color: statusColor.withOpacity(0.08),
+          color: statusColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
           border: hasBorder ? Border.all(color: statusColor, width: 2) : null,
         ),
@@ -879,7 +879,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                           ],
                         ),
                       ),
-                      Icon(Icons.close, size: 24, color: statusColor.withOpacity(0.8)),
+                      Icon(Icons.close, size: 24, color: statusColor.withValues(alpha: 0.8)),
                     ],
                   ),
                 ),

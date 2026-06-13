@@ -179,9 +179,9 @@ class Appointment {
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
     final List<dynamic>? rawServices = json['services'];
-    final List<AppointmentServiceItem>? parsedServices = rawServices != null
-        ? rawServices.map((s) => AppointmentServiceItem.fromJson(s)).toList()
-        : null;
+    final List<AppointmentServiceItem>? parsedServices = rawServices
+        ?.map((s) => AppointmentServiceItem.fromJson(s))
+        .toList();
 
     // Derived values
     List<String> sNames = [];

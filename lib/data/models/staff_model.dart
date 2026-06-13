@@ -19,6 +19,7 @@ class Staff {
   final String? createdAt;
   final String? updatedAt;
   final String? imageBase64;
+  final String? imageUrl;
   final String? password;
   final String? gender; // Added gender field
   final String? fcmToken;
@@ -44,12 +45,15 @@ class Staff {
     this.createdAt,
     this.updatedAt,
     this.imageBase64,
+    this.imageUrl,
     this.password,
     this.gender,
     this.fcmToken,
   });
 
   factory Staff.fromJson(Map<String, dynamic> json) {
+    final String? rawImg = json['imageBase64'] ?? json['imageAsBase64'] ?? json['image'];
+    final bool isUrl = rawImg != null && rawImg.startsWith('http');
     return Staff(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? json['staffId']?.toString() ?? json['staff_id']?.toString() ?? ''),
       userId: json['userId'] is int ? json['userId'] : int.tryParse(json['userId']?.toString() ?? json['user_id']?.toString() ?? json['uid']?.toString() ?? ''),
@@ -70,7 +74,8 @@ class Staff {
       longitude: json['longitude']?.toDouble(),
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
-      imageBase64: json['imageBase64'] ?? json['imageAsBase64'],
+      imageBase64: isUrl ? null : rawImg,
+      imageUrl: json['imageUrl'] ?? (isUrl ? rawImg : null),
       gender: json['gender'],
       fcmToken: json['fcmToken'],
     );
@@ -159,6 +164,7 @@ class Staff {
     String? createdAt,
     String? updatedAt,
     String? imageBase64,
+    String? imageUrl,
     String? password,
     String? gender,
     String? fcmToken,
@@ -184,6 +190,7 @@ class Staff {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       imageBase64: imageBase64 ?? this.imageBase64,
+      imageUrl: imageUrl ?? this.imageUrl,
       password: password ?? this.password,
       gender: gender ?? this.gender,
       fcmToken: fcmToken ?? this.fcmToken,

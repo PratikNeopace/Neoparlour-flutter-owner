@@ -5,6 +5,8 @@ import 'package:neo_parlour_owner/providers/analytics_provider.dart';
 import 'package:neo_parlour_owner/providers/staff_provider.dart';
 import 'package:provider/provider.dart';
 
+import 'package:neo_parlour_owner/widgets/premium_image.dart';
+
 class StaffRevenueDialog extends StatelessWidget {
   const StaffRevenueDialog({super.key});
 
@@ -85,14 +87,21 @@ class StaffRevenueDialog extends StatelessWidget {
                                 border: Border.all(color: Colors.grey.shade200),
                               ),
                               child: ClipOval(
-                                child: staff.imageBase64 != null && staff.imageBase64!.isNotEmpty
-                                    ? Image.memory(base64Decode(staff.imageBase64!), fit: BoxFit.cover)
-                                    : Center(
-                                        child: Text(
-                                          staff.name.substring(0, 1).toUpperCase(),
-                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0XFFFF0B01)),
-                                        ),
-                                      ),
+                                child: staff.imageUrl != null && staff.imageUrl!.isNotEmpty
+                                    ? PremiumImageWidget(
+                                        imageUrl: staff.imageUrl,
+                                        width: 44,
+                                        height: 44,
+                                        shape: BoxShape.circle,
+                                      )
+                                    : staff.imageBase64 != null && staff.imageBase64!.isNotEmpty
+                                        ? Image.memory(base64Decode(staff.imageBase64!), fit: BoxFit.cover)
+                                        : Center(
+                                            child: Text(
+                                              staff.name.substring(0, 1).toUpperCase(),
+                                              style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0XFFFF0B01)),
+                                            ),
+                                          ),
                               ),
                             ),
                             const SizedBox(width: 15),
@@ -130,7 +139,7 @@ class StaffRevenueDialog extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: const Color(0XFFF9F9F9),
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0XFF909090).withOpacity(0.3), width: 1),
+                                    border: Border.all(color: const Color(0XFF909090).withValues(alpha: 0.3), width: 1),
                                   ),
                                   child: isLoadingThis
                                       ? const SizedBox(

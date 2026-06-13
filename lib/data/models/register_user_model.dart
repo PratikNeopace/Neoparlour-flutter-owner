@@ -40,6 +40,9 @@ class UserRegistrationRequest {
   final String? gender;
   final double? homeServiceCharges;
   final List<KycDocument>? kycDocuments;
+  final bool? tncAccepted;
+  final String? tncVersion;
+  final String? tncAcceptedAt;
 
   UserRegistrationRequest({
     required this.name,
@@ -60,6 +63,9 @@ class UserRegistrationRequest {
     this.gender,
     this.homeServiceCharges,
     this.kycDocuments,
+    this.tncAccepted,
+    this.tncVersion,
+    this.tncAcceptedAt,
   });
 
   Map<String, dynamic> toJson() {
@@ -82,6 +88,9 @@ class UserRegistrationRequest {
       if (gender != null) 'gender': gender,
       if (homeServiceCharges != null) 'homeServiceCharges': homeServiceCharges,
       if (kycDocuments != null) 'kycDocuments': kycDocuments!.map((e) => e.toJson()).toList(),
+      if (tncAccepted != null) 'tncAccepted': tncAccepted,
+      if (tncVersion != null) 'tncVersion': tncVersion,
+      if (tncAcceptedAt != null) 'tncAcceptedAt': tncAcceptedAt,
     };
   }
 }

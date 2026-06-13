@@ -41,6 +41,7 @@ class _SplashThreeScreenState extends State<SplashThreeScreen> {
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     String? token = prefs.getString("token");
     String? role = prefs.getString("role");
 

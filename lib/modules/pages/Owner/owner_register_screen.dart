@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/gestures.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:neo_parlour_owner/data/models/register_user_model.dart';
 import 'package:neo_parlour_owner/data/services/auth_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -43,7 +44,6 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
 
   String? _selectedDocumentType = "AADHAAR_OR_GOVERNMENT_ID";
   String? _kycFileName;
-  String? _kycFileBase64;
   final List<KycDocument> _kycDocumentsList = [];
 
   bool _isValidPhone(String phone) {
@@ -365,7 +365,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                                         _kycDocumentsList.remove(doc);
                                         if (_kycFileName == doc.fileName) {
                                           _kycFileName = null;
-                                          _kycFileBase64 = null;
+                                          
                                         }
                                       });
                                     },
@@ -421,11 +421,39 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                               activeColor: const Color(0XFFFF0B01),
                               onChanged: (v) => setState(() => isChecked = v!),
                             ),
-                            const Text(
-                              "I agree with terms of use",
-                              style: TextStyle(
-                                color: Color(0XFF909090),
-                                fontSize: 12,
+                            Expanded(
+                              child: RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    color: Color(0XFF909090),
+                                    fontSize: 12,
+                                    fontFamily: 'Inter',
+                                  ),
+                                  children: [
+                                    const TextSpan(text: "I agree to the "),
+                                    TextSpan(
+                                      text: "Terms & Conditions",
+                                      style: const TextStyle(
+                                        color: Color(0XFFFF0B01),
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                      recognizer: TapGestureRecognizer()
+                                        ..onTap = openOwnerTerms,
+                                    ),
+                                    const TextSpan(text: " and "),
+                                    TextSpan(
+                                      text: "Privacy Policy",
+                                      style: const TextStyle(
+                                        color: Color(0XFFFF0B01),
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                      recognizer: TapGestureRecognizer()
+                                        ..onTap = openOwnerPrivacy,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -475,6 +503,30 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     );
   }
 
+  Future<void> openOwnerTerms() async {
+    final Uri url = Uri.parse(
+      'https://www.neoparlour.com/owner/terms-and-conditions',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  Future<void> openOwnerPrivacy() async {
+    final Uri url = Uri.parse(
+      'https://www.neoparlour.com/owner/privacy-policy',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
   void _handleRegister() async {
     String phone = mobileController.text.trim();
     String email = emailController.text.trim();
@@ -507,7 +559,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
       return;
     }
 
-    if (passwordController.text != confirmPasswordController.text) {
+    if (password != confirmPassword) {
       FlushbarHelper.show(context, "Passwords do not match");
       return;
     }
@@ -541,9 +593,9 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         fcmToken = await FirebaseMessaging.instance.getToken(
           vapidKey: vapidKey,
         );
-        print("OWNER REG FCM TOKEN (RAW) => $fcmToken");
+        debugPrint("OWNER REG FCM TOKEN (RAW) => $fcmToken");
       } catch (e) {
-        print("Non-fatal error getting FCM token: $e");
+        debugPrint("Non-fatal error getting FCM token: $e");
       }
 
       final registrationData = UserRegistrationRequest(
@@ -554,8 +606,8 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         salonName: salonNameController.text.trim(),
         cityName: cityNameController.text.trim(),
         areaName: areaNameController.text.trim(),
-        openingTime: openingTime,
-        closingTime: closingTime,
+        openingTime: openingTime.split(':').length == 2 ? "$openingTime:00" : openingTime,
+        closingTime: closingTime.split(':').length == 2 ? "$closingTime:00" : closingTime,
         fcmToken: fcmToken,
         address: addressController.text.trim().isEmpty
             ? null
@@ -568,6 +620,9 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         gender: _selectedGender,
         homeServiceCharges: null,
         kycDocuments: _kycDocumentsList,
+        tncAccepted: isChecked,
+        tncVersion: '1.0',
+        tncAcceptedAt: DateTime.now().toUtc().toIso8601String(),
       );
 
       if (!mounted) return;
@@ -651,7 +706,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         }
 
         if (bytes != null) {
-          _addKycDocument(file.name, base64Encode(bytes!));
+          _addKycDocument(file.name, base64Encode(bytes));
         } else {
           if (mounted) {
             FlushbarHelper.show(context, "Could not retrieve file content.");
@@ -705,7 +760,6 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         _kycDocumentsList.add(newDoc);
       }
       _kycFileName = name;
-      _kycFileBase64 = base64Content;
     });
   }
 
@@ -971,7 +1025,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
       margin: const EdgeInsets.only(bottom: 14),
       child: DropdownButtonFormField<String>(
         isExpanded: true,
-        value: value,
+        initialValue: value,
         items: items
             .map(
               (e) => DropdownMenuItem(

@@ -12,6 +12,7 @@ import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/data/models/staff_model.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
+import 'package:neo_parlour_owner/widgets/premium_image.dart';
 
 class AddStaffScreen extends StatefulWidget {
   final bool showAsTab;
@@ -175,7 +176,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               color: const Color(0xFFF8F8F8),
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                color: const Color(0XFF909090).withOpacity(0.3),
+                color: const Color(0XFF909090).withValues(alpha: 0.3),
               ),
             ),
             child: Icon(icon, size: 30, color: const Color(0XFFFF0B01)),
@@ -299,9 +300,9 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
           vapidKey = "BIdYnU3B7lY_U7wKzUv3Qv7Jv_Z_qX_L7_X_z_v_x_Z_Y";
         }
         fcmToken = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
-        print("STAFF REG FCM TOKEN (RAW) => $fcmToken");
+        debugPrint("STAFF REG FCM TOKEN (RAW) => $fcmToken");
       } catch (e) {
-        print("Non-fatal error getting FCM token: $e");
+        debugPrint("Non-fatal error getting FCM token: $e");
       }
 
 
@@ -329,10 +330,12 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
       if (_editingStaff != null) {
         await staffProvider.updateStaff(staffData);
         staffProvider.clearEditingStaff(); // Clear provider state after update
-        FlushbarHelper.show(context, "Staff updated successfully!");
+        if (!mounted) return;
+        FlushbarHelper.show(context, "Staff updated successfully!", isSuccess: true);
       } else {
         await staffProvider.addStaff(staffData);
-        FlushbarHelper.show(context, "Staff added successfully!");
+        if (!mounted) return;
+        FlushbarHelper.show(context, "Staff added successfully!", isSuccess: true);
       }
 
       _clearForm();
@@ -437,14 +440,29 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                                   onTap: _showImageSourcePicker,
                                   child: Stack(
                                     children: [
-                                      CircleAvatar(
-                                        radius: 50,
-                                        backgroundColor: Colors.grey[200],
-                                        backgroundImage: _imageFile != null
-                                            ? (kIsWeb ? NetworkImage(_imageFile!.path) : FileImage(File(_imageFile!.path)) as ImageProvider)
-                                            : null,
-                                        child: _imageFile == null ? const Icon(Icons.person, size: 50, color: Colors.grey) : null,
-                                      ),
+                                      _imageFile != null
+                                          ? CircleAvatar(
+                                              radius: 50,
+                                              backgroundColor: Colors.grey[200],
+                                              backgroundImage: kIsWeb ? NetworkImage(_imageFile!.path) : FileImage(File(_imageFile!.path)) as ImageProvider,
+                                            )
+                                          : _editingStaff != null && _editingStaff!.imageUrl != null && _editingStaff!.imageUrl!.isNotEmpty
+                                              ? PremiumImageWidget(
+                                                  imageUrl: _editingStaff!.imageUrl,
+                                                  width: 100,
+                                                  height: 100,
+                                                  shape: BoxShape.circle,
+                                                )
+                                              : CircleAvatar(
+                                                  radius: 50,
+                                                  backgroundColor: Colors.grey[200],
+                                                  backgroundImage: _editingStaff != null && _editingStaff!.imageBase64 != null && _editingStaff!.imageBase64!.isNotEmpty
+                                                      ? MemoryImage(base64Decode(_editingStaff!.imageBase64!))
+                                                      : null,
+                                                  child: (_editingStaff == null || _editingStaff!.imageBase64 == null || _editingStaff!.imageBase64!.isEmpty)
+                                                      ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                                                      : null,
+                                                ),
                                       Positioned(
                                         bottom: 0,
                                         right: 0,
@@ -474,7 +492,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                               _buildTextField(controller: _birthdateController, hint: "Birthdate", icon: Icons.cake_outlined, readOnly: true, onTap: _selectDate),
                               const SizedBox(height: 15),
                               DropdownButtonFormField<String>(
-                                value: _selectedGender,
+                                initialValue: _selectedGender,
                                 decoration: InputDecoration(
                                   hintText: "Gender",
                                   filled: true,
@@ -556,7 +574,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 boxShadow: [
                   if (isActive)
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -566,22 +584,22 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 opacity: isActive ? 1.0 : 0.6,
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage:
-                          staff.imageBase64 != null &&
-                              staff.imageBase64!.isNotEmpty
-                          ? (staff.imageBase64!.startsWith('http')
-                                ? NetworkImage(staff.imageBase64!)
-                                : MemoryImage(base64Decode(staff.imageBase64!))
-                                      as ImageProvider)
-                          : null,
-                      child:
-                          (staff.imageBase64 == null ||
-                              staff.imageBase64!.isEmpty)
-                          ? const Icon(Icons.person, color: Colors.grey)
-                          : null,
-                    ),
+                    (staff.imageUrl != null && staff.imageUrl!.isNotEmpty)
+                        ? PremiumImageWidget(
+                            imageUrl: staff.imageUrl,
+                            width: 40,
+                            height: 40,
+                            shape: BoxShape.circle,
+                          )
+                        : CircleAvatar(
+                            backgroundColor: Colors.grey[200],
+                            backgroundImage: staff.imageBase64 != null && staff.imageBase64!.isNotEmpty
+                                ? MemoryImage(base64Decode(staff.imageBase64!))
+                                : null,
+                            child: (staff.imageBase64 == null || staff.imageBase64!.isEmpty)
+                                ? const Icon(Icons.person, color: Colors.grey)
+                                : null,
+                          ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -603,8 +621,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isActive
-                                      ? Colors.green.withOpacity(0.1)
-                                      : Colors.red.withOpacity(0.1),
+                                      ? Colors.green.withValues(alpha: 0.1)
+                                      : Colors.red.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -650,7 +668,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                         try {
                           final msg = await provider.toggleStaffStatus(staff, !isActive);
                           if (context.mounted) {
-                            FlushbarHelper.show(context, msg);
+                            FlushbarHelper.show(context, msg, isSuccess: true);
                           }
                         } catch (e) {
                           if (context.mounted) {
@@ -741,7 +759,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(
                 Icons.arrow_back_ios_new,
                 size: 18,
@@ -762,7 +780,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withValues(alpha: 0.25),
                   blurRadius: 10,
                   offset: const Offset(0, 6),
                 ),

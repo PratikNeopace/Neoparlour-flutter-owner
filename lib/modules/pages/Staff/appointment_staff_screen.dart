@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -123,6 +124,7 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
                 
                 return TabBarView(
                   controller: _tabController,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: [
                     _buildAppointmentsList(provider, null),
                     _buildAppointmentsList(provider, "completed"),
@@ -198,7 +200,7 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          apt.customerName ?? "Customer",
+                          apt.customerName.isEmpty ? "Customer" : apt.customerName,
                           style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         Text(
@@ -271,9 +273,9 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(apt.status).withOpacity(0.1),
+                    color: _getStatusColor(apt.status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(50),
-                    border: Border.all(color: _getStatusColor(apt.status).withOpacity(0.5)),
+                    border: Border.all(color: _getStatusColor(apt.status).withValues(alpha: 0.5)),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -460,7 +462,7 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
                           );
                           if (context.mounted) {
                             Navigator.pop(context);
-                            FlushbarHelper.show(context, "Appointment completed successfully!");
+                            FlushbarHelper.show(context, "Appointment completed successfully!", isSuccess: true);
                             _refreshData();
                           }
                         } catch (e) {
@@ -482,8 +484,12 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
   }
 
   Future<void> _handleReschedule(Appointment appointment) async {
+    final localContext = context;
+    final authProvider = Provider.of<AuthProvider>(localContext, listen: false);
+    final appointmentProvider = Provider.of<AppointmentProvider>(localContext, listen: false);
+
     final DateTime? pickedDate = await showDatePicker(
-      context: context,
+      context: localContext,
       initialDate: appointment.appointmentAt.toLocal(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
@@ -502,9 +508,10 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
     );
 
     if (pickedDate == null) return;
+    if (!localContext.mounted) return;
 
     final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
+      context: localContext,
       initialTime: TimeOfDay.fromDateTime(appointment.appointmentAt.toLocal()),
       builder: (context, child) {
         return Theme(
@@ -530,13 +537,13 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
       pickedTime.minute,
     );
 
-    if (!context.mounted) return;
+    if (!localContext.mounted) return;
 
     final TextEditingController reasonController = TextEditingController();
 
     final String? reason = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: localContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text("Reschedule Reason"),
         content: TextField(
           controller: reasonController,
@@ -550,11 +557,11 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, reasonController.text),
+            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
             child: const Text("RESCHEDULE", style: TextStyle(color: Color(0XFFFF0B01))),
           ),
         ],
@@ -563,12 +570,9 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
 
     if (reason == null || reason.isEmpty) return;
 
-    if (!context.mounted) return;
+    if (!localContext.mounted) return;
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-      
       await appointmentProvider.rescheduleAppointment(
         appointmentId: appointment.id,
         newDateTime: newDateTime,
@@ -576,23 +580,26 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
         salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
       );
 
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Appointment rescheduled successfully!");
+      if (localContext.mounted) {
+        FlushbarHelper.show(localContext, "Appointment rescheduled successfully!", isSuccess: true);
         _refreshData();
       }
     } catch (e) {
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Error: $e");
+      if (localContext.mounted) {
+        FlushbarHelper.show(localContext, "Error: $e");
       }
     }
   }
 
   Future<void> _handleCancel(Appointment appointment) async {
+    final localContext = context;
+    final authProvider = Provider.of<AuthProvider>(localContext, listen: false);
+    final appointmentProvider = Provider.of<AppointmentProvider>(localContext, listen: false);
     final TextEditingController reasonController = TextEditingController();
 
     final String? reason = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: localContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text("Cancellation Reason"),
         content: TextField(
           controller: reasonController,
@@ -606,11 +613,11 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("BACK", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, reasonController.text),
+            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
             child: const Text("CANCEL APPOINTMENT", style: TextStyle(color: Color(0XFFFF0B01))),
           ),
         ],
@@ -619,25 +626,22 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
 
     if (reason == null || reason.isEmpty) return;
 
-    if (!context.mounted) return;
+    if (!localContext.mounted) return;
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-
       await appointmentProvider.cancelAppointment(
         appointmentId: appointment.id,
         reason: reason,
         salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
       );
 
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Appointment cancelled!");
+      if (localContext.mounted) {
+        FlushbarHelper.show(localContext, "Appointment cancelled!", isSuccess: true);
         _refreshData();
       }
     } catch (e) {
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Error: $e");
+      if (localContext.mounted) {
+        FlushbarHelper.show(localContext, "Error: $e");
       }
     }
   }
@@ -691,7 +695,7 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
                     Color(0XFFFF3502),
                   ],
@@ -714,7 +718,7 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(
                 Icons.arrow_back_ios_new,
                 size: 18,

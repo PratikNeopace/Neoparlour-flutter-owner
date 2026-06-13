@@ -11,7 +11,9 @@ class ProductModel {
   final String? productType;
   final bool active;
   final String? imageBase64;
+  final String? imageUrl;
   final List<String>? additionalImagesBase64;
+  final List<String>? additionalImageUrls;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -28,7 +30,9 @@ class ProductModel {
     this.productType,
     this.active = true,
     this.imageBase64,
+    this.imageUrl,
     this.additionalImagesBase64,
+    this.additionalImageUrls,
     this.createdAt,
     this.updatedAt,
   });
@@ -47,7 +51,9 @@ class ProductModel {
       productType: json['productType'],
       active: json['active'] ?? true,
       imageBase64: json['imageBase64'],
+      imageUrl: json['imageUrl'] ?? json['productImageUrl'],
       additionalImagesBase64: (json['additionalImagesBase64'] as List?)?.map((e) => e as String).toList(),
+      additionalImageUrls: (json['additionalImageUrls'] as List?)?.map((e) => e as String).toList(),
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
@@ -68,7 +74,9 @@ class ProductModel {
     if (restockLevel != null) data['restockLevel'] = restockLevel;
     if (productType != null) data['productType'] = productType;
     if (imageBase64 != null) data['imageBase64'] = imageBase64;
+    if (imageUrl != null) data['imageUrl'] = imageUrl;
     if (additionalImagesBase64 != null) data['additionalImagesBase64'] = additionalImagesBase64;
+    if (additionalImageUrls != null) data['additionalImageUrls'] = additionalImageUrls;
     
     return data;
   }

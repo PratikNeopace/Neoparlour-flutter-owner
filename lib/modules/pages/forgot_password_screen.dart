@@ -43,7 +43,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() {
         _isOtpSent = true;
       });
-      FlushbarHelper.show(context, "OTP sent successfully");
+      FlushbarHelper.show(context, "OTP sent successfully", isSuccess: true);
     } else {
       if (!mounted) return;
       final error = Provider.of<AuthProvider>(context, listen: false).errorMessage;
@@ -73,7 +73,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     if (success) {
       if (!mounted) return;
-      FlushbarHelper.show(context, "Password reset successfully. Please login.");
+      FlushbarHelper.show(context, "Password reset successfully. Please login.", isSuccess: true);
       Navigator.pop(context);
     } else {
       if (!mounted) return;

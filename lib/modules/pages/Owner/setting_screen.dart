@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_login.dart';
@@ -8,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import 'edit_profile_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/active_subscription_screen.dart';
+import 'about_us_screen.dart';
+import 'support_screen.dart';
 
 
 
@@ -21,11 +21,11 @@ class SettingScreen extends StatelessWidget {
       useRootNavigator: false,
       barrierDismissible: true,
       barrierLabel: 'Drawer',
-      barrierColor: Colors.black.withOpacity(0.15),
+      barrierColor: Colors.black.withValues(alpha: 0.15),
       transitionDuration: const Duration(milliseconds: 300),
      
-      pageBuilder: (_, __, ___) => const SettingScreen(),
-      transitionBuilder: (_, animation, __, child) {
+      pageBuilder: (context, animation, secondaryAnimation) => const SettingScreen(),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
         return SlideTransition(
           position: Tween<Offset>(
             begin: const Offset(1, 0),
@@ -118,11 +118,19 @@ Widget build(BuildContext context) {
                   _buildRow(
                     "assets/Images/DrawerScreen/about_us_icon.svg",
                     'About Us',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AboutUsScreen()),
+                    ),
                   ),
                   _divider(),
                   _buildRow(
                     "assets/Images/DrawerScreen/support_icon.svg",
                     'Support',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SupportScreen()),
+                    ),
                   ),
                   if (isOwner) ...[
                     _divider(),

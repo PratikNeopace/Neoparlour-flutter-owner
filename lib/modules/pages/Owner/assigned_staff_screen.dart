@@ -98,7 +98,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -221,7 +221,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text("Update Assignment - ${assignment.staffName}"),
           content: SingleChildScrollView(
@@ -269,25 +269,28 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text("CANCEL"),
             ),
             ElevatedButton(
               onPressed: () async {
                 final used = double.tryParse(usedQtyController.text) ?? 0.0;
                 final total = double.tryParse(newTotalQtyController.text) ?? 0.0;
+                final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
 
                 try {
-                  await Provider.of<InventoryProvider>(context, listen: false).reassignInventory(
+                  await inventoryProvider.reassignInventory(
                     assignment.id,
                     widget.inventory.id,
                     used,
                     total,
                     notesController.text,
                   );
+                  if (dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                  }
                   if (mounted) {
-                    Navigator.pop(context);
-                    FlushbarHelper.show(context, "Assignment updated successfully");
+                    FlushbarHelper.show(context, "Assignment updated successfully", isSuccess: true);
                   }
                 } catch (e) {
                   if (mounted) {

@@ -64,8 +64,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final salonId = int.tryParse(authProvider.user?.tenantName ?? '');
+
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
@@ -238,9 +237,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.7),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -253,7 +252,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.4),
+              backgroundColor: Colors.white.withValues(alpha: 0.4),
               child: const Icon(Icons.chevron_left, color: Colors.black),
             ),
           ),
@@ -317,7 +316,7 @@ class AppointmentCard extends StatelessWidget {
     bool isScheduled =
         status == 'booked' || status == 'rescheduled' || status == 'scheduled';
     bool isCancelled = status == 'cancelled';
-    bool isCompleted = status == 'completed';
+
 
     return GestureDetector(
       onLongPress: () {
@@ -567,6 +566,9 @@ class AppointmentCard extends StatelessWidget {
   }
 
   Future<void> _handleReschedule(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: appointment.appointmentAt.toLocal(),
@@ -587,6 +589,7 @@ class AppointmentCard extends StatelessWidget {
     );
 
     if (pickedDate == null) return;
+    if (!context.mounted) return;
 
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
@@ -621,7 +624,7 @@ class AppointmentCard extends StatelessWidget {
 
     final String? reason = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text("Reschedule Reason"),
         content: TextField(
           controller: reasonController,
@@ -635,11 +638,11 @@ class AppointmentCard extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, reasonController.text),
+            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
             child: const Text(
               "RESCHEDULE",
               style: TextStyle(color: Color(0XFFFF0B01)),
@@ -654,12 +657,6 @@ class AppointmentCard extends StatelessWidget {
     if (!context.mounted) return;
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(
-        context,
-        listen: false,
-      );
-
       await appointmentProvider.rescheduleAppointment(
         appointmentId: appointment.id,
         newDateTime: newDateTime,
@@ -668,7 +665,7 @@ class AppointmentCard extends StatelessWidget {
       );
 
       if (context.mounted) {
-        FlushbarHelper.show(context, "Appointment rescheduled successfully!");
+        FlushbarHelper.show(context, "Appointment rescheduled successfully!", isSuccess: true);
       }
     } catch (e) {
       if (context.mounted) {
@@ -678,11 +675,13 @@ class AppointmentCard extends StatelessWidget {
   }
 
   Future<void> _handleCancel(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
     final TextEditingController reasonController = TextEditingController();
 
     final String? reason = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text("Cancellation Reason"),
         content: TextField(
           controller: reasonController,
@@ -696,11 +695,11 @@ class AppointmentCard extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text("BACK", style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, reasonController.text),
+            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
             child: const Text(
               "CANCEL APPOINTMENT",
               style: TextStyle(color: Color(0XFFFF0B01)),
@@ -715,12 +714,6 @@ class AppointmentCard extends StatelessWidget {
     if (!context.mounted) return;
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(
-        context,
-        listen: false,
-      );
-
       await appointmentProvider.cancelAppointment(
         appointmentId: appointment.id,
         reason: reason,
@@ -728,7 +721,7 @@ class AppointmentCard extends StatelessWidget {
       );
 
       if (context.mounted) {
-        FlushbarHelper.show(context, "Appointment cancelled!");
+        FlushbarHelper.show(context, "Appointment cancelled!", isSuccess: true);
       }
     } catch (e) {
       if (context.mounted) {
@@ -781,7 +774,7 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       content: Consumer<StaffProvider>(
-        builder: (context, staffProvider, child) {
+        builder: (consumerContext, staffProvider, child) {
           if (staffProvider.isLoading) {
             return const SizedBox(
               height: 200,
@@ -805,8 +798,8 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
             height: 300,
             child: ListView.separated(
               itemCount: staffList.length,
-              separatorBuilder: (context, index) => const Divider(),
-              itemBuilder: (context, index) {
+              separatorBuilder: (separatorContext, index) => const Divider(),
+              itemBuilder: (itemContext, index) {
                 final staff = staffList[index];
                 return ListTile(
                   leading: const CircleAvatar(
@@ -823,19 +816,12 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
                     color: Color(0XFF909090),
                   ),
                   onTap: () async {
-                    try {
-                      final authProvider = Provider.of<AuthProvider>(
-                        context,
-                        listen: false,
-                      );
-                      final salonId = int.tryParse(
-                        authProvider.user?.tenantName ?? '',
-                      );
+                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+                    final salonId = int.tryParse(authProvider.user?.tenantName ?? '');
 
-                      await Provider.of<AppointmentProvider>(
-                        context,
-                        listen: false,
-                      ).assignStaffToAppointment(
+                    try {
+                      await appointmentProvider.assignStaffToAppointment(
                         appointmentId: widget.appointment.id,
                         newStaffId: staff.id ?? 0,
                         newStaffName: staff.name,
@@ -847,6 +833,7 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
                         FlushbarHelper.show(
                           context,
                           "Staff assigned to ${staff.name} successfully",
+                          isSuccess: true,
                         );
                       }
                     } catch (e) {

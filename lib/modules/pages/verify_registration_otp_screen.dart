@@ -1,6 +1,5 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/data/models/register_user_model.dart';
 import 'package:neo_parlour_owner/data/services/auth_service.dart';
@@ -225,7 +224,7 @@ class _VerifyRegistrationOtpScreenState
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      "We sent a verification code to your\nmobile number ${widget.registrationRequest.phone.substring(0, 2)}******${widget.registrationRequest.phone.substring(widget.registrationRequest.phone.length - 2)}",
+                      "We sent a verification code to your\nmobile number ${widget.registrationRequest.phone.length >= 4 ? ('${widget.registrationRequest.phone.substring(0, 2)}******${widget.registrationRequest.phone.substring(widget.registrationRequest.phone.length - 2)}') : widget.registrationRequest.phone}",
                       style: const TextStyle(
                         color: Color(0XFF909090),
                         fontSize: 13,
@@ -340,20 +339,6 @@ class _VerifyRegistrationOtpScreenState
           }
         },
       ),
-    );
-  }
-
-  Widget _socialCircle(String svg, Color bgColor) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-        border: bgColor == Colors.white
-            ? Border.all(color: Colors.grey.shade300)
-            : null,
-      ),
-      child: SvgPicture.asset(svg, height: 20, width: 20),
     );
   }
 }

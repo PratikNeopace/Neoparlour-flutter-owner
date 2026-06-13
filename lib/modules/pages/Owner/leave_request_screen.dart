@@ -86,7 +86,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
                     const Color(0XFFFF3502),
                   ],
@@ -110,7 +110,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(
                 Icons.arrow_back_ios_new,
                 size: 18,

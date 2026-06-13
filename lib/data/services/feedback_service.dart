@@ -70,7 +70,7 @@ class FeedbackService {
 
   Future<void> rejectFeedback(int feedbackId) async {
     try {
-      final response = await _apiClient.put('feedback/$feedbackId/reject');
+      final response = await _apiClient.delete('feedback/$feedbackId/reject');
       if (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 204) {
         throw Exception('Failed to reject feedback');
       }

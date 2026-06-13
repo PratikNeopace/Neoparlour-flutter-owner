@@ -26,7 +26,7 @@ final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<v
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print("Background message received: ${message.messageId}");
+  debugPrint("Background message received: ${message.messageId}");
 }
 
 void main() async {
@@ -39,8 +39,8 @@ void main() async {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     NotificationService().initFCM(); 
   } catch (e) {
-    print("Firebase initialization failed: $e");
-    print("If you are on Chrome, ensure you have configured Firebase for Web.");
+    debugPrint("Firebase initialization failed: $e");
+    debugPrint("If you are on Chrome, ensure you have configured Firebase for Web.");
   }
 
   runApp(

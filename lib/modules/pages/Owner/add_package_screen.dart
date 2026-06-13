@@ -56,24 +56,78 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
   }
 
   void _savePackage() async {
-    if (_nameController.text.isEmpty || _priceController.text.isEmpty) {
-      FlushbarHelper.show(context, 'Please fill all required fields');
+    if (_nameController.text.trim().isEmpty) {
+      FlushbarHelper.show(context, 'Package Name is required');
       return;
     }
 
+    final priceStr = _priceController.text.trim();
+    if (priceStr.isEmpty) {
+      FlushbarHelper.show(context, 'Package Price is required');
+      return;
+    }
+
+    final price = double.tryParse(priceStr);
+    if (price == null) {
+      FlushbarHelper.show(context, 'Please enter a valid package price');
+      return;
+    }
+    if (price <= 0) {
+      FlushbarHelper.show(context, 'Package price must be greater than 0');
+      return;
+    }
+    if (price > 1000000) {
+      FlushbarHelper.show(context, 'Package price cannot exceed 1,000,000');
+      return;
+    }
+
+    int? usageLimitPerCustomer;
+    if (_usageLimitController.text.trim().isNotEmpty) {
+      usageLimitPerCustomer = int.tryParse(_usageLimitController.text.trim());
+      if (usageLimitPerCustomer == null) {
+        FlushbarHelper.show(context, 'Please enter a valid usage limit per customer');
+        return;
+      }
+      if (usageLimitPerCustomer <= 0) {
+        FlushbarHelper.show(context, 'Usage limit per customer must be greater than 0');
+        return;
+      }
+      if (usageLimitPerCustomer > 100000) {
+        FlushbarHelper.show(context, 'Usage limit per customer cannot exceed 100,000');
+        return;
+      }
+    }
+
+    int? totalUsageLimit;
+    if (_totalUsageLimitController.text.trim().isNotEmpty) {
+      totalUsageLimit = int.tryParse(_totalUsageLimitController.text.trim());
+      if (totalUsageLimit == null) {
+        FlushbarHelper.show(context, 'Please enter a valid total usage limit');
+        return;
+      }
+      if (totalUsageLimit <= 0) {
+        FlushbarHelper.show(context, 'Total usage limit must be greater than 0');
+        return;
+      }
+      if (totalUsageLimit > 1000000) {
+        FlushbarHelper.show(context, 'Total usage limit cannot exceed 1,000,000');
+        return;
+      }
+    }
+
     final package = ServicePackage(
-      name: _nameController.text,
-      packagePrice: double.tryParse(_priceController.text) ?? 0.0,
-      description: _descriptionController.text,
-      usageLimitPerCustomer: int.tryParse(_usageLimitController.text),
-      totalUsageLimit: int.tryParse(_totalUsageLimitController.text),
+      name: _nameController.text.trim(),
+      packagePrice: price,
+      description: _descriptionController.text.trim(),
+      usageLimitPerCustomer: usageLimitPerCustomer,
+      totalUsageLimit: totalUsageLimit,
       services: _selectedServices,
     );
 
     final success = await context.read<PackageProvider>().addPackage(package);
     if (success) {
       if (mounted) {
-        FlushbarHelper.show(context, 'Package added successfully');
+        FlushbarHelper.show(context, 'Package added successfully', isSuccess: true);
         if (!widget.showAsTab) {
           Navigator.pop(context);
         } else {
@@ -135,8 +189,10 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
             Expanded(
               child: CustomRefreshIndicator(
                 onRefresh: () async {
-                  await context.read<PackageProvider>().fetchPackages();
-                  await context.read<ServiceProvider>().fetchActiveServices();
+                  final packageProvider = context.read<PackageProvider>();
+                  final serviceProvider = context.read<ServiceProvider>();
+                  await packageProvider.fetchPackages();
+                  await serviceProvider.fetchActiveServices();
                 },
                 color: const Color(0XFFFF0B01),
                 child: SingleChildScrollView(
@@ -355,7 +411,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
                 ],
               ),
               child: Row(
@@ -364,7 +420,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: const Color(0XFFFF0B01).withOpacity(0.1),
+                      color: const Color(0XFFFF0B01).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.inventory_2_outlined, color: Color(0XFFFF0B01)),
@@ -421,30 +477,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 );
 }
 
-  void _confirmDelete(int id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Package"),
-        content: const Text("Are you sure you want to delete this package?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("CANCEL")),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text("DELETE"),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      final success = await context.read<PackageProvider>().deletePackage(id);
-      if (success && mounted) {
-        FlushbarHelper.show(context, 'Package deleted successfully');
-      }
-    }
-  }
+  
 
   Widget _buildHeader(BuildContext context) {
     return Stack(
@@ -467,9 +500,9 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.7),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -490,7 +523,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.5),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
               child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
             ),
           ),

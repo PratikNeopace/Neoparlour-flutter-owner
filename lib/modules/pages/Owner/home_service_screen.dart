@@ -67,7 +67,7 @@ class _HomeServicesScreenState extends State<HomeServicesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -119,7 +119,7 @@ class _HomeServicesScreenState extends State<HomeServicesScreen> {
                         children: [
                           // ================= ENABLE BOOKINGS CARD =================
                           Consumer<SalonProvider>(
-                            builder: (context, provider, child) {
+                            builder: (consumerContext, provider, child) {
                               return Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(15),
@@ -144,7 +144,7 @@ class _HomeServicesScreenState extends State<HomeServicesScreen> {
                                         ),
                                         Switch(
                                           value: enableBookings,
-                                          activeColor: Colors.white, // The thumb color
+                                          activeThumbColor: Colors.white, // The thumb color
                                           activeTrackColor: const Color(
                                             0XFFFF0B01,
                                           ), // The background color when ON
@@ -234,7 +234,7 @@ class _HomeServicesScreenState extends State<HomeServicesScreen> {
                                                   return;
                                                 }
                                                 final success = await provider.updateHomeServiceCharges(charges);
-                                                if (mounted) {
+                                                if (context.mounted) {
                                                   if (success) {
                                                     FlushbarHelper.show(context, "Charges updated successfully", isSuccess: true);
                                                   } else {
@@ -308,7 +308,7 @@ class _HomeServicesScreenState extends State<HomeServicesScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
                     const Color(0XFFFF3502),
                   ],
@@ -331,7 +331,7 @@ class _HomeServicesScreenState extends State<HomeServicesScreen> {
           top: MediaQuery.of(context).padding.top + 10,
           left: 16,
           child: CircleAvatar(
-            backgroundColor: Colors.white.withOpacity(0.5),
+            backgroundColor: Colors.white.withValues(alpha: 0.5),
             child: IconButton(
               icon: const Icon(
                 Icons.arrow_back_ios_new,

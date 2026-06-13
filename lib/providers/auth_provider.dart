@@ -1,6 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:neo_parlour_owner/data/models/auth_response.dart';
 import 'package:neo_parlour_owner/data/services/auth_service.dart';
 import 'package:neo_parlour_owner/data/services/notification_service.dart';
@@ -32,9 +31,9 @@ class AuthProvider extends ChangeNotifier {
           vapidKey = "BIdYnU3B7lY_U7wKzUv3Qv7Jv_Z_qX_L7_X_z_v_x_Z_Y";
         }
         fcmToken = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
-        print("LOGIN FCM TOKEN (RAW) => $fcmToken");
+        debugPrint("LOGIN FCM TOKEN (RAW) => $fcmToken");
       } catch (e) {
-        print("Non-fatal error getting FCM token during login: $e");
+        debugPrint("Non-fatal error getting FCM token during login: $e");
       }
 
 

@@ -64,8 +64,32 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
   }
 
   void _handleSave() async {
-    if (nameController.text.isEmpty || valueController.text.isEmpty) {
-      FlushbarHelper.show(context, "Please fill in Offer Name and Value");
+    if (nameController.text.trim().isEmpty) {
+      FlushbarHelper.show(context, "Please fill in Offer Name");
+      return;
+    }
+
+    final valueStr = valueController.text.trim();
+    if (valueStr.isEmpty) {
+      FlushbarHelper.show(context, "Please fill in Offer Value");
+      return;
+    }
+
+    final discountValue = double.tryParse(valueStr);
+    if (discountValue == null) {
+      FlushbarHelper.show(context, "Please enter a valid discount value");
+      return;
+    }
+    if (discountValue <= 0) {
+      FlushbarHelper.show(context, "Discount value must be greater than 0");
+      return;
+    }
+    if (selectedDiscountType == DiscountType.PERCENTAGE && discountValue > 100) {
+      FlushbarHelper.show(context, "Percentage discount cannot exceed 100%");
+      return;
+    }
+    if (selectedDiscountType == DiscountType.FLAT && discountValue > 1000000) {
+      FlushbarHelper.show(context, "Fixed discount cannot exceed 1,000,000");
       return;
     }
 
@@ -74,22 +98,57 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
       return;
     }
 
+    int? totalUsageLimit;
+    if (totalUsageLimitController.text.trim().isNotEmpty) {
+      totalUsageLimit = int.tryParse(totalUsageLimitController.text.trim());
+      if (totalUsageLimit == null) {
+        FlushbarHelper.show(context, "Please enter a valid total usage limit");
+        return;
+      }
+      if (totalUsageLimit <= 0) {
+        FlushbarHelper.show(context, "Total usage limit must be greater than 0");
+        return;
+      }
+      if (totalUsageLimit > 1000000) {
+        FlushbarHelper.show(context, "Total usage limit cannot exceed 1,000,000");
+        return;
+      }
+    }
+
+    int? usageLimitPerCustomer;
+    if (usageLimitPerCustomerController.text.trim().isNotEmpty) {
+      usageLimitPerCustomer = int.tryParse(usageLimitPerCustomerController.text.trim());
+      if (usageLimitPerCustomer == null) {
+        FlushbarHelper.show(context, "Please enter a valid usage limit per customer");
+        return;
+      }
+      if (usageLimitPerCustomer <= 0) {
+        FlushbarHelper.show(context, "Usage limit per customer must be greater than 0");
+        return;
+      }
+      if (usageLimitPerCustomer > 100000) {
+        FlushbarHelper.show(context, "Usage limit per customer cannot exceed 100,000");
+        return;
+      }
+    }
+
     final offer = Offer(
-      name: nameController.text,
-      description: descriptionController.text,
+      name: nameController.text.trim(),
+      description: descriptionController.text.trim(),
       discountType: selectedDiscountType,
-      discountValue: double.tryParse(valueController.text) ?? 0.0,
+      discountValue: discountValue,
       validFrom: validFrom,
       validTo: validTo,
       applicableServiceIds: selectedServiceIds,
-      totalUsageLimit: int.tryParse(totalUsageLimitController.text),
-      usageLimitPerCustomer: int.tryParse(usageLimitPerCustomerController.text),
+      totalUsageLimit: totalUsageLimit,
+      usageLimitPerCustomer: usageLimitPerCustomer,
     );
 
     final success = await Provider.of<OfferProvider>(
       context,
       listen: false,
     ).addOffer(offer);
+    if (!mounted) return;
     if (success) {
       nameController.clear();
       descriptionController.clear();
@@ -99,7 +158,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
       setState(() {
         selectedServiceIds = [];
       });
-      FlushbarHelper.show(context, "Offer created successfully");
+      FlushbarHelper.show(context, "Offer created successfully", isSuccess: true);
     }
   }
 
@@ -552,9 +611,9 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.3),
+                    Colors.black.withValues(alpha: 0.3),
                     Colors.transparent,
-                    const Color(0XFFFF3502).withOpacity(0.7),
+                    const Color(0XFFFF3502).withValues(alpha: 0.7),
                   ],
                 ),
               ),
@@ -567,7 +626,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.4),
+              backgroundColor: Colors.white.withValues(alpha: 0.4),
               child: const Icon(Icons.chevron_left, color: Colors.black),
             ),
           ),

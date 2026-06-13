@@ -4,6 +4,7 @@ class NeoService {
   final int duration;
   final double price;
   final String? image;
+  final String? imageUrl;
   final String? pdfUrl;
   final String category;
   final bool active;
@@ -17,6 +18,7 @@ class NeoService {
     required this.duration,
     required this.price,
     this.image,
+    this.imageUrl,
     this.pdfUrl,
     required this.category,
     this.active = true,
@@ -26,12 +28,16 @@ class NeoService {
   });
 
   factory NeoService.fromJson(Map<String, dynamic> json) {
+    final String? imgField = json['image'];
+    final bool isUrl = imgField != null && imgField.startsWith('http');
+    
     return NeoService(
       id: json['id'],
       name: json['name'] ?? '',
       duration: json['duration'] ?? 0,
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      image: json['image'],
+      image: isUrl ? null : imgField,
+      imageUrl: isUrl ? imgField : json['imageUrl'],
       pdfUrl: json['pdfUrl'],
       category: json['category'] ?? '',
       active: json['active'] ?? true,
