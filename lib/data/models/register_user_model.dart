@@ -39,6 +39,8 @@ class UserRegistrationRequest {
   final double? longitude;
   final String? gender;
   final double? homeServiceCharges;
+  final String? imageBase64; // Main Salon Image
+  final List<String>? salonImagesBase64; // Salon Gallery Images
   final List<KycDocument>? kycDocuments;
   final bool? tncAccepted;
   final String? tncVersion;
@@ -62,6 +64,8 @@ class UserRegistrationRequest {
     this.longitude,
     this.gender,
     this.homeServiceCharges,
+    this.imageBase64,
+    this.salonImagesBase64,
     this.kycDocuments,
     this.tncAccepted,
     this.tncVersion,
@@ -87,6 +91,8 @@ class UserRegistrationRequest {
       if (longitude != null) 'longitude': longitude,
       if (gender != null) 'gender': gender,
       if (homeServiceCharges != null) 'homeServiceCharges': homeServiceCharges,
+      if (imageBase64 != null) 'imageBase64': imageBase64,
+      if (salonImagesBase64 != null) 'salonImagesBase64': salonImagesBase64,
       if (kycDocuments != null) 'kycDocuments': kycDocuments!.map((e) => e.toJson()).toList(),
       if (tncAccepted != null) 'tncAccepted': tncAccepted,
       if (tncVersion != null) 'tncVersion': tncVersion,

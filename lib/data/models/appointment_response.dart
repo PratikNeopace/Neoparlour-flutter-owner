@@ -1,3 +1,5 @@
+import 'package:neo_parlour_owner/core/utils/date_time_utils.dart';
+
 class AppointmentServiceItem {
   final int id;
   final String serviceId;
@@ -44,6 +46,8 @@ class Appointment {
   final String customerName;
   final String? customerMobile;
   final DateTime appointmentAt;
+  final DateTime? estimatedEndAt;
+  final DateTime? nextAppointmentAt;
   final int? serviceDuration;
   final double totalPrice;
   final double? discountAmount;
@@ -79,6 +83,8 @@ class Appointment {
     required this.customerName,
     this.customerMobile,
     required this.appointmentAt,
+    this.estimatedEndAt,
+    this.nextAppointmentAt,
     this.serviceDuration,
     required this.totalPrice,
     this.discountAmount,
@@ -115,6 +121,8 @@ class Appointment {
     String? customerName,
     String? customerMobile,
     DateTime? appointmentAt,
+    DateTime? estimatedEndAt,
+    DateTime? nextAppointmentAt,
     int? serviceDuration,
     double? totalPrice,
     double? discountAmount,
@@ -150,6 +158,8 @@ class Appointment {
       customerName: customerName ?? this.customerName,
       customerMobile: customerMobile ?? this.customerMobile,
       appointmentAt: appointmentAt ?? this.appointmentAt,
+      estimatedEndAt: estimatedEndAt ?? this.estimatedEndAt,
+      nextAppointmentAt: nextAppointmentAt ?? this.nextAppointmentAt,
       serviceDuration: serviceDuration ?? this.serviceDuration,
       totalPrice: totalPrice ?? this.totalPrice,
       discountAmount: discountAmount ?? this.discountAmount,
@@ -214,6 +224,8 @@ class Appointment {
           ?.toString(),
       appointmentAt: DateTime.parse(
           json['appointmentAt'] ?? DateTime.now().toIso8601String()),
+      estimatedEndAt: json['estimatedEndAt'] != null ? DateTime.parse(json['estimatedEndAt']) : null,
+      nextAppointmentAt: json['nextAppointmentAt'] != null ? DateTime.parse(json['nextAppointmentAt']) : null,
       serviceDuration: (json['serviceDuration'] as num?)?.toInt(),
       totalPrice: (json['totalPrice'] as num?)?.toDouble() ?? 0.0,
       discountAmount: (json['discountAmount'] as num?)?.toDouble(),
@@ -255,7 +267,7 @@ class Appointment {
       'staffName': staffName,
       'customerName': customerName,
       'customerNumber': customerMobile,
-      'appointmentAt': appointmentAt.toIso8601String(),
+      'appointmentAt': DateTimeUtils.toIstIsoString(appointmentAt),
       'serviceDuration': serviceDuration,
       'totalPrice': totalPrice,
       'discountAmount': discountAmount,
@@ -275,8 +287,8 @@ class Appointment {
       'address': address,
       'latitude': latitude,
       'longitude': longitude,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'createdAt': DateTimeUtils.toIstIsoString(createdAt),
+      'updatedAt': updatedAt != null ? DateTimeUtils.toIstIsoString(updatedAt!) : null,
       'serviceNames': serviceNames,
       if (services != null) 'services': services!.map((s) => s.toJson())
           .toList(),

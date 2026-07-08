@@ -18,6 +18,9 @@ import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
 import 'package:neo_parlour_owner/providers/staff_provider.dart';
 import 'package:neo_parlour_owner/data/models/staff_model.dart';
+import 'package:neo_parlour_owner/core/utils/date_time_utils.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_booking_state.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_select_date_time_screen.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -83,95 +86,26 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
   }
 
   Future<void> _handleReschedule(Appointment appointment) async {
-    DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: appointment.appointmentAt,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0XFFFF0B01)),
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final salonId = int.tryParse(authProvider.user?.tenantName ?? '') ?? 0;
+    
+    final bookingState = GuestBookingState(salonId: salonId);
+    bookingState.fromAppointment(appointment);
+
+    final bool? success = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GuestSelectDateTimeScreen(
+          bookingState: bookingState,
+          isReschedule: true,
+          rescheduleAppointment: appointment,
         ),
-        child: child!,
       ),
     );
 
-    if (pickedDate == null || !mounted) return;
-
-    TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(appointment.appointmentAt),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0XFFFF0B01)),
-        ),
-        child: child!,
-      ),
-    );
-
-    if (pickedTime == null || !mounted) return;
-
-    final newDateTime = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
-
-    final reasonController = TextEditingController();
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Reschedule Reason"),
-        content: TextField(
-          controller: reasonController,
-          decoration: const InputDecoration(
-            hintText: "Enter reason for rescheduling...",
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("CANCEL"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0XFFFF0B01),
-            ),
-            child: const Text(
-              "RESCHEDULE",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true && mounted) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(
-        context,
-        listen: false,
-      );
-
-      try {
-        await appointmentProvider.rescheduleAppointment(
-          appointmentId: appointment.id,
-          newDateTime: newDateTime,
-          reason: reasonController.text,
-          salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
-        );
-        if (mounted) {
-          FlushbarHelper.show(context, "Appointment rescheduled successfully", isSuccess: true);
-          _refreshData();
-        }
-      } catch (e) {
-        if (mounted) {
-          FlushbarHelper.show(context, "Error: $e");
-        }
-      }
+    if (success == true && mounted) {
+      FlushbarHelper.show(context, "Appointment rescheduled successfully", isSuccess: true);
+      _refreshData();
     }
   }
 
@@ -240,7 +174,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
   Future<void> _handleAssignStaff(Appointment appointment) async {
     final staffProvider = Provider.of<StaffProvider>(context, listen: false);
     
-    final formattedTime = appointment.appointmentAt.toUtc().toIso8601String();
+    final formattedTime = DateTimeUtils.toIstIsoString(appointment.appointmentAt);
     final duration = appointment.serviceDuration ?? 30;
 
     await staffProvider.fetchAvailableStaff(
@@ -310,6 +244,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       bottomNavigationBar: const OwnerBottomNavBar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -907,6 +842,54 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                                   ),
                                 ],
                               ),
+                              if (appointment.cancelReason != null && appointment.cancelReason!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.cancel_outlined, size: 14, color: Colors.red),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          "Cancel Reason: ${appointment.cancelReason}",
+                                          style: const TextStyle(fontSize: 11, color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (appointment.ownerRescheduleReason != null && appointment.ownerRescheduleReason!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.info_outline, size: 14, color: Colors.blue),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          "Owner Reschedule Reason: ${appointment.ownerRescheduleReason}",
+                                          style: const TextStyle(fontSize: 11, color: Colors.blue),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (appointment.customerRescheduleReason != null && appointment.customerRescheduleReason!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.info_outline, size: 14, color: Colors.orange),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          "Customer Reschedule Reason: ${appointment.customerRescheduleReason}",
+                                          style: const TextStyle(fontSize: 11, color: Colors.orange),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               const SizedBox(height: 15),
                               Row(
                                 children: [

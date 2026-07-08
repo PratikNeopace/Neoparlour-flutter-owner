@@ -26,25 +26,49 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _notificationsLoaded = false;
+  bool _birthdaysLoaded = false;
+  bool _requestsLoaded = false;
+  bool _ordersLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      final salonId = int.tryParse(auth.user?.tenantName ?? '') ?? 0;
+      _loadTab(0);
+    });
+  }
+
+  void _onTabChanged() {
+    _loadTab(_tabController.index);
+  }
+
+  void _loadTab(int index) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final salonId = int.tryParse(auth.user?.tenantName ?? '') ?? 0;
+    
+    if (index == 0 && !_notificationsLoaded) {
       Provider.of<NotificationProvider>(context, listen: false)
           .fetchNotifications(salonId: salonId, refresh: true);
+      _notificationsLoaded = true;
+    } else if (index == 1 && !_birthdaysLoaded) {
       Provider.of<NotificationProvider>(context, listen: false)
           .fetchBirthdays(salonId: salonId, refresh: true);
+      _birthdaysLoaded = true;
+    } else if (index == 2 && !_requestsLoaded) {
       Provider.of<InventoryProvider>(context, listen: false)
           .fetchPendingSwapRequests();
       Provider.of<AttendanceProvider>(context, listen: false)
           .fetchPendingLeaveRequests();
+      _requestsLoaded = true;
+    } else if (index == 3 && !_ordersLoaded) {
       Provider.of<OrderProvider>(context, listen: false)
           .fetchOrders(salonId: salonId, refresh: true);
-    });
+      _ordersLoaded = true;
+    }
   }
 
   @override

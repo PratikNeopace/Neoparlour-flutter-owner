@@ -176,41 +176,55 @@ class _VerifyRegistrationOtpScreenState
     final double w = size.width;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/Images/SplashScreen/splash_screen_one_bg.jpg',
-              fit: BoxFit.cover,
+      resizeToAvoidBottomInset: true,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            // Background Image
+            Positioned.fill(
+              child: Image.asset(
+                'assets/Images/SplashScreen/splash_screen_one_bg.jpg',
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
 
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              width: double.infinity,
-              margin: EdgeInsets.symmetric(horizontal: w * 0.05),
-              padding: EdgeInsets.fromLTRB(
-                25,
-                30,
-                25,
-                MediaQuery.of(context).viewInsets.bottom + 30,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(35),
-                  topRight: Radius.circular(35),
-                ),
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "VERIFY OTP",
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                top: false,
+                child: Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.symmetric(horizontal: w * 0.05),
+                  padding: const EdgeInsets.fromLTRB(25, 30, 25, 30),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(35),
+                      topRight: Radius.circular(35),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: const Icon(Icons.arrow_back),
+                            ),
+                            const SizedBox(width: 15),
+                            const Text(
+                              "OWNER & SALON REGISTRATION",
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        _buildStepperHeader(),
+                        const Text(
+                          "VERIFY OTP",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -293,6 +307,91 @@ class _VerifyRegistrationOtpScreenState
                 ),
               ),
             ),
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildStepperHeader() {
+    final steps = ['PERSONAL', 'SALON', 'KYC', 'OTP'];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20.0),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Connecting Line
+          Positioned(
+            left: 30,
+            right: 30,
+            top: 20,
+            child: Container(
+              height: 2,
+              color: Colors.grey[300],
+            ),
+          ),
+          Positioned(
+             left: 30,
+             right: 30,
+             top: 20,
+             child: Row(
+               children: [
+                  Expanded(
+                    flex: 3,
+                    child: Container(height: 2, color: const Color(0XFFFF0B01)),
+                  ),
+                  Expanded(
+                    flex: 0,
+                    child: Container(height: 2, color: Colors.transparent),
+                  )
+               ],
+             ),
+          ),
+          // Step circles
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(4, (index) {
+              final isActive = index == 3;
+              final isCompleted = index < 3;
+              return Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isActive || isCompleted ? const Color(0XFFFF0B01) : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isActive || isCompleted ? const Color(0XFFFF0B01) : Colors.grey[300]!,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: isCompleted
+                          ? const Icon(Icons.check, color: Colors.white, size: 20)
+                          : Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: isActive ? Colors.white : Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    steps[index],
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isActive || isCompleted ? Colors.black : Colors.grey,
+                    ),
+                  ),
+                ],
+              );
+            }),
           ),
         ],
       ),
@@ -300,44 +399,46 @@ class _VerifyRegistrationOtpScreenState
   }
 
   Widget _otpBox(int index) {
-    return Container(
-      width: 45,
-      height: 55,
-      decoration: BoxDecoration(
-        color: const Color(0XFFF9F9F9),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: _controllers[index].text.isNotEmpty
-              ? const Color(0XFFFF0B01)
-              : const Color(0XFFE0E0E0),
-          width: 1.2,
+    return Expanded(
+      child: Container(
+        height: 55,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: const Color(0XFFF9F9F9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: _controllers[index].text.isNotEmpty
+                ? const Color(0XFFFF0B01)
+                : const Color(0XFFE0E0E0),
+            width: 1.2,
+          ),
         ),
-      ),
-      child: TextField(
-        controller: _controllers[index],
-        focusNode: _focusNodes[index],
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        maxLength: 1,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        decoration: const InputDecoration(
-          counterText: "",
-          border: InputBorder.none,
-        ),
-        onChanged: (value) {
-          if (value.isNotEmpty) {
-            setState(() {});
-            if (index < 5) {
-              FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+        child: TextField(
+          controller: _controllers[index],
+          focusNode: _focusNodes[index],
+          textAlign: TextAlign.center,
+          keyboardType: TextInputType.number,
+          maxLength: 1,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          decoration: const InputDecoration(
+            counterText: "",
+            border: InputBorder.none,
+          ),
+          onChanged: (value) {
+            if (value.isNotEmpty) {
+              setState(() {});
+              if (index < 5) {
+                FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
+              } else {
+                FocusScope.of(context).unfocus();
+              }
             } else {
-              FocusScope.of(context).unfocus();
+              if (index > 0) {
+                FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
+              }
             }
-          } else {
-            if (index > 0) {
-              FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
-            }
-          }
-        },
+          },
+        ),
       ),
     );
   }

@@ -1,6 +1,8 @@
 // ignore_for_file: deprecated_member_use
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
@@ -15,6 +17,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:neo_parlour_owner/providers/inventory_provider.dart';
 import 'package:neo_parlour_owner/data/models/inventory_model.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/inventory_staff_screen.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_booking_state.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_select_date_time_screen.dart';
 
 class AppointmentStaffScreen extends StatefulWidget {
   const AppointmentStaffScreen({super.key});
@@ -209,6 +213,10 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (apt.status.toUpperCase() == 'BOOKED' || apt.status.toUpperCase() == 'RESCHEDULED') ...[
+                          const SizedBox(height: 6),
+                          CallNowButton(phoneNumber: apt.customerMobile),
+                        ],
                       ],
                     ),
                   ),
@@ -223,6 +231,54 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
                   ),
                 ],
               ),
+              if (apt.cancelReason != null && apt.cancelReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cancel_outlined, size: 14, color: Colors.red),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Cancel Reason: ${apt.cancelReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (apt.ownerRescheduleReason != null && apt.ownerRescheduleReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: Colors.blue),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Owner Reschedule Reason: ${apt.ownerRescheduleReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (apt.customerRescheduleReason != null && apt.customerRescheduleReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: Colors.orange),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Customer Reschedule Reason: ${apt.customerRescheduleReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.orange),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 16),
               if (apt.status.toUpperCase() == 'BOOKED' || apt.status.toUpperCase() == 'RESCHEDULED') ...[
                 Row(
@@ -294,7 +350,7 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
   void _showCompleteDialog(Appointment appointment) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final staffId = authProvider.user?.id;
-    final salonId = int.tryParse(authProvider.user?.tenantName ?? '');
+    final salonId = authProvider.user?.salonId ?? int.tryParse(authProvider.user?.tenantName ?? '');
 
     if (staffId == null) return;
 
@@ -486,108 +542,25 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
   Future<void> _handleReschedule(Appointment appointment) async {
     final localContext = context;
     final authProvider = Provider.of<AuthProvider>(localContext, listen: false);
-    final appointmentProvider = Provider.of<AppointmentProvider>(localContext, listen: false);
+    final salonId = authProvider.user?.salonId ?? int.tryParse(authProvider.user?.tenantName ?? '') ?? 0;
+    
+    final bookingState = GuestBookingState(salonId: salonId);
+    bookingState.fromAppointment(appointment);
 
-    final DateTime? pickedDate = await showDatePicker(
-      context: localContext,
-      initialDate: appointment.appointmentAt.toLocal(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0XFFFF0B01),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedDate == null) return;
-    if (!localContext.mounted) return;
-
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: localContext,
-      initialTime: TimeOfDay.fromDateTime(appointment.appointmentAt.toLocal()),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0XFFFF0B01),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedTime == null) return;
-
-    final newDateTime = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
-
-    if (!localContext.mounted) return;
-
-    final TextEditingController reasonController = TextEditingController();
-
-    final String? reason = await showDialog<String>(
-      context: localContext,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("Reschedule Reason"),
-        content: TextField(
-          controller: reasonController,
-          decoration: const InputDecoration(
-            hintText: "Enter reason for rescheduling",
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0XFFFF0B01)),
-            ),
-          ),
-          maxLines: 2,
+    final bool? success = await Navigator.push(
+      localContext,
+      MaterialPageRoute(
+        builder: (context) => GuestSelectDateTimeScreen(
+          bookingState: bookingState,
+          isReschedule: true,
+          rescheduleAppointment: appointment,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
-            child: const Text("RESCHEDULE", style: TextStyle(color: Color(0XFFFF0B01))),
-          ),
-        ],
       ),
     );
 
-    if (reason == null || reason.isEmpty) return;
-
-    if (!localContext.mounted) return;
-
-    try {
-      await appointmentProvider.rescheduleAppointment(
-        appointmentId: appointment.id,
-        newDateTime: newDateTime,
-        reason: reason,
-        salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
-      );
-
-      if (localContext.mounted) {
-        FlushbarHelper.show(localContext, "Appointment rescheduled successfully!", isSuccess: true);
-        _refreshData();
-      }
-    } catch (e) {
-      if (localContext.mounted) {
-        FlushbarHelper.show(localContext, "Error: $e");
-      }
+    if (success == true && localContext.mounted) {
+      FlushbarHelper.show(localContext, "Appointment rescheduled successfully", isSuccess: true);
+      _refreshData();
     }
   }
 
@@ -632,7 +605,7 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
       await appointmentProvider.cancelAppointment(
         appointmentId: appointment.id,
         reason: reason,
-        salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
+        salonId: authProvider.user?.salonId ?? int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
       );
 
       if (localContext.mounted) {
@@ -758,4 +731,64 @@ class HeaderCurveClipper extends CustomClipper<Path> {
   }
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class CallNowButton extends StatelessWidget {
+  final String? phoneNumber;
+
+  const CallNowButton({super.key, this.phoneNumber});
+
+  Future<void> _launchCall() async {
+    final trimmed = phoneNumber?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: trimmed,
+    );
+    try {
+      await launchUrl(launchUri);
+    } catch (e) {
+      debugPrint("Error launching dialer: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = phoneNumber?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return InkWell(
+      onTap: _launchCall,
+      borderRadius: BorderRadius.circular(5),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDBFADE),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.call,
+              size: 12,
+              color: Colors.black,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              "Call Now",
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

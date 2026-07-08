@@ -50,6 +50,31 @@ class ServiceProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> reorderServicesShift(int oldIndex, int newIndex) async {
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    final previousServices = List<NeoService>.from(_services);
+    
+    // Optimistic update
+    final movedService = _services.removeAt(oldIndex);
+    _services.insert(newIndex, movedService);
+    notifyListeners();
+
+    try {
+      final List<String> serviceIds = _services.map((s) => s.id.toString()).toList();
+      await _service.reorderServices(serviceIds);
+      return true;
+    } catch (e) {
+      // Rollback on failure
+      _services = previousServices;
+      _errorMessage = ErrorHandler.parseError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> fetchActiveServices() async {
     _isLoading = true;
     _errorMessage = null;

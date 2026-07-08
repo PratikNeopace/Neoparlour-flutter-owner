@@ -41,6 +41,22 @@ class ServiceService {
     }
   }
 
+  Future<void> reorderServices(List<String> serviceIds) async {
+    try {
+      final response = await _apiClient.put(
+        'services/reorder',
+        data: serviceIds,
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to reorder services');
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<NeoService>> fetchActiveServices() async {
     try {
       final response = await _apiClient.get('services/active');

@@ -20,6 +20,18 @@ class OfferService {
     }
   }
 
+  Future<Offer> getOfferById(int id) async {
+    try {
+      final response = await _apiClient.get('offers/$id');
+      if (response.statusCode == 200) {
+        return Offer.fromJson(response.data);
+      }
+      throw Exception('Failed to fetch offer details');
+    } catch (e) {
+      throw Exception('Error fetching offer details: $e');
+    }
+  }
+
   Future<Offer> createOffer(Offer offer) async {
     try {
       final response = await _apiClient.post(

@@ -35,6 +35,8 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
   final _totalUsageLimitController = TextEditingController();
 
   final List<NeoService> _selectedServices = [];
+  final ScrollController _scrollController = ScrollController();
+  int? _lastEditingPackageId;
 
   @override
   void initState() {
@@ -43,6 +45,50 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       context.read<ServiceProvider>().fetchActiveServices();
       context.read<PackageProvider>().fetchPackages();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = Provider.of<PackageProvider>(context);
+    final editingPackage = provider.editingPackage;
+    
+    if (editingPackage != null && editingPackage.id != _lastEditingPackageId) {
+      _lastEditingPackageId = editingPackage.id;
+      _nameController.text = editingPackage.name;
+      _descriptionController.text = editingPackage.description ?? '';
+      _priceController.text = editingPackage.packagePrice.toString();
+      _usageLimitController.text = editingPackage.usageLimitPerCustomer?.toString() ?? '';
+      _totalUsageLimitController.text = editingPackage.totalUsageLimit?.toString() ?? '';
+      _selectedServices.clear();
+      _selectedServices.addAll(editingPackage.services);
+    } else if (editingPackage == null && _lastEditingPackageId != null) {
+      _lastEditingPackageId = null;
+      _nameController.clear();
+      _descriptionController.clear();
+      _priceController.clear();
+      _usageLimitController.clear();
+      _totalUsageLimitController.clear();
+      _selectedServices.clear();
+    }
+  }
+
+  void _clearForm() {
+    context.read<PackageProvider>().setEditingPackage(null);
+  }
+
+  Future<void> _handleEditPress(ServicePackage packageListModel) async {
+    final provider = Provider.of<PackageProvider>(context, listen: false);
+    
+    // Fetch full details
+    final fullPackage = await provider.getPackageById(packageListModel.id!);
+    if (!mounted) return;
+    
+    final package = fullPackage ?? packageListModel;
+    provider.setEditingPackage(package);
+
+    // Switch to Form Tab
+    DefaultTabController.of(context).animateTo(0);
   }
 
   @override
@@ -81,41 +127,48 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       return;
     }
 
+    if (_usageLimitController.text.trim().isEmpty) {
+      FlushbarHelper.show(context, 'Usage limit per customer is required');
+      return;
+    }
+    
     int? usageLimitPerCustomer;
-    if (_usageLimitController.text.trim().isNotEmpty) {
-      usageLimitPerCustomer = int.tryParse(_usageLimitController.text.trim());
-      if (usageLimitPerCustomer == null) {
-        FlushbarHelper.show(context, 'Please enter a valid usage limit per customer');
-        return;
-      }
-      if (usageLimitPerCustomer <= 0) {
-        FlushbarHelper.show(context, 'Usage limit per customer must be greater than 0');
-        return;
-      }
-      if (usageLimitPerCustomer > 100000) {
-        FlushbarHelper.show(context, 'Usage limit per customer cannot exceed 100,000');
-        return;
-      }
+    usageLimitPerCustomer = int.tryParse(_usageLimitController.text.trim());
+    if (usageLimitPerCustomer == null) {
+      FlushbarHelper.show(context, 'Please enter a valid usage limit per customer');
+      return;
+    }
+    if (usageLimitPerCustomer <= 0) {
+      FlushbarHelper.show(context, 'Usage limit per customer must be greater than 0');
+      return;
+    }
+    if (usageLimitPerCustomer > 100000) {
+      FlushbarHelper.show(context, 'Usage limit per customer cannot exceed 100,000');
+      return;
+    }
+
+    if (_totalUsageLimitController.text.trim().isEmpty) {
+      FlushbarHelper.show(context, 'Total usage limit is required');
+      return;
     }
 
     int? totalUsageLimit;
-    if (_totalUsageLimitController.text.trim().isNotEmpty) {
-      totalUsageLimit = int.tryParse(_totalUsageLimitController.text.trim());
-      if (totalUsageLimit == null) {
-        FlushbarHelper.show(context, 'Please enter a valid total usage limit');
-        return;
-      }
-      if (totalUsageLimit <= 0) {
-        FlushbarHelper.show(context, 'Total usage limit must be greater than 0');
-        return;
-      }
-      if (totalUsageLimit > 1000000) {
-        FlushbarHelper.show(context, 'Total usage limit cannot exceed 1,000,000');
-        return;
-      }
+    totalUsageLimit = int.tryParse(_totalUsageLimitController.text.trim());
+    if (totalUsageLimit == null) {
+      FlushbarHelper.show(context, 'Please enter a valid total usage limit');
+      return;
+    }
+    if (totalUsageLimit <= 0) {
+      FlushbarHelper.show(context, 'Total usage limit must be greater than 0');
+      return;
+    }
+    if (totalUsageLimit > 1000000) {
+      FlushbarHelper.show(context, 'Total usage limit cannot exceed 1,000,000');
+      return;
     }
 
     final package = ServicePackage(
+      id: _lastEditingPackageId,
       name: _nameController.text.trim(),
       packagePrice: price,
       description: _descriptionController.text.trim(),
@@ -124,34 +177,32 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
       services: _selectedServices,
     );
 
-    final success = await context.read<PackageProvider>().addPackage(package);
+    final provider = context.read<PackageProvider>();
+    final success = _lastEditingPackageId == null 
+        ? await provider.addPackage(package)
+        : await provider.updatePackage(package);
+        
     if (success) {
       if (mounted) {
-        FlushbarHelper.show(context, 'Package added successfully', isSuccess: true);
+        final wasEditing = _lastEditingPackageId != null;
         if (!widget.showAsTab) {
+          FlushbarHelper.show(context, wasEditing ? 'Successfully edited the package' : 'Successfully created the package', isSuccess: true);
           Navigator.pop(context);
         } else {
           _clearForm();
-          context.read<PackageProvider>().fetchPackages();
+          provider.fetchPackages();
+          FlushbarHelper.show(context, wasEditing ? 'Successfully edited the package' : 'Successfully created the package', isSuccess: true);
         }
       }
     } else {
       if (mounted) {
-        FlushbarHelper.show(context, 'Failed to add package');
+        final errorMsg = provider.errorMessage ?? 'Failed to save package';
+        FlushbarHelper.show(context, errorMsg);
       }
     }
   }
 
-  void _clearForm() {
-    _nameController.clear();
-    _descriptionController.clear();
-    _priceController.clear();
-    _usageLimitController.clear();
-    _totalUsageLimitController.clear();
-    setState(() {
-      _selectedServices.clear();
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +247,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 },
                 color: const Color(0XFFFF0B01),
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
@@ -229,8 +281,38 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("ADD NEW PACKAGE", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        const Divider(color: Color(0XFFFF0B01), thickness: 2, endIndent: 200),
+        Row(
+          children: [
+            Icon(
+              _lastEditingPackageId != null ? Icons.edit_note_rounded : Icons.add,
+              size: 20,
+              color: _lastEditingPackageId != null ? Colors.blue : Colors.black,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _lastEditingPackageId != null ? "EDITING PACKAGE" : "ADD NEW PACKAGE",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: _lastEditingPackageId != null ? Colors.blue : Colors.black,
+              ),
+            ),
+            if (_lastEditingPackageId != null) ...[
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _clearForm,
+                icon: const Icon(Icons.close, size: 16),
+                label: const Text("Cancel Edit"),
+                style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+              ),
+            ],
+          ],
+        ),
+        Divider(
+          color: _lastEditingPackageId != null ? Colors.blue : const Color(0XFFFF0B01),
+          thickness: 2,
+          endIndent: _lastEditingPackageId != null ? 100 : 200,
+        ),
         const SizedBox(height: 20),
         _buildInputField(_nameController, "Package Name", "assets/Images/AddPackageScreen/package_details_icon.svg"),
         const SizedBox(height: 15),
@@ -238,9 +320,9 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
         const SizedBox(height: 15),
         _buildInputField(_priceController, "Package Price", "assets/Images/AddPackageScreen/rate_icon.svg", keyboardType: TextInputType.number),
         const SizedBox(height: 15),
-        _buildInputField(_usageLimitController, "Usage Limit Per Customer (Optional)", "assets/Images/AddPackageScreen/coupon_icon.svg", keyboardType: TextInputType.number),
+        _buildInputField(_usageLimitController, "Usage Limit Per Customer", "assets/Images/AddPackageScreen/coupon_icon.svg", keyboardType: TextInputType.number),
         const SizedBox(height: 15),
-        _buildInputField(_totalUsageLimitController, "Total Usage Limit (Optional)", "assets/Images/AddPackageScreen/coupon_icon.svg", keyboardType: TextInputType.number),
+        _buildInputField(_totalUsageLimitController, "Total Usage Limit", "assets/Images/AddPackageScreen/coupon_icon.svg", keyboardType: TextInputType.number),
         const SizedBox(height: 20),
         _buildServiceSelection(),
         const SizedBox(height: 30),
@@ -454,6 +536,12 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                         Text("\u{20B9}${package.packagePrice}", style: const TextStyle(color: Color(0XFFFF0B01), fontWeight: FontWeight.bold)),
                       ],
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                    onPressed: () => _handleEditPress(package),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),

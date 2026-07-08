@@ -1,9 +1,12 @@
 // ignore_for_file: deprecated_member_use
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:neo_parlour_owner/core/utils/date_time_utils.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/staff_bottom_nav_bar.dart';
@@ -21,7 +24,17 @@ import 'package:neo_parlour_owner/data/models/inventory_model.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
 
 import 'appointment_staff_screen.dart';
-
+import 'package:neo_parlour_owner/core/api_client.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_booking_state.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_select_date_time_screen.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_select_services_screen.dart';
+import 'package:neo_parlour_owner/data/models/staff_model.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/extend_appointment/extend_select_services_screen.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/extend_appointment/conflict_reschedule_screen.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/extend_appointment/conflict_assign_staff_screen.dart';
+import 'package:neo_parlour_owner/data/models/service_model.dart';
+import 'package:neo_parlour_owner/data/models/offer_model.dart';
+import 'package:neo_parlour_owner/data/models/package_model.dart';
 class HomeStaffScreen extends StatefulWidget {
   const HomeStaffScreen({super.key});
 
@@ -30,6 +43,17 @@ class HomeStaffScreen extends StatefulWidget {
 }
 
 class _HomeStaffScreenState extends State<HomeStaffScreen> {
+  bool _isStarting = false;
+  bool _showSearch = false;
+  DateTime _selectedDate = DateTime.now();
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +78,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: const Color(0xFFF9F9F9),
       bottomNavigationBar: const StaffBottomNavBar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -90,15 +115,13 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                     const SizedBox(height: 10),
                     _buildAttendanceButtons(),
                     const SizedBox(height: 15),
-                    _buildAttendanceCard(),
-                    const SizedBox(height: 15),
-                    _buildNavButtons(context),
+                    _buildQuickActions(context),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "UPCOMING APPOINTMENTS",
+                          "ASSIGNED APPOINTMENTS",
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -115,7 +138,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                             );
                           },
                           child: Text(
-                            "Show All",
+                            "See More",
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -126,18 +149,32 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
+                    _buildDateStrip(context),
+                    const SizedBox(height: 15),
                     Consumer<AppointmentProvider>(
                       builder: (context, provider, child) {
-                        if (provider.isLoading &&
-                            provider.appointments.isEmpty) {
+                        if (provider.isLoading && provider.appointments.isEmpty) {
                           return const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0XFFFF0B01),
-                            ),
+                            child: CircularProgressIndicator(color: Color(0XFFFF0B01)),
                           );
                         }
-                        if (provider.errorMessage != null &&
-                            provider.appointments.isEmpty) {
+                        
+                        final searchQuery = _searchController.text.toLowerCase();
+                        final filteredAppointments = provider.appointments.where((apt) {
+                          final aptDate = apt.appointmentAt.toLocal();
+                          final isSameDate = aptDate.year == _selectedDate.year &&
+                                             aptDate.month == _selectedDate.month &&
+                                             aptDate.day == _selectedDate.day;
+                          
+                          if (!isSameDate) return false;
+                          if (searchQuery.isEmpty) return true;
+
+                          final name = apt.customerName.toLowerCase();
+                          final mobile = apt.customerMobile?.toLowerCase() ?? '';
+                          return name.contains(searchQuery) || mobile.contains(searchQuery);
+                        }).toList();
+
+                        if (provider.errorMessage != null && filteredAppointments.isEmpty) {
                           return Center(
                             child: Text(
                               provider.errorMessage!,
@@ -145,12 +182,12 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                             ),
                           );
                         }
-                        if (provider.appointments.isEmpty) {
+                        if (filteredAppointments.isEmpty) {
                           return Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Center(
-                                child: Text("No Upcoming appointments found"),
+                                child: Text("No Upcoming appointments found for this date"),
                               ),
                               const SizedBox(height: 20),
                               _buildPaginationWidget(provider),
@@ -159,7 +196,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                         }
                         return Column(
                           children: [
-                            ...provider.appointments.map(
+                            ...filteredAppointments.map(
                               (apt) => _buildAppointmentCard(apt),
                             ),
                             const SizedBox(height: 20),
@@ -186,153 +223,134 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
     return PaginationWidget(
       currentPage: provider.currentPage,
       totalPages: provider.totalPages,
-      onPageSelected: (page) => provider.goToPage(page: page, staffId: staffId),
+      onPageSelected: (page) => provider.goToPage(page: page, staffId: staffId, status: null),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Stack(
-      children: [
-        ClipPath(
-          clipper: HeaderCurveClipper(),
-          child: Container(
-            height: 225,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(
-                  "assets/Images/CreateInvoiceScreen/background_image.jpg",
-                ),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: Container(
-              padding: const EdgeInsets.only(left: 25, bottom: 20),
-              alignment: Alignment.bottomLeft,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.3),
-                    const Color(0XFFFF3502).withValues(alpha: 0.7),
-                  ],
-                ),
-              ),
-              child: Consumer<AuthProvider>(
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 20,
+        left: 20,
+        right: 20,
+        bottom: 10,
+      ),
+      color: Colors.white, // Or whatever background color matches the body if we want it seamless
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Consumer<AuthProvider>(
                 builder: (context, auth, child) {
-                  return Text(
-                    "WELCOME ${auth.user?.name.toUpperCase() ?? 'STAFF'}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Good Morning",
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Hello ${auth.user?.name ?? 'Staff'} \u{1F44B}",
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
-            ),
-          ),
-        ),
-        Positioned(
-          right: 10,
-          bottom: 20,
-          child: GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const StaffNotificationScreen(),
-              ),
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.notifications, color: Colors.white),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAttendanceButtons() {
-    return Consumer2<AuthProvider, AttendanceProvider>(
-      builder: (context, auth, attendance, child) {
-        final staffId = auth.user?.id ?? 0;
-        final hasCheckedIn = attendance.todayAttendance?.checkIn != null;
-        final hasCheckedOut = attendance.todayAttendance?.checkOut != null;
-
-        return Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: (hasCheckedIn || attendance.isLoading)
-                    ? null
-                    : () => _handleCheckIn(staffId),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    _buildOutlinedBox(
-                      "Check In",
-                      color: hasCheckedIn ? Colors.grey.shade300 : null,
-                      textColor: (hasCheckedIn || attendance.isLoading)
-                          ? Colors.grey
-                          : null,
-                    ),
-                    if (attendance.isLoading && !hasCheckedIn)
-                      const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0XFFFF0B01),
-                        ),
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _showSearch = !_showSearch;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey.shade300),
                       ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: (!hasCheckedIn || hasCheckedOut || attendance.isLoading)
-                    ? null
-                    : () => _handleCheckOut(staffId),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    _buildOutlinedBox(
-                      "Check Out",
-                      color: (!hasCheckedIn || hasCheckedOut)
-                          ? Colors.grey.shade300
-                          : null,
-                      textColor:
-                          (!hasCheckedIn ||
-                              hasCheckedOut ||
-                              attendance.isLoading)
-                          ? Colors.grey
-                          : null,
+                      child: const Icon(Icons.search, color: Colors.black, size: 24),
                     ),
-                    if (attendance.isLoading && hasCheckedIn && !hasCheckedOut)
-                      const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0XFFFF0B01),
-                        ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StaffNotificationScreen(),
                       ),
-                  ],
+                    ),
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: const Icon(Icons.notifications_outlined, color: Colors.black, size: 24),
+                        ),
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Color(0XFFFF0B01),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          if (_showSearch) ...[
+            const SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {});
+                },
+                decoration: InputDecoration(
+                  hintText: "Search Appointment",
+                  hintStyle: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 ),
               ),
             ),
           ],
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -370,357 +388,888 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
     }
   }
 
-  Widget _buildAttendanceCard() {
-    return Consumer<AttendanceProvider>(
-      builder: (context, provider, child) {
-        final attendance = provider.todayAttendance;
-        final checkInStr = attendance?.checkIn != null
-            ? DateFormat('hh:mm a').format(attendance!.checkIn!.toLocal())
-            : '--:--';
-        final checkOutStr = attendance?.checkOut != null
-            ? DateFormat('hh:mm a').format(attendance!.checkOut!.toLocal())
-            : '--:--';
+  Widget _buildAttendanceButtons() {
+    return Consumer2<AuthProvider, AttendanceProvider>(
+      builder: (context, auth, attendance, child) {
+        final staffId = auth.user?.id ?? 0;
+        final today = DateTime.now();
+        final att = attendance.todayAttendance;
+        bool hasCheckedIn = false;
+        bool hasCheckedOut = false;
 
-        return Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+        if (att != null) {
+          final localDate = att.attendanceDate.toLocal();
+          if (localDate.year == today.year && 
+              localDate.month == today.month && 
+              localDate.day == today.day) {
+            hasCheckedIn = att.checkIn != null;
+            hasCheckedOut = att.checkOut != null;
+          }
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: (hasCheckedIn || attendance.isLoading)
+                    ? null
+                    : () => _handleCheckIn(staffId),
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: hasCheckedIn ? Colors.grey.shade300 : const Color(0XFFFF0B01),
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Center(
+                    child: (attendance.isLoading && !hasCheckedIn)
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            "Check In",
+                            style: GoogleFonts.poppins(
+                              color: hasCheckedIn ? Colors.grey : Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
               ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Today",
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      Text(
-                        DateFormat('dd MMMM yyyy').format(DateTime.now()),
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: (!hasCheckedIn || hasCheckedOut || attendance.isLoading)
+                    ? null
+                    : () => _handleCheckOut(staffId),
+                child: Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: (!hasCheckedIn || hasCheckedOut)
+                        ? Colors.grey.shade300
+                        : Colors.grey.shade600,
+                    borderRadius: BorderRadius.circular(25),
                   ),
-                  LiveAttendanceTimer(
-                    checkIn: attendance?.checkIn,
-                    checkOut: attendance?.checkOut,
+                  child: Center(
+                    child: (attendance.isLoading && hasCheckedIn && !hasCheckedOut)
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            "Check Out",
+                            style: GoogleFonts.poppins(
+                              color: (!hasCheckedIn || hasCheckedOut) ? Colors.grey : Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
-                ],
+                ),
               ),
-              const Divider(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildPunchItem(
-                    "Punch In",
-                    checkInStr,
-                    Icons.login,
-                    Colors.green,
-                  ),
-                  _buildPunchItem(
-                    "Punch Out",
-                    checkOutStr,
-                    Icons.logout,
-                    Colors.red,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildNavButtons(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const LeaveRequestStaffScreen(),
-                ),
-              ).then((value) {
-                if (value == true && context.mounted) {
-                  FlushbarHelper.show(
-                    context,
-                    "Request sent to owner successfully",
-                    isSuccess: true,
-                  );
-                }
-              });
-            },
-            child: _buildOutlinedBox("Leave Request", icon: Icons.exit_to_app),
-          ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const InventoryStaffScreen(),
+          child: _buildActionCard(
+            "Guest\nAppointment",
+            "assets/Images/HomeScreen/guest_icon.png",
+            onTap: () async {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0XFFFF0B01)),
+                  ),
                 ),
               );
+              try {
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final salonId = authProvider.user?.salonId ?? int.tryParse(authProvider.user?.tenantName ?? '') ?? 0;
+                final response = await ApiClient().get('salons/$salonId');
+                
+                double weekdayDiscount = 0.0;
+                if (response.data != null && response.data['weekdayDiscountPercent'] != null) {
+                  weekdayDiscount = double.tryParse(response.data['weekdayDiscountPercent'].toString()) ?? 0.0;
+                }
+
+                if (context.mounted) {
+                  Navigator.pop(context); // dismiss loading dialog
+                  final staffId = authProvider.user?.id ?? 0;
+                  final staffName = authProvider.user?.name ?? '';
+                  final bookingState = GuestBookingState(salonId: salonId)
+                    ..weekdayDiscountPercent = weekdayDiscount
+                    ..selectedStaff = Staff(id: staffId, name: staffName, phone: '', email: '');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GuestSelectServicesScreen(bookingState: bookingState),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context); // dismiss loading dialog
+                  FlushbarHelper.show(context, "Failed to load salon details: $e");
+                }
+              }
             },
-            child: _buildOutlinedBox("Inventory", icon: Icons.inventory),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAppointmentCard(Appointment apt) {
-    final timeStr = DateFormat('hh:mm a').format(apt.appointmentAt.toLocal());
-    final dateStr = DateFormat(
-      'dd MMM yyyy',
-    ).format(apt.appointmentAt.toLocal());
-    final serviceStr = apt.serviceNames.join(', ');
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: const Color(0XFF909090)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x26000000),
-            offset: Offset(0, 2),
-            blurRadius: 4,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Align(
-            alignment: Alignment.topRight,
-            child: Text(
-              "View details",
+  Widget _buildActionCard(String title, String assetPath, {VoidCallback? onTap, bool isIcon = false, IconData? iconData}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 90,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isIcon && iconData != null)
+              Icon(iconData, color: Colors.grey.shade600, size: 24)
+            else
+              Image.asset(assetPath, width: 24, height: 24, errorBuilder: (context, error, stackTrace) => Icon(Icons.person, color: Colors.grey.shade600, size: 24)),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 10,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CircleAvatar(
-                radius: 25.5,
-                backgroundColor: Color(0xFFE0E0E0),
-                backgroundImage: AssetImage(
-                  'assets/Images/HomeScreen/circle_avatar.jpg',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      apt.customerName.isEmpty ? "Customer Name" : apt.customerName,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      serviceStr,
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0XFF909090),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_month,
-                        size: 16,
-                        color: Color(0XFF909090),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        dateStr,
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0XFF909090),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.access_time_filled,
-                        size: 16,
-                        color: Color(0XFF909090),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        timeStr,
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0XFF909090),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (apt.status.toUpperCase() == 'BOOKED' ||
-              apt.status.toUpperCase() == 'RESCHEDULED') ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _handleReschedule(apt),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0XFFFF0B01),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      "RESCHEDULE",
-                      style: GoogleFonts.roboto(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 2,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _handleCancel(apt),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0XFF909090),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      "CANCEL",
-                      style: GoogleFonts.roboto(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 2,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => _showCompleteDialog(apt),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  side: const BorderSide(color: Color(0XFF909090)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: Text(
-                  "COMPLETED",
-                  style: GoogleFonts.roboto(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2,
-                    color: const Color(0XFF909090),
-                  ),
-                ),
-              ),
-            ),
-          ] else ...[
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: _getStatusColor(apt.status).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(50),
-                border: Border.all(
-                  color: _getStatusColor(apt.status).withValues(alpha: 0.5),
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                apt.status.toUpperCase(),
-                style: GoogleFonts.roboto(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 2,
-                  color: _getStatusColor(apt.status),
-                ),
-              ),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
 
+  Widget _buildDateStrip(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 50,
+          height: 60,
+          decoration: BoxDecoration(
+            color: const Color(0xFF2E2E2E),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                DateFormat('MMM').format(_selectedDate).toUpperCase(),
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: SizedBox(
+            height: 60,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 30, // Show next 30 days
+              itemBuilder: (context, index) {
+                final date = DateTime.now().add(Duration(days: index - 5)); // Allow some past days too, or start from today. Let's start from today for simplicity, wait, mockup shows dates. Let's just do from today.
+                final actualDate = DateTime.now().add(Duration(days: index));
+                final isSelected = actualDate.year == _selectedDate.year &&
+                                   actualDate.month == _selectedDate.month &&
+                                   actualDate.day == _selectedDate.day;
+                
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedDate = actualDate;
+                    });
+                    final authProvider = context.read<AuthProvider>();
+                    if (authProvider.user != null) {
+                      context.read<AppointmentProvider>().fetchUpcomingAppointments(
+                        staffId: authProvider.user!.id,
+                        status: null,
+                        specificDate: actualDate,
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 45,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? const Color(0XFFFF0B01) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          DateFormat('d').format(actualDate),
+                          style: GoogleFonts.poppins(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          DateFormat('EEE').format(actualDate),
+                          style: GoogleFonts.poppins(
+                            color: isSelected ? Colors.white : Colors.grey,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleExtend(Appointment apt) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ExtendSelectServicesScreen(appointment: apt),
+      ),
+    );
+
+    if (result != null && mounted) {
+      final addedServices = result['addedServices'] as List<NeoService>;
+      final addedOffer = result['addedOffer'] as Offer?;
+      final addedPackage = result['addedPackage'] as ServicePackage?;
+      final addedDuration = result['addedDuration'] as int;
+      final addedPrice = result['addedPrice'] as double;
+
+      final newServices = List<AppointmentServiceItem>.from(apt.services ?? []);
+      for (var s in addedServices) {
+        newServices.add(AppointmentServiceItem(
+          id: 0,
+          serviceId: s.id.toString(),
+          serviceName: s.name,
+          price: s.price,
+          duration: s.duration,
+        ));
+      }
+      if (addedPackage != null) {
+        for (var s in addedPackage.services) {
+          newServices.add(AppointmentServiceItem(
+            id: 0,
+            serviceId: s.id.toString(),
+            serviceName: s.name,
+            price: s.price,
+            duration: s.duration,
+          ));
+        }
+      }
+
+      final updatedApt = apt.copyWith(
+        serviceDuration: (apt.serviceDuration ?? 0) + addedDuration,
+        totalPrice: apt.totalPrice + addedPrice,
+        finalAmount: apt.finalAmount + addedPrice,
+        offerId: addedOffer?.id ?? apt.offerId,
+        offerName: addedOffer?.name ?? apt.offerName,
+        packageId: addedPackage?.id ?? apt.packageId,
+        packageName: addedPackage?.name ?? apt.packageName,
+        services: newServices,
+      );
+
+      try {
+        await context.read<AppointmentProvider>().extendAppointment(
+          originalAppointment: apt,
+          updatedAppointment: updatedApt,
+        );
+        if (mounted) {
+          FlushbarHelper.show(context, "Appointment extended successfully!", isSuccess: true);
+        }
+      } catch (e) {
+        if (mounted) {
+          final errorMsg = e.toString();
+          if (errorMsg.contains('Conflict detected')) {
+            _showConflictDialog(errorMsg, apt);
+          } else {
+            FlushbarHelper.show(context, "Failed to extend appointment: $errorMsg");
+          }
+        }
+      }
+    }
+  }
+
+  void _showConflictDialog(String conflictMessage, Appointment currentApt) {
+    // Parse the message to extract collided appointment IDs and names
+    // Example: - Appointment ID: 15 for John Doe at 06:00 PM.
+    final RegExp regExp = RegExp(r"Appointment ID:\s*(\d+)\s*for\s*(.*?)\s*at\s*(.*?)\.");
+    final Iterable<RegExpMatch> matches = regExp.allMatches(conflictMessage);
+
+    List<Map<String, dynamic>> collidedAppointments = [];
+    for (final match in matches) {
+      if (match.groupCount >= 3) {
+        collidedAppointments.add({
+          'id': int.tryParse(match.group(1)!) ?? 0,
+          'name': match.group(2)!.trim(),
+          'time': match.group(3)!.trim(),
+          'details': '${match.group(2)} at ${match.group(3)}',
+        });
+      }
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Conflict Detected", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.red)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Extending this appointment collides with:",
+                  style: GoogleFonts.poppins(fontSize: 14),
+                ),
+                const SizedBox(height: 15),
+                if (collidedAppointments.isEmpty)
+                  Text(conflictMessage, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[700]))
+                else
+                  ...collidedAppointments.map((c) => Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        elevation: 1,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("ID: ${c['id']} • ${c['details']}", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        Navigator.pop(context);
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ConflictRescheduleScreen(
+                                              collidedAppointmentId: c['id'],
+                                              staffId: currentApt.staffId ?? 0,
+                                              durationMinutes: 30, // approximate
+                                            ),
+                                          ),
+                                        );
+                                        if (result == true) {
+                                          if (mounted) FlushbarHelper.show(context, "Rescheduled successfully", isSuccess: true);
+                                          _refreshData();
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black,
+                                        side: BorderSide(color: Colors.grey.shade300),
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                                      ),
+                                      child: Text("Reschedule", style: GoogleFonts.poppins(fontSize: 11)),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        Navigator.pop(context);
+                                        // Convert 'time' e.g. "06:00 PM" to ZonedDateTime string for backend
+                                        String timeStr = c['time'];
+                                        try {
+                                          final parsed = DateFormat("hh:mm a").parse(timeStr);
+                                          final aptDate = currentApt.appointmentAt.toLocal();
+                                          final combined = DateTime(
+                                            aptDate.year, 
+                                            aptDate.month, 
+                                            aptDate.day, 
+                                            parsed.hour, 
+                                            parsed.minute
+                                          );
+                                          timeStr = DateTimeUtils.toIstIsoString(combined);
+                                        } catch (e) {
+                                          // ignore, pass raw
+                                        }
+
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ConflictAssignStaffScreen(
+                                              collidedAppointmentId: c['id'],
+                                              appointmentTimeStr: timeStr,
+                                              durationMinutes: 30, // approximate
+                                            ),
+                                          ),
+                                        );
+                                        if (result == true) {
+                                          if (mounted) FlushbarHelper.show(context, "Staff assigned successfully", isSuccess: true);
+                                          _refreshData();
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0XFFFF0B01),
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                                      ),
+                                      child: Text("Assign Staff", style: GoogleFonts.poppins(fontSize: 11, color: Colors.white)),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                      )),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel", style: GoogleFonts.poppins(color: Colors.grey[700])),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAppointmentCard(Appointment apt) {
+    final startTime = apt.appointmentAt.toLocal();
+    final endTime = apt.estimatedEndAt?.toLocal() ?? startTime.add(Duration(minutes: apt.serviceDuration ?? 0));
+    final startTimeStr = DateFormat('hh:mm a').format(startTime);
+    final endTimeStr = DateFormat('hh:mm a').format(endTime);
+    final dateStr = DateFormat('dd MMM yyyy').format(startTime);
+    final serviceStr = apt.serviceNames.join(', ');
+    final status = apt.status.toUpperCase();
+    
+    String nextApptStr = "--";
+    if (apt.nextAppointmentAt != null) {
+      nextApptStr = DateFormat('hh:mm a').format(apt.nextAppointmentAt!.toLocal());
+    }
+
+    final showActionGrid = status == 'BOOKED' || status == 'RESCHEDULED' || status == 'STARTED' || status == 'IN_PROGRESS';
+
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: 5),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!showActionGrid)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: const CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Color(0xFFE0E0E0),
+                        backgroundImage: AssetImage('assets/Images/HomeScreen/circle_avatar.jpg'),
+                      ),
+                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          apt.customerName.isEmpty ? "Customer Name" : apt.customerName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          serviceStr,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (showActionGrid) ...[
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            final uri = Uri.parse("tel:${apt.customerMobile}");
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.phone, color: Colors.green, size: 18),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "Call Now",
+                          style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () => _handleCancel(apt),
+                          child: Container(
+                            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4, top: 4), // Lifted up a bit
+                            child: const Icon(Icons.cancel_outlined, color: Colors.grey, size: 24),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          "Cancel\nAppointment",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(fontSize: 8, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            // view details
+                          },
+                          child: Text("View details", style: TextStyle(fontSize: 10)),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_month, size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(dateStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(startTimeStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+              
+              if (showActionGrid) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Appointments Duration", style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text("$startTimeStr - $endTimeStr", style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Next Appointment at", style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(nextApptStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final provider = context.read<AppointmentProvider>();
+                          final authProvider = context.read<AuthProvider>();
+                          try {
+                            await provider.startAppointment(
+                              appointmentId: apt.id,
+                              staffId: authProvider.user?.id,
+                            );
+                            if (mounted) FlushbarHelper.show(context, "Appointment started successfully!", isSuccess: true);
+                          } catch (e) {
+                            if (mounted) FlushbarHelper.show(context, "Error: $e");
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0XFFFFE2E1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text("STARTED", style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _handleReschedule(apt),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0XFFFFE2E1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text("RESCHEDULE", style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _handleExtend(apt),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0XFFFFE2E1)),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text("EXTEND", style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _showCompleteDialog(apt),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.green.shade100),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.check, color: Colors.green, size: 16),
+                              const SizedBox(width: 4),
+                              Text("COMPLETED", style: GoogleFonts.poppins(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              if (apt.cancelReason != null && apt.cancelReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cancel_outlined, size: 14, color: Colors.red),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Cancel Reason: ${apt.cancelReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (apt.ownerRescheduleReason != null && apt.ownerRescheduleReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: Colors.blue),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Owner Reschedule Reason: ${apt.ownerRescheduleReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (apt.customerRescheduleReason != null && apt.customerRescheduleReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: Colors.orange),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Customer Reschedule Reason: ${apt.customerRescheduleReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.orange),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              if (!showActionGrid) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _handleReschedule(apt),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0XFFFF0B01),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        ),
+                        child: Text("RESCHEDULE", style: GoogleFonts.roboto(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _handleCancel(apt),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                        ),
+                        child: Text("CANCEL", style: GoogleFonts.roboto(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (showActionGrid && (status == 'STARTED' || status == 'IN_PROGRESS'))
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 15),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.check, color: Colors.green, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  "INPROGRESS",
+                  style: GoogleFonts.poppins(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              ],
+            ),
+          )
+        else if (!showActionGrid)
+          Container(
+            margin: const EdgeInsets.only(bottom: 15),
+          ),
+      ],
+    );
+  }
+
   void _showCompleteDialog(Appointment appointment) {
+    if (appointment.status?.toLowerCase() != 'in_progress') {
+      FlushbarHelper.show(context, "You can only complete an appointment that has been started.");
+      return;
+    }
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final staffId = authProvider.user?.id;
-    final salonId = int.tryParse(authProvider.user?.tenantName ?? '');
+    final salonId = authProvider.user?.salonId ?? int.tryParse(authProvider.user?.tenantName ?? '');
 
     if (staffId == null) return;
 
@@ -950,6 +1499,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
                               "Appointment completed successfully!",
                               isSuccess: true,
                             );
+                            _refreshData();
                           }
                         } catch (e) {
                           if (context.mounted) {
@@ -975,110 +1525,25 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
   Future<void> _handleReschedule(Appointment appointment) async {
     final localContext = context;
     final authProvider = Provider.of<AuthProvider>(localContext, listen: false);
-    final appointmentProvider = Provider.of<AppointmentProvider>(localContext, listen: false);
+    final salonId = authProvider.user?.salonId ?? int.tryParse(authProvider.user?.tenantName ?? '') ?? 0;
+    
+    final bookingState = GuestBookingState(salonId: salonId);
+    bookingState.fromAppointment(appointment);
 
-    final DateTime? pickedDate = await showDatePicker(
-      context: localContext,
-      initialDate: appointment.appointmentAt.toLocal(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0XFFFF0B01),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedDate == null) return;
-    if (!localContext.mounted) return;
-
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: localContext,
-      initialTime: TimeOfDay.fromDateTime(appointment.appointmentAt.toLocal()),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0XFFFF0B01),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedTime == null) return;
-
-    final newDateTime = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
-
-    if (!localContext.mounted) return;
-
-    final TextEditingController reasonController = TextEditingController();
-
-    final String? reason = await showDialog<String>(
-      context: localContext,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("Reschedule Reason"),
-        content: TextField(
-          controller: reasonController,
-          decoration: const InputDecoration(
-            hintText: "Enter reason for rescheduling",
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0XFFFF0B01)),
-            ),
-          ),
-          maxLines: 2,
+    final bool? success = await Navigator.push(
+      localContext,
+      MaterialPageRoute(
+        builder: (context) => GuestSelectDateTimeScreen(
+          bookingState: bookingState,
+          isReschedule: true,
+          rescheduleAppointment: appointment,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
-            child: const Text(
-              "RESCHEDULE",
-              style: TextStyle(color: Color(0XFFFF0B01)),
-            ),
-          ),
-        ],
       ),
     );
 
-    if (reason == null || reason.isEmpty) return;
-
-    if (!localContext.mounted) return;
-
-    try {
-      await appointmentProvider.rescheduleAppointment(
-        appointmentId: appointment.id,
-        newDateTime: newDateTime,
-        reason: reason,
-        salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
-      );
-
-      if (localContext.mounted) {
-        FlushbarHelper.show(localContext, "Appointment rescheduled successfully!", isSuccess: true);
-      }
-    } catch (e) {
-      if (localContext.mounted) {
-        FlushbarHelper.show(localContext, "Error: $e");
-      }
+    if (success == true && localContext.mounted) {
+      FlushbarHelper.show(localContext, "Appointment rescheduled successfully", isSuccess: true);
+      _refreshData();
     }
   }
 
@@ -1126,7 +1591,7 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
       await appointmentProvider.cancelAppointment(
         appointmentId: appointment.id,
         reason: reason,
-        salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
+        salonId: authProvider.user?.salonId ?? int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
       );
 
       if (localContext.mounted) {
@@ -1143,6 +1608,8 @@ class _HomeStaffScreenState extends State<HomeStaffScreen> {
     switch (status?.toLowerCase()) {
       case 'booked':
         return Colors.green;
+      case 'started':
+        return Colors.teal;
       case 'rescheduled':
         return Colors.blue;
       case 'cancelled':
@@ -1328,3 +1795,64 @@ class _LiveAttendanceTimerState extends State<LiveAttendanceTimer> {
     );
   }
 }
+
+class CallNowButton extends StatelessWidget {
+  final String? phoneNumber;
+
+  const CallNowButton({super.key, this.phoneNumber});
+
+  Future<void> _launchCall() async {
+    final trimmed = phoneNumber?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: trimmed,
+    );
+    try {
+      await launchUrl(launchUri);
+    } catch (e) {
+      debugPrint("Error launching dialer: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = phoneNumber?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return InkWell(
+      onTap: _launchCall,
+      borderRadius: BorderRadius.circular(5),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDBFADE),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.call,
+              size: 12,
+              color: Colors.black,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              "Call Now",
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

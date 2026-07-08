@@ -1,3 +1,5 @@
+import 'package:neo_parlour_owner/core/utils/date_time_utils.dart';
+
 class StaffAttendance {
   final int? id;
   final int salonId;
@@ -37,9 +39,9 @@ class StaffAttendance {
       if (id != null) 'id': id,
       'salonId': salonId,
       'staffId': staffId,
-      'attendanceDate': attendanceDate.toIso8601String(),
-      if (checkIn != null) 'checkIn': checkIn!.toIso8601String(),
-      if (checkOut != null) 'checkOut': checkOut!.toIso8601String(),
+      'attendanceDate': DateTimeUtils.toIstIsoString(attendanceDate),
+      if (checkIn != null) 'checkIn': DateTimeUtils.toIstIsoString(checkIn!),
+      if (checkOut != null) 'checkOut': DateTimeUtils.toIstIsoString(checkOut!),
       'status': status,
     };
   }
@@ -91,8 +93,8 @@ class LeaveRequestResponse {
       if (id != null) 'id': id,
       'salonId': salonId,
       'staffId': staffId,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
+      'startDate': DateTimeUtils.toIstIsoString(startDate),
+      'endDate': DateTimeUtils.toIstIsoString(endDate),
       'reason': reason,
       'status': status,
     };

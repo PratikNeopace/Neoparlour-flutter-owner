@@ -8,7 +8,12 @@ import 'package:neo_parlour_owner/core/utils/download_helper.dart';
 import 'package:neo_parlour_owner/modules/pages/email_login_screen.dart';
 import 'package:neo_parlour_owner/widgets/premium_image.dart';
 import 'package:http/http.dart' as http;
-
+import 'dart:io';
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:neo_parlour_owner/core/data/services/search_service.dart';
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -25,6 +30,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _areaController = TextEditingController();
   final TextEditingController _homeChargesController = TextEditingController();
+  final TextEditingController _weekdayDiscountController = TextEditingController();
   String _selectedGender = 'Select Gender';
   String _selectedWeeklyOff = 'NONE';
   String _openingTime = '09:00';
@@ -34,6 +40,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String _salonPhone = '';
   bool _isEditing = false;
   bool _isLoadingData = false;
+
+  String? _mainSalonImageUrl;
+  String? _mainSalonImageBase64;
+  List<dynamic> _salonGalleryImageUrls = [];
+  final List<String> _salonGalleryImagesBase64 = [];
+  String? _selectedDocumentType;
+
+  final SearchService _searchService = SearchService();
+  final FocusNode _cityFocusNode = FocusNode();
+  final FocusNode _areaFocusNode = FocusNode();
+  List<Map<String, dynamic>> _citySuggestions = [];
+  List<Map<String, dynamic>> _areaSuggestions = [];
 
   @override
   void initState() {
@@ -82,20 +100,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (salon != null) {
           _salonNameController.text = salon.salonName ?? '';
           _homeChargesController.text = salon.homeServiceCharges?.toString() ?? '0';
+          _weekdayDiscountController.text = salon.weekdayDiscount?.toString() ?? '0';
           _selectedWeeklyOff = salon.weeklyOffDay ?? 'NONE';
           _openingTime = salon.openingTime ?? '09:00';
           _closingTime = salon.closingTime ?? '21:00';
           _salonCode = salon.salonCode ?? '';
 
           _salonPhone = salon.phone ?? '';
+          _mainSalonImageUrl = salon.imageUrl;
+          _salonGalleryImageUrls = List.from(salon.salonImages ?? []);
+          _mainSalonImageBase64 = null;
+          _salonGalleryImagesBase64.clear();
         } else {
           // Fallback to user data if salon profile fetch fails
           _salonNameController.text = user.salonName ?? '';
           _homeChargesController.text = user.homeServiceCharges?.toString() ?? '0';
+          _weekdayDiscountController.text = '0';
           _selectedWeeklyOff = user.weeklyOffDay ?? 'NONE';
           _openingTime = user.openingTime ?? '09:00';
           _closingTime = user.closingTime ?? '21:00';
           _salonCode = user.salonCode ?? '';
+          _mainSalonImageBase64 = null;
+          _salonGalleryImagesBase64.clear();
         }
       });
       
@@ -161,34 +187,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   void _saveSalonProfile() async {
     final salonProvider = Provider.of<SalonProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final salon = salonProvider.salonProfile;
+    final user = authProvider.user;
     if (salon == null) return;
 
     final Map<String, dynamic> data = {
       'salonId': salon.salonId,
-      'salonName': _salonNameController.text,
-      'salonCode': salon.salonCode,
+      'name': null,
       'phone': salon.phone,
       'email': salon.email,
+      'salonName': _salonNameController.text,
+      'cityName': salon.city,
+      'areaName': salon.area,
       'address': _addressController.text,
-      'area': salon.area,
-      'city': salon.city,
-      'openingTime': _openingTime,
-      'closingTime': _closingTime,
-      'weeklyOffDay': _selectedWeeklyOff,
-      'homeServiceCharges': double.tryParse(_homeChargesController.text) ?? 0,
+      'birthdate': null,
+      'latitude': user?.latitude,
+      'longitude': user?.longitude,
+      'role': null,
       'active': salon.active,
       'createdAt': salon.createdAt,
       'updatedAt': null,
-      'birthdate': null,
-      'gender': null,
-      'holidays': salon.holidays ?? [],
-      'imageBase64': null,
-      'latitude': null,
-      'longitude': null,
-      'name': null,
-      'qrCodeBase64': salon.qrCodeBase64,
-      'role': null,
+      'imageUrl': _mainSalonImageUrl,
+      'qrCodeUrl': salon.qrCodeUrl,
+      'salonCode': salon.salonCode,
+      'openingTime': _openingTime,
+      'closingTime': _closingTime,
+      'homeServiceCharges': double.tryParse(_homeChargesController.text),
+      'weekdayDiscount': double.tryParse(_weekdayDiscountController.text),
+      'weeklyOffDay': _selectedWeeklyOff,
+      'rating': null,
+      'salonImages': _salonGalleryImageUrls,
+      'isFavourite': null,
+      'imageBase64': _mainSalonImageBase64,
+      'salonImagesBase64': _salonGalleryImagesBase64.isNotEmpty ? _salonGalleryImagesBase64 : null,
     };
 
     final success = await salonProvider.updateSalonProfile(data);
@@ -246,6 +278,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _cityController.dispose();
     _areaController.dispose();
     _homeChargesController.dispose();
+    _weekdayDiscountController.dispose();
+    _cityFocusNode.dispose();
+    _areaFocusNode.dispose();
     super.dispose();
   }
 
@@ -520,25 +555,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       ),
                                       const SizedBox(height: 15),
                                        if (authProvider.user?.role == "SALON_OWNER" || authProvider.user?.role == "OWNER")
-                                      Row(
+                                      Column(
                                         children: [
-                                          Expanded(
-                                            child: _buildInputField(
-                                              "assets/Images/RegisterScreen/username.svg",
-                                              "City",
-                                              _cityController,
-                                              readOnly: true,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 15),
-                                          Expanded(
-                                            child: _buildInputField(
-                                              "assets/Images/RegisterScreen/username.svg",
-                                              "Area",
-                                              _areaController,
-                                              readOnly: true,
-                                            ),
-                                          ),
+                                          _buildCityTypeAhead(),
+                                          const SizedBox(height: 15),
+                                          _buildAreaTypeAhead(),
                                         ],
                                       ),
                                        const SizedBox(height: 35),
@@ -594,20 +615,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           ],
                                         ),
                                         const SizedBox(height: 15),
-                                        _buildWeeklyOffDropdown(),
                                         const SizedBox(height: 15),
-                                        
-                                        
-                                        _buildLabeledField(
-                                          "Home Service Charges",
-                                          _buildInputField(
-                                            "assets/Images/HomeScreen/revenue_icon.svg",
-                                            "Home Service Charges",
-                                            _homeChargesController,
-                                            keyboardType: TextInputType.number,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 35),
+                                         _buildWeeklyOffDropdown(),
+                                         const SizedBox(height: 15),
+                                         Row(
+                                           children: [
+                                             Expanded(
+                                               child: _buildLabeledField(
+                                                 "Home Service Charges (₹)",
+                                                 _buildInputField(
+                                                   "assets/Images/HomeScreen/revenue_icon.svg",
+                                                   "Home Service Charges",
+                                                   _homeChargesController,
+                                                   keyboardType: TextInputType.number,
+                                                 ),
+                                               ),
+                                             ),
+                                             const SizedBox(width: 15),
+                                             Expanded(
+                                               child: _buildLabeledField(
+                                                 "Weekday Discount (%)",
+                                                 _buildInputField(
+                                                   "assets/Images/HomeScreen/revenue_icon.svg",
+                                                   "Weekday Discount",
+                                                   _weekdayDiscountController,
+                                                   keyboardType: TextInputType.number,
+                                                 ),
+                                               ),
+                                             ),
+                                           ],
+                                         ),
+                                         const SizedBox(height: 35),
+                                         _buildSalonMediaSection(),
+                                         const SizedBox(height: 35),
                                         _buildSaveButton(Provider.of<SalonProvider>(context).isLoading, _saveSalonProfile),
                                         const SizedBox(height: 35),
                                         _buildQRCodeSection(),
@@ -935,6 +975,467 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+  Widget _buildSalonMediaSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader("Salon Media"),
+        const SizedBox(height: 15),
+        const Text("MAIN SALON IMAGE", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
+        const SizedBox(height: 8),
+        _buildImageUploadBox("MAIN_SALON_IMAGE", _mainSalonImageBase64, _mainSalonImageUrl),
+        const SizedBox(height: 15),
+        const Text("SALON GALLERY", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            ..._salonGalleryImageUrls.map((url) {
+              return Stack(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      image: DecorationImage(
+                        image: NetworkImage(url.toString()),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  if (_isEditing)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _salonGalleryImageUrls.remove(url)),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                          child: const Icon(Icons.close, size: 16, color: Colors.red),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }),
+            ..._salonGalleryImagesBase64.map((base64Image) {
+              return Stack(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      image: DecorationImage(
+                        image: MemoryImage(base64Decode(base64Image)),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  if (_isEditing)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _salonGalleryImagesBase64.remove(base64Image)),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                          child: const Icon(Icons.close, size: 16, color: Colors.red),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }),
+            if (_isEditing)
+               GestureDetector(
+                onTap: () {
+                   _selectedDocumentType = "SALON_GALLERY";
+                   _showUploadOptions(context);
+                },
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0XFFF9F9F9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0XFFE0E0E0), width: 1.2),
+                  ),
+                  child: const Center(child: Icon(Icons.add, color: Colors.grey)),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageUploadBox(String docType, String? currentBase64, String? currentUrl) {
+    bool hasImage = currentBase64 != null || (currentUrl != null && currentUrl.isNotEmpty);
+    ImageProvider? imageProvider;
+    if (currentBase64 != null) {
+      imageProvider = MemoryImage(base64Decode(currentBase64));
+    } else if (currentUrl != null && currentUrl.isNotEmpty) {
+      imageProvider = NetworkImage(currentUrl);
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (!_isEditing) return;
+        _selectedDocumentType = docType;
+        _showUploadOptions(context);
+      },
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          color: const Color(0XFFF9F9F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: hasImage ? const Color(0XFFFF0B01) : const Color(0XFFE0E0E0), width: 1.2),
+          image: hasImage
+              ? DecorationImage(image: imageProvider!, fit: BoxFit.cover)
+              : null,
+        ),
+        child: !hasImage
+            ? const Center(child: Icon(Icons.add_photo_alternate, color: Colors.grey, size: 30))
+            : (_isEditing ? Align(
+                alignment: Alignment.topRight,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (docType == "MAIN_SALON_IMAGE") {
+                        _mainSalonImageBase64 = null;
+                        _mainSalonImageUrl = null;
+                      }
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                    child: const Icon(Icons.close, size: 18, color: Colors.red),
+                  ),
+                ),
+              ) : null),
+      ),
+    );
+  }
+
+  void _showUploadOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 10),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
+              const SizedBox(height: 15),
+              const Text("Select Document Source", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 15),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0XFFF9F9F9), child: Icon(Icons.photo_library, color: Color(0XFFFF0B01))),
+                title: const Text("Upload from Gallery / Files"),
+                subtitle: const Text("Select image or PDF document"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickDocumentFromGallery();
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0XFFF9F9F9), child: Icon(Icons.camera_alt, color: Color(0XFFFF0B01))),
+                title: const Text("Take a Photo"),
+                subtitle: const Text("Capture using device camera"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _takePhoto();
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickDocumentFromGallery() async {
+    try {
+      FilePickerResult? result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png'],
+      );
+      if (result != null) {
+        final file = result.files.single;
+        Uint8List? bytes;
+        try {
+          bytes = await file.readAsBytes();
+        } catch (_) {
+          if (file.path != null && !kIsWeb) {
+            final localFile = File(file.path!);
+            bytes = await localFile.readAsBytes();
+          }
+        }
+
+        if (bytes != null) {
+          _handleUploadedFile(file.name, base64Encode(bytes));
+        } else {
+          if (mounted) FlushbarHelper.show(context, "Could not retrieve file content.");
+        }
+      }
+    } catch (e) {
+      if (mounted) FlushbarHelper.show(context, "Error picking file: $e");
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      if (photo != null) {
+        final bytes = await photo.readAsBytes();
+        _handleUploadedFile(photo.name, base64Encode(bytes));
+      }
+    } catch (e) {
+      if (mounted) FlushbarHelper.show(context, "Error taking photo: $e");
+    }
+  }
+
+  void _handleUploadedFile(String name, String base64Content) {
+    if (_selectedDocumentType == null) return;
+
+    if (_selectedDocumentType == "MAIN_SALON_IMAGE") {
+      setState(() {
+        _mainSalonImageBase64 = base64Content;
+        _mainSalonImageUrl = null;
+      });
+    } else if (_selectedDocumentType == "SALON_GALLERY") {
+      setState(() => _salonGalleryImagesBase64.add(base64Content));
+    }
+  }
+  Widget _buildCityTypeAhead() {
+    final bool effectiveReadOnly = !_isEditing;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _cityController,
+          focusNode: _cityFocusNode,
+          readOnly: effectiveReadOnly,
+          style: TextStyle(
+            color: effectiveReadOnly ? Colors.black87 : Colors.black,
+            fontWeight: effectiveReadOnly ? FontWeight.w400 : FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            prefixIcon: Padding(
+              padding: const EdgeInsets.all(14),
+              child: SvgPicture.asset(
+                "assets/Images/RegisterScreen/username.svg",
+                width: 18,
+                height: 18,
+                colorFilter: ColorFilter.mode(
+                  effectiveReadOnly ? Colors.grey : const Color(0XFFFF0B01),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            suffixIcon: _cityController.text.isNotEmpty && !effectiveReadOnly
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18, color: Color(0XFF8B8989)),
+                    onPressed: () {
+                      setState(() {
+                        _cityController.clear();
+                        _citySuggestions = [];
+                      });
+                    },
+                  )
+                : null,
+            hintText: "City",
+            hintStyle: const TextStyle(color: Color(0XFF8D8D8D), fontSize: 14),
+            filled: !effectiveReadOnly,
+            fillColor: const Color(0XFFF9F9F9).withValues(alpha: 0.5),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(9),
+              borderSide: BorderSide(
+                color: effectiveReadOnly ? const Color(0XFFE0E0E0) : const Color(0XFF909090),
+                width: effectiveReadOnly ? 0.5 : 0.8,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(9),
+              borderSide: const BorderSide(color: Color(0XFFFF0B01), width: 1.2),
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(9)),
+          ),
+          onChanged: (val) async {
+            if (effectiveReadOnly) return;
+            if (val.trim().length >= 2) {
+              final results = await _searchService.searchExternalLocations(val, featureClass: 'city');
+              setState(() {
+                _citySuggestions = results;
+              });
+            } else {
+              setState(() => _citySuggestions = []);
+            }
+          },
+        ),
+        if (_citySuggestions.isNotEmpty && !effectiveReadOnly)
+          Container(
+            margin: const EdgeInsets.only(top: 4, bottom: 8),
+            constraints: const BoxConstraints(maxHeight: 160),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: _citySuggestions.length,
+              itemBuilder: (context, index) {
+                final suggestion = _citySuggestions[index];
+                final name = suggestion['name'] ?? '';
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.location_city, size: 18, color: Color(0XFFFF0B01)),
+                  title: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    setState(() {
+                      _cityController.text = name;
+                      _citySuggestions = [];
+                    });
+                    _areaFocusNode.requestFocus();
+                  },
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAreaTypeAhead() {
+    final bool effectiveReadOnly = !_isEditing;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _areaController,
+          focusNode: _areaFocusNode,
+          readOnly: effectiveReadOnly,
+          style: TextStyle(
+            color: effectiveReadOnly ? Colors.black87 : Colors.black,
+            fontWeight: effectiveReadOnly ? FontWeight.w400 : FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            prefixIcon: Padding(
+              padding: const EdgeInsets.all(14),
+              child: SvgPicture.asset(
+                "assets/Images/RegisterScreen/username.svg",
+                width: 18,
+                height: 18,
+                colorFilter: ColorFilter.mode(
+                  effectiveReadOnly ? Colors.grey : const Color(0XFFFF0B01),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            suffixIcon: _areaController.text.isNotEmpty && !effectiveReadOnly
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18, color: Color(0XFF8B8989)),
+                    onPressed: () {
+                      setState(() {
+                        _areaController.clear();
+                        _areaSuggestions = [];
+                      });
+                    },
+                  )
+                : null,
+            hintText: "Area",
+            hintStyle: const TextStyle(color: Color(0XFF8D8D8D), fontSize: 14),
+            filled: !effectiveReadOnly,
+            fillColor: const Color(0XFFF9F9F9).withValues(alpha: 0.5),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(9),
+              borderSide: BorderSide(
+                color: effectiveReadOnly ? const Color(0XFFE0E0E0) : const Color(0XFF909090),
+                width: effectiveReadOnly ? 0.5 : 0.8,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(9),
+              borderSide: const BorderSide(color: Color(0XFFFF0B01), width: 1.2),
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(9)),
+          ),
+          onChanged: (val) async {
+            if (effectiveReadOnly) return;
+            if (val.trim().length >= 2) {
+              final results = await _searchService.searchExternalLocations(
+                val,
+                featureClass: 'area',
+                cityName: _cityController.text.trim(),
+              );
+              setState(() {
+                _areaSuggestions = results;
+              });
+            } else {
+              setState(() => _areaSuggestions = []);
+            }
+          },
+        ),
+        if (_areaSuggestions.isNotEmpty && !effectiveReadOnly)
+          Container(
+            margin: const EdgeInsets.only(top: 4, bottom: 8),
+            constraints: const BoxConstraints(maxHeight: 160),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: _areaSuggestions.length,
+              itemBuilder: (context, index) {
+                final suggestion = _areaSuggestions[index];
+                final name = suggestion['name'] ?? '';
+                final details = suggestion['city'] ?? '';
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.place, size: 18, color: Color(0XFFFF0B01)),
+                  title: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  subtitle: details.isNotEmpty ? Text(details, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)) : null,
+                  onTap: () {
+                    setState(() {
+                      _areaController.text = name;
+                      _areaSuggestions = [];
+                    });
+                    FocusScope.of(context).unfocus();
+                  },
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 }

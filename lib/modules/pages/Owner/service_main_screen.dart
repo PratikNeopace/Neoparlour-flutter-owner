@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
+import 'package:neo_parlour_owner/widgets/premium_segmented_control.dart';
 
 class ServiceMainScreen extends StatefulWidget {
   const ServiceMainScreen({super.key});
@@ -15,62 +16,71 @@ class ServiceMainScreen extends StatefulWidget {
 }
 
 class _ServiceMainScreenState extends State<ServiceMainScreen> {
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: const Color(0xFFF9F9F9),
+        backgroundColor: const Color(0xFFF8F9FB),
         bottomNavigationBar: const OwnerBottomNavBar(),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            final authProvider = Provider.of<AuthProvider>(context, listen: false);
-            final role = authProvider.user?.role.toUpperCase();
-            if (role == 'SALON_OWNER' || role == 'OWNER') {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const OwnerHomeScreen()),
-                (route) => false,
-              );
-            } else {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const HomeStaffScreen()),
-                (route) => false,
-              );
-            }
-          },
-          backgroundColor: const Color(0XFFFF0B01),
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: SvgPicture.asset("assets/Images/BottomNavigationScreen/home_icon.svg"),
-        ),
-        body: Column(
-          children: [
-            _buildHeader(context),
-            const TabBar(
-              labelColor: Colors.black,
-              unselectedLabelColor: Color(0XFFCBC8C8),
-              indicatorColor: Color(0XFFFF0B01),
-              indicatorWeight: 2,
-              indicatorSize: TabBarIndicatorSize.label,
-              labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              tabs: [
-                Tab(text: "ADD SERVICE"),
-                Tab(text: "SERVICE LIST"),
-              ],
-            ),
-            const Expanded(
-              child: TabBarView(
-                children: [
-                   AddServiceScreen(showAsTab: true, initialTabIndex: 0),
-                   AddServiceScreen(showAsTab: true, initialTabIndex: 1),
-                ],
+        onPressed: () {
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final role = authProvider.user?.role.toUpperCase();
+          if (role == 'SALON_OWNER' || role == 'OWNER') {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const OwnerHomeScreen()),
+              (route) => false,
+            );
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeStaffScreen()),
+              (route) => false,
+            );
+          }
+        },
+        backgroundColor: const Color(0XFFFF0B01),
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: SvgPicture.asset("assets/Images/BottomNavigationScreen/home_icon.svg"),
+      ),
+        body: NestedScrollView(
+          headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(child: _buildHeader(context)),
+              SliverToBoxAdapter(
+                child: Builder(
+                  builder: (context) {
+                    final tabController = DefaultTabController.of(context);
+                    return AnimatedBuilder(
+                      animation: tabController,
+                      builder: (context, _) {
+                        return PremiumSegmentedControl(
+                          selectedIndex: tabController.index,
+                          onValueChanged: (index) {
+                            tabController.animateTo(index);
+                          },
+                          labels: const ["Service List", "Add Service"],
+                          icons: const [Icons.list_alt_rounded, Icons.add_circle_outline_rounded],
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ];
+          },
+          body: const TabBarView(
+            children: [
+               AddServiceScreen(showAsTab: true, initialTabIndex: 1), // Service List
+               AddServiceScreen(showAsTab: true, initialTabIndex: 0), // Add Service
+            ],
+          ),
         ),
       ),
     );
@@ -83,7 +93,7 @@ class _ServiceMainScreenState extends State<ServiceMainScreen> {
         ClipPath(
           clipper: HeaderCurveClipper(),
           child: Container(
-            height: 225,
+            height: 190,
             width: double.infinity,
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -99,9 +109,9 @@ class _ServiceMainScreenState extends State<ServiceMainScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
+                    Colors.black.withValues(alpha: 0.6),
                     Colors.black.withValues(alpha: 0.3),
-                    Colors.transparent,
-                    const Color(0XFFFF3502).withValues(alpha: 0.7),
+                    const Color(0XFFFF3502).withValues(alpha: 0.8),
                   ],
                 ),
               ),
@@ -110,34 +120,53 @@ class _ServiceMainScreenState extends State<ServiceMainScreen> {
         ),
         Positioned(
           top: MediaQuery.of(context).padding.top + 10,
-          left: 20,
+          left: 16,
           child: GestureDetector(
-            onTap: () => Navigator.pop(context),
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
             child: CircleAvatar(
-              backgroundColor: Colors.white.withValues(alpha: 0.4),
-              child: const Icon(Icons.chevron_left, color: Colors.black),
+              backgroundColor: Colors.white.withValues(alpha: 0.5),
+              child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
             ),
           ),
         ),
-        const Positioned(
-          bottom: 30,
-          left: 23,
-          child: Text(
-            "SERVICES",
-            style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w500),
+        Positioned(
+          bottom: 45,
+          left: 25,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Services",
+                style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.7,
+                child: Text(
+                  "Manage your salon services and preview how customers see them.",
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13),
+                  maxLines: 2,
+                ),
+              ),
+            ],
           ),
         ),
         Positioned(
-          bottom: -5,
-          right: 22,
+          bottom: -15,
+          right: 25,
           child: Container(
-            height: 56,
-            width: 56,
+            height: 60,
+            width: 60,
             decoration: BoxDecoration(
               color: const Color(0XFFFF0B01),
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 6)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8)),
               ],
             ),
             child: Center(

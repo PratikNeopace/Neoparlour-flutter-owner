@@ -84,6 +84,15 @@ class ApiClient {
   }
 
   static String handleDioError(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout || 
+        e.type == DioExceptionType.receiveTimeout || 
+        e.type == DioExceptionType.sendTimeout) {
+      return "Connection timed out. Please check your internet connection and try again.";
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return "No internet connection. Please check your network and try again.";
+    }
+
     if (e.response?.statusCode == 500) {
       return "Something went wrong on the server. Please try again later.";
     }

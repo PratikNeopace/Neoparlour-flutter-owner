@@ -37,6 +37,18 @@ class PackagePaginatedResponse {
 class PackageService {
   final ApiClient _apiClient = ApiClient();
 
+  Future<ServicePackage> getPackageById(int id) async {
+    try {
+      final response = await _apiClient.get('packages/$id');
+      if (response.statusCode == 200) {
+        return ServicePackage.fromJson(response.data);
+      }
+      throw Exception('Failed to fetch package details');
+    } catch (e) {
+      throw Exception('Error fetching package details: $e');
+    }
+  }
+
   Future<ServicePackage> addPackage(ServicePackage package) async {
     try {
       final response = await _apiClient.post(
@@ -57,9 +69,11 @@ class PackageService {
       final message = ApiClient.handleDioError(e);
       throw Exception('API Error: $message');
     } catch (e) {
-      throw Exception('Unexpected error: $e');
+      throw Exception('Error adding package: $e');
     }
   }
+
+
 
   Future<PackagePaginatedResponse> fetchPackages({
     int page = 0,
@@ -96,17 +110,20 @@ class PackageService {
         data: package.toJson(),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         if (data is List && data.isNotEmpty) {
           return ServicePackage.fromJson(data[0]);
         }
         return ServicePackage.fromJson(data);
       } else {
-        throw Exception('Failed to update package');
+        throw Exception('Failed to update package: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      final message = ApiClient.handleDioError(e);
+      throw Exception('API Error: $message');
     } catch (e) {
-      rethrow;
+      throw Exception('Error updating package: $e');
     }
   }
 

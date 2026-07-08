@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:neo_parlour_owner/modules/pages/verify_registration_otp_screen.dart';
+import 'package:neo_parlour_owner/core/data/services/search_service.dart';
 
 class OwnerRegisterScreen extends StatefulWidget {
   const OwnerRegisterScreen({super.key});
@@ -23,7 +24,6 @@ class OwnerRegisterScreen extends StatefulWidget {
 
 class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   bool isChecked = false;
-  bool isOwnerTab = true;
 
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
@@ -35,16 +35,15 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   final TextEditingController cityNameController = TextEditingController();
   final TextEditingController areaNameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
 
-  String? _selectedGender = "MALE";
-  DateTime? _selectedBirthdate;
-
-  String? _selectedDocumentType = "AADHAAR_OR_GOVERNMENT_ID";
-  String? _kycFileName;
+  String? _selectedDocumentType;
   final List<KycDocument> _kycDocumentsList = [];
+
+  int _currentStep = 0;
+  String? _mainSalonImageBase64;
+  final List<String> _salonGalleryImagesBase64 = [];
 
   bool _isValidPhone(String phone) {
     return RegExp(r'^[0-9]{10}$').hasMatch(phone);
@@ -57,36 +56,13 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   String openingTime = "09:00";
   String closingTime = "21:00";
 
-  final Map<String, List<String>> _cityAreas = {
-    "Pune": [
-      "Kothrud",
-      "Baner",
-      "Hinjewadi",
-      "Viman Nagar",
-      "Kalyani Nagar",
-      "Hadapsar",
-      "Wakad",
-    ],
-    "Mumbai": [
-      "Andheri",
-      "Bandra",
-      "Borivali",
-      "Dadar",
-      "Powai",
-      "Juhu",
-      "Colaba",
-    ],
-    "Bangalore": [
-      "Indiranagar",
-      "Koramangala",
-      "HSR Layout",
-      "Whitefield",
-      "Jayanagar",
-      "MG Road",
-    ],
-  };
-  String? _selectedCity;
-  String? _selectedArea;
+  final SearchService _searchService = SearchService();
+  final FocusNode cityFocusNode = FocusNode();
+  final FocusNode areaFocusNode = FocusNode();
+  List<Map<String, dynamic>> citySuggestions = [];
+  List<Map<String, dynamic>> areaSuggestions = [];
+  bool isSearchingCity = false;
+  bool isSearchingArea = false;
 
   @override
   void dispose() {
@@ -99,7 +75,524 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     passwordController.dispose();
     confirmPasswordController.dispose();
     addressController.dispose();
+    cityFocusNode.dispose();
+    areaFocusNode.dispose();
     super.dispose();
+  }
+
+  Widget _buildStepperHeader() {
+    final steps = ['PERSONAL', 'SALON', 'KYC', 'OTP'];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20.0),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Connecting Line
+          Positioned(
+            left: 30,
+            right: 30,
+            top: 20,
+            child: Container(
+              height: 2,
+              color: Colors.grey[300],
+            ),
+          ),
+          Positioned(
+             left: 30,
+             right: 30,
+             top: 20,
+             child: Row(
+               children: [
+                  Expanded(
+                    flex: _currentStep,
+                    child: Container(height: 2, color: const Color(0XFFFF0B01)),
+                  ),
+                  Expanded(
+                    flex: 3 - _currentStep,
+                    child: Container(height: 2, color: Colors.transparent),
+                  )
+               ],
+             ),
+          ),
+          // Step circles
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(4, (index) {
+              final isActive = index == _currentStep;
+              final isCompleted = index < _currentStep;
+              return Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isActive || isCompleted ? const Color(0XFFFF0B01) : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isActive || isCompleted ? const Color(0XFFFF0B01) : Colors.grey[300]!,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: isCompleted
+                          ? const Icon(Icons.check, color: Colors.white, size: 20)
+                          : Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                color: isActive ? Colors.white : Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    steps[index],
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isActive || isCompleted ? Colors.black : Colors.grey,
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "OWNER DETAILS",
+          style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
+        const SizedBox(height: 15),
+        _customInputField(
+          "assets/Images/RegisterScreen/username.svg",
+          "Owner Full Name",
+          nameController,
+        ),
+        _customInputField(
+          "assets/Images/RegisterScreen/mail.svg",
+          "Email Address",
+          emailController,
+        ),
+        _customInputField(
+          "assets/Images/RegisterScreen/call.svg",
+          "Mobile Number",
+          mobileController,
+          isVerify: true,
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          "SECURITY",
+          style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
+        const SizedBox(height: 15),
+        Row(
+          children: [
+            Expanded(
+              child: _customInputField(
+                "assets/Images/RegisterScreen/password.svg",
+                "Create a password",
+                passwordController,
+                obscure: !_passwordVisible,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _customInputField(
+                "assets/Images/RegisterScreen/password.svg",
+                "Confirm password",
+                confirmPasswordController,
+                obscure: !_confirmPasswordVisible,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isEmpty || emailController.text.isEmpty || mobileController.text.isEmpty || passwordController.text.isEmpty) {
+                FlushbarHelper.show(context, "Please fill all mandatory fields");
+                return;
+              }
+              if (!_isValidPhone(mobileController.text.trim())) {
+                FlushbarHelper.show(context, "Mobile number must be exactly 10 digits");
+                return;
+              }
+              if (!_isValidGmail(emailController.text.trim())) {
+                FlushbarHelper.show(context, "Please enter a valid Gmail address");
+                return;
+              }
+              if (passwordController.text.length < 6) {
+                FlushbarHelper.show(context, "Password must be at least 6 characters");
+                return;
+              }
+              if (passwordController.text != confirmPasswordController.text) {
+                FlushbarHelper.show(context, "Passwords do not match");
+                return;
+              }
+              setState(() => _currentStep = 1);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0XFFFF0B01),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text("CONTINUE TO SALON INFO", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                const TextSpan(text: "Already have account? ", style: TextStyle(color: Color(0XFF909090))),
+                TextSpan(
+                  text: "Login",
+                  style: const TextStyle(color: Color(0XFFFF0B01), fontWeight: FontWeight.bold),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SalonOwnerLoginScreen())),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSalonStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "SALON INFORMATION",
+          style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
+        const SizedBox(height: 15),
+        _customInputField(
+          "assets/Images/RegisterScreen/username.svg",
+          "Salon Name",
+          salonNameController,
+        ),
+        _buildCityTypeAhead(),
+        const SizedBox(height: 15),
+        _buildAreaTypeAhead(),
+        const SizedBox(height: 15),
+        _customInputField(
+          "assets/Images/RegisterScreen/username.svg",
+          "Address",
+          addressController,
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _timePickerField("Opening Time", openingTime, (t) => setState(() => openingTime = t)),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: _timePickerField("Closing Time", closingTime, (t) => setState(() => closingTime = t)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          "SALON MEDIA",
+          style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
+        const SizedBox(height: 15),
+        const Text("MAIN SALON IMAGE", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
+        const SizedBox(height: 8),
+        _buildImageUploadBox("MAIN_SALON_IMAGE", _mainSalonImageBase64),
+        const SizedBox(height: 15),
+        const Text("SALON GALLERY (MIN 2 / MAX 5)", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            ..._salonGalleryImagesBase64.map((base64Image) {
+              return Stack(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      image: DecorationImage(
+                        image: MemoryImage(base64Decode(base64Image)),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _salonGalleryImagesBase64.remove(base64Image)),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: const Icon(Icons.close, size: 16, color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
+            if (_salonGalleryImagesBase64.length < 5)
+               GestureDetector(
+                onTap: () {
+                   _selectedDocumentType = "SALON_GALLERY";
+                   _showUploadOptions(context);
+                },
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: const Color(0XFFF9F9F9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0XFFE0E0E0), width: 1.2),
+                  ),
+                  child: const Center(child: Icon(Icons.add, color: Colors.grey)),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 25),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _currentStep = 0),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: const BorderSide(color: Color(0XFFE0E0E0)),
+                ),
+                child: const Text("BACK", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (salonNameController.text.isEmpty || cityNameController.text.isEmpty || areaNameController.text.isEmpty) {
+                     FlushbarHelper.show(context, "Please fill Salon Name, City, and Area");
+                     return;
+                  }
+                  if (_mainSalonImageBase64 == null) {
+                     FlushbarHelper.show(context, "Please upload a Main Salon Image");
+                     return;
+                  }
+                  if (_salonGalleryImagesBase64.length < 2) {
+                     FlushbarHelper.show(context, "Please upload at least 2 Gallery Images");
+                     return;
+                  }
+                  setState(() => _currentStep = 2);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0XFFFF0B01),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("CONTINUE TO KYC", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageUploadBox(String docType, String? currentBase64) {
+    return GestureDetector(
+      onTap: () {
+        _selectedDocumentType = docType;
+        _showUploadOptions(context);
+      },
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          color: const Color(0XFFF9F9F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: currentBase64 != null ? const Color(0XFFFF0B01) : const Color(0XFFE0E0E0), width: 1.2),
+          image: currentBase64 != null
+              ? DecorationImage(image: MemoryImage(base64Decode(currentBase64)), fit: BoxFit.cover)
+              : null,
+        ),
+        child: currentBase64 == null
+            ? const Center(child: Icon(Icons.add_photo_alternate, color: Colors.grey, size: 30))
+            : Align(
+                alignment: Alignment.topRight,
+                child: GestureDetector(
+                  onTap: () => setState(() => _mainSalonImageBase64 = null),
+                  child: Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                    child: const Icon(Icons.close, size: 18, color: Colors.red),
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildKycBox(String title, String docType) {
+    final docIndex = _kycDocumentsList.indexWhere((doc) => doc.documentType == docType);
+    final hasDoc = docIndex != -1;
+    final doc = hasDoc ? _kycDocumentsList[docIndex] : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0XFFF9F9F9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: hasDoc ? Colors.green : const Color(0XFFE0E0E0), width: 1.2),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              if (hasDoc) const Icon(Icons.check_circle, color: Colors.green, size: 16),
+            ],
+          ),
+          const SizedBox(height: 4),
+          if (!hasDoc)
+            const Text("NOT UPLOADED", style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+          if (hasDoc)
+            Text(doc!.fileName, style: const TextStyle(color: Colors.grey, fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                if (hasDoc) {
+                   setState(() => _kycDocumentsList.removeAt(docIndex));
+                } else {
+                   _selectedDocumentType = docType;
+                   _showUploadOptions(context);
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: hasDoc ? Colors.red.withValues(alpha:0.3) : Colors.grey.withValues(alpha:0.3)),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text(hasDoc ? "REMOVE" : "UPLOAD FILE", style: TextStyle(color: hasDoc ? Colors.red : Colors.black, fontSize: 10, fontWeight: FontWeight.bold)),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKycStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "KYC VERIFICATION",
+              style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: const Color(0XFFFF0B01).withValues(alpha:0.1), borderRadius: BorderRadius.circular(4)),
+              child: const Text("AT LEAST 1 DOCUMENT REQUIRED", style: TextStyle(color: Color(0XFFFF0B01), fontSize: 9, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 15),
+        const Text("Please upload at least one valid identity or business document for KYC verification purpose. Max 2MB. Accepted formats: Image/PDF.", style: TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 20),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 1.4,
+          mainAxisSpacing: 15,
+          crossAxisSpacing: 15,
+          children: [
+            _buildKycBox("Aadhaar / Government ID", "AADHAAR_OR_GOVERNMENT_ID"),
+            _buildKycBox("PAN Card", "PAN_CARD"),
+            _buildKycBox("Shop & Est. License", "SHOP_ESTABLISHMENT_LICENSE"),
+            _buildKycBox("Bank Account Proof", "BANK_ACCOUNT_PROOF"),
+          ],
+        ),
+        const SizedBox(height: 30),
+        Row(
+          children: [
+            Checkbox(
+              value: isChecked,
+              activeColor: const Color(0XFFFF0B01),
+              onChanged: (v) => setState(() => isChecked = v!),
+            ),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Color(0XFF909090), fontSize: 12, fontFamily: 'Inter'),
+                  children: [
+                    const TextSpan(text: "I agree with the "),
+                    TextSpan(
+                      text: "Terms & Conditions",
+                      style: const TextStyle(color: Color(0XFFFF0B01), fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                      recognizer: TapGestureRecognizer()..onTap = openOwnerTerms,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 25),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _currentStep = 1),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  side: const BorderSide(color: Color(0XFFE0E0E0)),
+                ),
+                child: const Text("BACK", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: _submitRegistration,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0XFFFF0B01),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("SEND OTP", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -120,7 +613,6 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                 fit: BoxFit.cover,
               ),
             ),
-
             Align(
               alignment: Alignment.bottomCenter,
               child: SafeArea(
@@ -128,369 +620,44 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                 child: Container(
                   width: double.infinity,
                   margin: EdgeInsets.symmetric(horizontal: w * 0.05),
-                  padding: EdgeInsets.fromLTRB(
-                    w * 0.06,
-                    h * 0.03,
-                    w * 0.06,
-                    h * 0.03,
-                  ),
+                  padding: EdgeInsets.fromLTRB(w * 0.06, h * 0.03, w * 0.06, h * 0.03),
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(35),
-                      topRight: Radius.circular(35),
-                    ),
+                    borderRadius: BorderRadius.only(topLeft: Radius.circular(35), topRight: Radius.circular(35)),
                   ),
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        /// TABS
                         Row(
                           children: [
-                            _buildTabItem("OWNER", true, () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const OwnerRegisterScreen(),
-                                ),
-                              );
-                            }),
-                            // SizedBox(width: w * 0.08),
-                            // _buildTabItem(
-                            //   "EMPLOYEE",
-                            //   false,
-                            //   () {
-                            //     Navigator.pushReplacement(
-                            //       context,
-                            //       MaterialPageRoute(
-                            //         builder: (_) => const StaffRegisterScreen(),
-                            //       ),
-                            //     );
-                            //   },
-                            // ),
-                          ],
-                        ),
-
-                        SizedBox(height: h * 0.03),
-
-                        _customInputField(
-                          "assets/Images/RegisterScreen/username.svg",
-                          "User Name",
-                          nameController,
-                        ),
-                        _customInputField(
-                          "assets/Images/RegisterScreen/mail.svg",
-                          "Email Id",
-                          emailController,
-                        ),
-
-                        _customInputField(
-                          "assets/Images/RegisterScreen/call.svg",
-                          "Mobile Number",
-                          mobileController,
-                          isVerify: true,
-                        ),
-                        _customInputField(
-                          "assets/Images/RegisterScreen/username.svg",
-                          "Salon Name",
-                          salonNameController,
-                        ),
-
-                        _dropdownField(
-                          "City Name",
-                          _selectedCity,
-                          _cityAreas.keys.toList(),
-                          (val) {
-                            setState(() {
-                              _selectedCity = val;
-                              _selectedArea = null;
-                              cityNameController.text = val ?? "";
-                            });
-                          },
-                        ),
-
-                        _dropdownField(
-                          "Area Name",
-                          _selectedArea,
-                          _selectedCity == null
-                              ? []
-                              : _cityAreas[_selectedCity]!,
-                          (val) {
-                            setState(() {
-                              _selectedArea = val;
-                              areaNameController.text = val ?? "";
-                            });
-                          },
-                        ),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _timePickerField(
-                                "Opening Time",
-                                openingTime,
-                                (t) => setState(() => openingTime = t),
-                              ),
+                            GestureDetector(
+                              onTap: () {
+                                if (_currentStep > 0) {
+                                  setState(() => _currentStep--);
+                                } else {
+                                  Navigator.pop(context);
+                                }
+                              },
+                              child: const Icon(Icons.arrow_back),
                             ),
                             const SizedBox(width: 15),
-                            Expanded(
-                              child: _timePickerField(
-                                "Closing Time",
-                                closingTime,
-                                (t) => setState(() => closingTime = t),
-                              ),
+                            const Text(
+                              "OWNER & SALON REGISTRATION",
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 14),
-
-                        _datePickerField(
-                          "Birthdate",
-                          _selectedBirthdate != null
-                              ? "${_selectedBirthdate!.year}-${_selectedBirthdate!.month.toString().padLeft(2, '0')}-${_selectedBirthdate!.day.toString().padLeft(2, '0')}"
-                              : "Select Birthdate",
-                          (date) => setState(() => _selectedBirthdate = date),
+                        _buildStepperHeader(),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: _currentStep == 0
+                              ? _buildPersonalStep()
+                              : _currentStep == 1
+                                  ? _buildSalonStep()
+                                  : _buildKycStep(),
                         ),
-
-                        _dropdownField(
-                          "Gender",
-                          _selectedGender,
-                          ["MALE", "FEMALE", "OTHER"],
-                          (val) {
-                            setState(() {
-                              _selectedGender = val;
-                            });
-                          },
-                        ),
-
-                        _customInputField(
-                          "assets/Images/RegisterScreen/username.svg",
-                          "Address",
-                          addressController,
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        _dropdownField(
-                          "KYC Document Type",
-                          _selectedDocumentType,
-                          [
-                            "AADHAAR_OR_GOVERNMENT_ID",
-                            "PAN_CARD",
-                            "SHOP_ESTABLISHMENT_LICENSE",
-                            "BANK_ACCOUNT_PROOF",
-                          ],
-                          (val) {
-                            setState(() {
-                              _selectedDocumentType = val;
-                            });
-                          },
-                        ),
-
-                        _documentPickerField(),
-
-                        if (_kycDocumentsList.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          const Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Uploaded Documents:",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          ..._kycDocumentsList.map(
-                            (doc) => Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0XFFF9F9F9),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0XFFE0E0E0),
-                                  width: 1.2,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.description,
-                                    color: Color(0XFFFF0B01),
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          doc.documentType.replaceAll('_', ' '),
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          doc.fileName,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[600],
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                      size: 20,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _kycDocumentsList.remove(doc);
-                                        if (_kycFileName == doc.fileName) {
-                                          _kycFileName = null;
-                                          
-                                        }
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: 14),
-
-                        _customInputField(
-                          "assets/Images/RegisterScreen/password.svg",
-                          "Create a password",
-                          passwordController,
-                          obscure: !_passwordVisible,
-                        ),
-                        _customInputField(
-                          "assets/Images/RegisterScreen/password.svg",
-                          "Confirm password",
-                          confirmPasswordController,
-                          obscure: !_confirmPasswordVisible,
-                        ),
-
-                        SizedBox(height: h * 0.01),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: h * 0.065,
-                          child: ElevatedButton(
-                            onPressed: _handleRegister,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0XFFFF0B01),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              "REGISTER",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: isChecked,
-                              activeColor: const Color(0XFFFF0B01),
-                              onChanged: (v) => setState(() => isChecked = v!),
-                            ),
-                            Expanded(
-                              child: RichText(
-                                text: TextSpan(
-                                  style: const TextStyle(
-                                    color: Color(0XFF909090),
-                                    fontSize: 12,
-                                    fontFamily: 'Inter',
-                                  ),
-                                  children: [
-                                    const TextSpan(text: "I agree to the "),
-                                    TextSpan(
-                                      text: "Terms & Conditions",
-                                      style: const TextStyle(
-                                        color: Color(0XFFFF0B01),
-                                        fontWeight: FontWeight.bold,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                      recognizer: TapGestureRecognizer()
-                                        ..onTap = openOwnerTerms,
-                                    ),
-                                    const TextSpan(text: " and "),
-                                    TextSpan(
-                                      text: "Privacy Policy",
-                                      style: const TextStyle(
-                                        color: Color(0XFFFF0B01),
-                                        fontWeight: FontWeight.bold,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                      recognizer: TapGestureRecognizer()
-                                        ..onTap = openOwnerPrivacy,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text.rich(
-                            TextSpan(
-                              children: [
-                                const TextSpan(
-                                  text: "Already have account? ",
-                                  style: TextStyle(color: Color(0XFF909090)),
-                                ),
-                                TextSpan(
-                                  text: "Login",
-                                  style: const TextStyle(
-                                    color: Color(0XFFFF0B01),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const SalonOwnerLoginScreen(),
-                                        ),
-                                      );
-                                    },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
                       ],
                     ),
                   ),
@@ -504,79 +671,27 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
   }
 
   Future<void> openOwnerTerms() async {
-    final Uri url = Uri.parse(
-      'https://www.neoparlour.com/owner/terms-and-conditions',
-    );
+    final Uri url = Uri.parse('https://www.neoparlour.com/owner/terms-and-conditions');
     if (await canLaunchUrl(url)) {
-      await launchUrl(
-        url,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 
   Future<void> openOwnerPrivacy() async {
-    final Uri url = Uri.parse(
-      'https://www.neoparlour.com/owner/privacy-policy',
-    );
+    final Uri url = Uri.parse('https://www.neoparlour.com/owner/privacy-policy');
     if (await canLaunchUrl(url)) {
-      await launchUrl(
-        url,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 
-  void _handleRegister() async {
-    String phone = mobileController.text.trim();
-    String email = emailController.text.trim();
-    String password = passwordController.text.trim();
-    String confirmPassword = confirmPasswordController.text.trim();
-
-    if (nameController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        mobileController.text.isEmpty ||
-        passwordController.text.isEmpty) {
-      FlushbarHelper.show(context, "Please fill all mandatory fields");
-      return;
-    }
-
-    // 📱 Phone validation
-    if (!_isValidPhone(phone)) {
-      FlushbarHelper.show(context, "Mobile number must be exactly 10 digits");
-      return;
-    }
-
-    // 📧 Gmail validation
-    if (!_isValidGmail(email)) {
-      FlushbarHelper.show(context, "Please enter a valid Gmail address");
-      return;
-    }
-
-    // 🔑 Password length
-    if (password.length < 6) {
-      FlushbarHelper.show(context, "Password must be at least 6 characters");
-      return;
-    }
-
-    if (password != confirmPassword) {
-      FlushbarHelper.show(context, "Passwords do not match");
-      return;
-    }
-
+  void _submitRegistration() async {
     if (!isChecked) {
       FlushbarHelper.show(context, "Please accept Terms of Use");
       return;
     }
 
-    final hasAadhaar = _kycDocumentsList.any(
-      (doc) => doc.documentType == "AADHAAR_OR_GOVERNMENT_ID",
-    );
-    if (!hasAadhaar) {
-      FlushbarHelper.show(
-        context,
-        "Aadhaar Card is compulsory. Please upload it.",
-      );
+    if (_kycDocumentsList.isEmpty) {
+      FlushbarHelper.show(context, "Please upload at least 1 KYC document.");
       return;
     }
 
@@ -590,10 +705,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         if (kIsWeb) {
           vapidKey = "BIdYnU3B7lY_U7wKzUv3Qv7Jv_Z_qX_L7_X_z_v_x_Z_Y";
         }
-        fcmToken = await FirebaseMessaging.instance.getToken(
-          vapidKey: vapidKey,
-        );
-        debugPrint("OWNER REG FCM TOKEN (RAW) => $fcmToken");
+        fcmToken = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
       } catch (e) {
         debugPrint("Non-fatal error getting FCM token: $e");
       }
@@ -609,15 +721,11 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         openingTime: openingTime.split(':').length == 2 ? "$openingTime:00" : openingTime,
         closingTime: closingTime.split(':').length == 2 ? "$closingTime:00" : closingTime,
         fcmToken: fcmToken,
-        address: addressController.text.trim().isEmpty
-            ? null
-            : addressController.text.trim(),
-        birthdate: _selectedBirthdate != null
-            ? "${_selectedBirthdate!.year}-${_selectedBirthdate!.month.toString().padLeft(2, '0')}-${_selectedBirthdate!.day.toString().padLeft(2, '0')}"
-            : null,
-        latitude: 18.5074, // Default placeholder
-        longitude: 73.8077, // Default placeholder
-        gender: _selectedGender,
+        address: addressController.text.trim().isEmpty ? null : addressController.text.trim(),
+        imageBase64: _mainSalonImageBase64,
+        salonImagesBase64: _salonGalleryImagesBase64,
+        latitude: 18.5074,
+        longitude: 73.8077,
         homeServiceCharges: null,
         kycDocuments: _kycDocumentsList,
         tncAccepted: isChecked,
@@ -629,62 +737,13 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => VerifyRegistrationOtpScreen(
-            registrationRequest: registrationData,
-          ),
+          builder: (_) => VerifyRegistrationOtpScreen(registrationRequest: registrationData),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       FlushbarHelper.show(context, "Error: ${e.toString()}");
     }
-  }
-
-  Widget _documentPickerField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Upload Document",
-          style: TextStyle(fontSize: 12, color: Color(0XFF909090)),
-        ),
-        const SizedBox(height: 5),
-        InkWell(
-          onTap: () => _showUploadOptions(context),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-            decoration: BoxDecoration(
-              color: const Color(0XFFF9F9F9),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0XFFE0E0E0), width: 1.2),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    _kycFileName ?? "Select PDF or Image",
-                    style: TextStyle(
-                      color: _kycFileName != null
-                          ? Colors.black
-                          : const Color(0XFFADADAD),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const Icon(
-                  Icons.upload_file,
-                  color: Color(0XFF909090),
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   Future<void> _pickDocumentFromGallery() async {
@@ -706,71 +765,59 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         }
 
         if (bytes != null) {
-          _addKycDocument(file.name, base64Encode(bytes));
+          _handleUploadedFile(file.name, base64Encode(bytes));
         } else {
-          if (mounted) {
-            FlushbarHelper.show(context, "Could not retrieve file content.");
-          }
+          if (mounted) FlushbarHelper.show(context, "Could not retrieve file content.");
         }
       }
     } catch (e) {
-      if (mounted) {
-        FlushbarHelper.show(context, "Error picking file: $e");
-      }
+      if (mounted) FlushbarHelper.show(context, "Error picking file: $e");
     }
   }
 
   Future<void> _takePhoto() async {
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 85,
-      );
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
       if (photo != null) {
         final bytes = await photo.readAsBytes();
-        _addKycDocument(photo.name, base64Encode(bytes));
+        _handleUploadedFile(photo.name, base64Encode(bytes));
       }
     } catch (e) {
-      if (mounted) {
-        FlushbarHelper.show(context, "Error taking photo: $e");
-      }
+      if (mounted) FlushbarHelper.show(context, "Error taking photo: $e");
     }
   }
 
-  void _addKycDocument(String name, String base64Content) {
+  void _handleUploadedFile(String name, String base64Content) {
     if (_selectedDocumentType == null) return;
 
-    final newDoc = KycDocument(
-      documentType: _selectedDocumentType!,
-      fileName: name,
-      contentType: name.toLowerCase().endsWith('.pdf')
-          ? 'application/pdf'
-          : 'image/jpeg',
-      fileBase64: base64Content,
-    );
-
-    setState(() {
-      final existingIndex = _kycDocumentsList.indexWhere(
-        (doc) => doc.documentType == _selectedDocumentType,
+    if (_selectedDocumentType == "MAIN_SALON_IMAGE") {
+      setState(() => _mainSalonImageBase64 = base64Content);
+    } else if (_selectedDocumentType == "SALON_GALLERY") {
+      setState(() => _salonGalleryImagesBase64.add(base64Content));
+    } else {
+      final newDoc = KycDocument(
+        documentType: _selectedDocumentType!,
+        fileName: name,
+        contentType: name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+        fileBase64: base64Content,
       );
-      if (existingIndex != -1) {
-        _kycDocumentsList[existingIndex] = newDoc;
-      } else {
-        _kycDocumentsList.add(newDoc);
-      }
-      _kycFileName = name;
-    });
+      setState(() {
+        final existingIndex = _kycDocumentsList.indexWhere((doc) => doc.documentType == _selectedDocumentType);
+        if (existingIndex != -1) {
+          _kycDocumentsList[existingIndex] = newDoc;
+        } else {
+          _kycDocumentsList.add(newDoc);
+        }
+      });
+    }
   }
 
   void _showUploadOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
       ),
       builder: (BuildContext context) {
         return SafeArea(
@@ -778,25 +825,12 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 10),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
               const SizedBox(height: 15),
-              const Text(
-                "Select Document Source",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              const Text("Select Document Source", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 15),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0XFFF9F9F9),
-                  child: Icon(Icons.photo_library, color: Color(0XFFFF0B01)),
-                ),
+                leading: const CircleAvatar(backgroundColor: Color(0XFFF9F9F9), child: Icon(Icons.photo_library, color: Color(0XFFFF0B01))),
                 title: const Text("Upload from Gallery / Files"),
                 subtitle: const Text("Select image or PDF document"),
                 onTap: () {
@@ -806,10 +840,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
               ),
               const Divider(height: 1),
               ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: Color(0XFFF9F9F9),
-                  child: Icon(Icons.camera_alt, color: Color(0XFFFF0B01)),
-                ),
+                leading: const CircleAvatar(backgroundColor: Color(0XFFF9F9F9), child: Icon(Icons.camera_alt, color: Color(0XFFFF0B01))),
                 title: const Text("Take a Photo"),
                 subtitle: const Text("Capture using device camera"),
                 onTap: () {
@@ -825,81 +856,20 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     );
   }
 
-  Widget _datePickerField(
-    String label,
-    String currentValue,
-    Function(DateTime) onDateSelected,
-  ) {
+  Widget _timePickerField(String label, String currentTime, Function(String) onTimeSelected) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0XFF909090)),
-        ),
-        const SizedBox(height: 5),
-        InkWell(
-          onTap: () async {
-            final DateTime? picked = await showDatePicker(
-              context: context,
-              initialDate: _selectedBirthdate ?? DateTime.now(),
-              firstDate: DateTime(1900),
-              lastDate: DateTime.now(),
-            );
-            if (picked != null) {
-              onDateSelected(picked);
-            }
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-            decoration: BoxDecoration(
-              color: const Color(0XFFF9F9F9),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0XFFE0E0E0), width: 1.2),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(currentValue, style: const TextStyle(color: Colors.black)),
-                const Icon(
-                  Icons.calendar_today,
-                  color: Color(0XFF909090),
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _timePickerField(
-    String label,
-    String currentTime,
-    Function(String) onTimeSelected,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Color(0XFF909090)),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Color(0XFF909090))),
         const SizedBox(height: 5),
         InkWell(
           onTap: () async {
             final TimeOfDay? picked = await showTimePicker(
               context: context,
-              initialTime: TimeOfDay(
-                hour: int.parse(currentTime.split(":")[0]),
-                minute: int.parse(currentTime.split(":")[1]),
-              ),
+              initialTime: TimeOfDay(hour: int.parse(currentTime.split(":")[0]), minute: int.parse(currentTime.split(":")[1])),
             );
             if (picked != null) {
-              final formattedTime =
-                  "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+              final formattedTime = "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
               onTimeSelected(formattedTime);
             }
           },
@@ -914,11 +884,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(currentTime, style: const TextStyle(color: Colors.black)),
-                const Icon(
-                  Icons.access_time,
-                  color: Color(0XFF909090),
-                  size: 18,
-                ),
+                const Icon(Icons.access_time, color: Color(0XFF909090), size: 18),
               ],
             ),
           ),
@@ -927,37 +893,7 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
     );
   }
 
-  Widget _buildTabItem(String title, bool isActive, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: isActive ? Colors.black : const Color(0XFFADADAD),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Container(
-            height: 3,
-            width: title.length * 9,
-            color: isActive ? const Color(0XFFFF0B01) : Colors.transparent,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _customInputField(
-    String icon,
-    String hint,
-    TextEditingController controller, {
-    bool obscure = false,
-    bool isVerify = false,
-  }) {
+  Widget _customInputField(String icon, String hint, TextEditingController controller, {bool obscure = false, bool isVerify = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       child: TextField(
@@ -966,25 +902,12 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
         decoration: InputDecoration(
           prefixIcon: Padding(
             padding: const EdgeInsets.all(12),
-            child: SvgPicture.asset(
-              icon,
-              colorFilter: const ColorFilter.mode(
-                Color(0XFF909090),
-                BlendMode.srcIn,
-              ),
-            ),
+            child: SvgPicture.asset(icon, colorFilter: const ColorFilter.mode(Color(0XFF909090), BlendMode.srcIn)),
           ),
-          suffixIcon:
-              (hint == "Create a password" || hint == "Confirm password")
+          suffixIcon: (hint == "Create a password" || hint == "Confirm password")
               ? IconButton(
                   icon: Icon(
-                    hint == "Create a password"
-                        ? (_passwordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off)
-                        : (_confirmPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off),
+                    hint == "Create a password" ? (_passwordVisible ? Icons.visibility : Icons.visibility_off) : (_confirmPasswordVisible ? Icons.visibility : Icons.visibility_off),
                     color: const Color(0XFF909090),
                   ),
                   onPressed: () {
@@ -999,61 +922,189 @@ class _OwnerRegisterScreenState extends State<OwnerRegisterScreen> {
                 )
               : null,
           hintText: hint,
-          hintStyle: const TextStyle(color: Color(0XFFADADAD)),
+          hintStyle: const TextStyle(color: Color(0XFFADADAD), fontSize: 13),
           filled: true,
           fillColor: const Color(0XFFF9F9F9),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0XFFE0E0E0), width: 1.2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0XFFFF0B01), width: 1.6),
-          ),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0XFFE0E0E0), width: 1.2)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0XFFFF0B01), width: 1.6)),
         ),
       ),
     );
   }
 
-  Widget _dropdownField(
-    String hint,
-    String? value,
-    List<String> items,
-    Function(String?) onChanged,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField<String>(
-        isExpanded: true,
-        initialValue: value,
-        items: items
-            .map(
-              (e) => DropdownMenuItem(
-                value: e,
-                child: Text(e, overflow: TextOverflow.ellipsis),
-              ),
-            )
-            .toList(),
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          prefixIcon: const Padding(
-            padding: EdgeInsets.all(12),
-            child: Icon(Icons.location_city, color: Color(0XFF909090)),
+  Widget _buildCityTypeAhead() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: cityNameController,
+          focusNode: cityFocusNode,
+          decoration: InputDecoration(
+            prefixIcon: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(Icons.location_city, color: Color(0XFF909090)),
+            ),
+            suffixIcon: cityNameController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18, color: Color(0XFF8B8989)),
+                    onPressed: () {
+                      setState(() {
+                        cityNameController.clear();
+                        citySuggestions = [];
+                      });
+                    },
+                  )
+                : null,
+            hintText: "City Name (e.g. Pune)",
+            hintStyle: const TextStyle(color: Color(0XFFADADAD), fontSize: 13),
+            filled: true,
+            fillColor: const Color(0XFFF9F9F9),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0XFFE0E0E0), width: 1.2)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0XFFFF0B01), width: 1.6)),
           ),
-          hintText: hint,
-          hintStyle: const TextStyle(color: Color(0XFFADADAD)),
-          filled: true,
-          fillColor: const Color(0XFFF9F9F9),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0XFFE0E0E0), width: 1.2),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0XFFFF0B01), width: 1.6),
-          ),
+          onChanged: (val) async {
+            if (val.trim().length >= 2) {
+              setState(() => isSearchingCity = true);
+              final results = await _searchService.searchExternalLocations(val, featureClass: 'city');
+              setState(() {
+                citySuggestions = results;
+                isSearchingCity = false;
+              });
+            } else {
+              setState(() => citySuggestions = []);
+            }
+          },
         ),
-      ),
+        if (citySuggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4, bottom: 8),
+            constraints: const BoxConstraints(maxHeight: 160),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: citySuggestions.length,
+              itemBuilder: (context, index) {
+                final suggestion = citySuggestions[index];
+                final name = suggestion['name'] ?? '';
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.location_city, size: 18, color: Color(0XFFFF0B01)),
+                  title: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    setState(() {
+                      cityNameController.text = name;
+                      citySuggestions = [];
+                    });
+                    areaFocusNode.requestFocus();
+                  },
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAreaTypeAhead() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: areaNameController,
+          focusNode: areaFocusNode,
+          decoration: InputDecoration(
+            prefixIcon: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(Icons.location_on, color: Color(0XFF909090)),
+            ),
+            suffixIcon: areaNameController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18, color: Color(0XFF8B8989)),
+                    onPressed: () {
+                      setState(() {
+                        areaNameController.clear();
+                        areaSuggestions = [];
+                      });
+                    },
+                  )
+                : null,
+            hintText: "Area Name (e.g. Kothrud)",
+            hintStyle: const TextStyle(color: Color(0XFFADADAD), fontSize: 13),
+            filled: true,
+            fillColor: const Color(0XFFF9F9F9),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0XFFE0E0E0), width: 1.2)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0XFFFF0B01), width: 1.6)),
+          ),
+          onChanged: (val) async {
+            if (val.trim().length >= 2) {
+              setState(() => isSearchingArea = true);
+              final results = await _searchService.searchExternalLocations(
+                val,
+                featureClass: 'area',
+                cityName: cityNameController.text.trim(),
+              );
+              setState(() {
+                areaSuggestions = results;
+                isSearchingArea = false;
+              });
+            } else {
+              setState(() => areaSuggestions = []);
+            }
+          },
+        ),
+        if (areaSuggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4, bottom: 8),
+            constraints: const BoxConstraints(maxHeight: 160),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: areaSuggestions.length,
+              itemBuilder: (context, index) {
+                final suggestion = areaSuggestions[index];
+                final name = suggestion['name'] ?? '';
+                final details = suggestion['city'] ?? '';
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.place, size: 18, color: Color(0XFFFF0B01)),
+                  title: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  subtitle: details.isNotEmpty ? Text(details, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)) : null,
+                  onTap: () {
+                    setState(() {
+                      areaNameController.text = name;
+                      areaSuggestions = [];
+                    });
+                    FocusScope.of(context).unfocus();
+                  },
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 }

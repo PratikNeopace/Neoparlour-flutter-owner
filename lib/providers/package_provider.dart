@@ -8,11 +8,20 @@ class PackageProvider with ChangeNotifier {
   bool _isLoading = false;
   int _currentPage = 0;
   int _totalPages = 0;
+  String? _errorMessage;
+  ServicePackage? _editingPackage;
 
   List<ServicePackage> get packages => _packages;
   bool get isLoading => _isLoading;
   int get currentPage => _currentPage;
   int get totalPages => _totalPages;
+  String? get errorMessage => _errorMessage;
+  ServicePackage? get editingPackage => _editingPackage;
+
+  void setEditingPackage(ServicePackage? package) {
+    _editingPackage = package;
+    notifyListeners();
+  }
 
   Future<void> fetchPackages({
     bool refresh = false,
@@ -51,15 +60,34 @@ class PackageProvider with ChangeNotifier {
     await fetchPackages(size: size, keyword: keyword);
   }
 
+  Future<ServicePackage?> getPackageById(int id) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final package = await _packageService.getPackageById(id);
+      _isLoading = false;
+      notifyListeners();
+      return package;
+    } catch (e) {
+      _errorMessage = e.toString().replaceFirst('Exception: API Error: ', '').replaceFirst('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<bool> addPackage(ServicePackage package) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     try {
       final newPackage = await _packageService.addPackage(package);
       _packages.add(newPackage);
-      notifyListeners();
       return true;
     } catch (e) {
+      _errorMessage = e.toString().replaceFirst('Exception: API Error: ', '').replaceFirst('Exception: ', '');
       debugPrint('Error adding package: $e');
       return false;
     } finally {
@@ -70,6 +98,7 @@ class PackageProvider with ChangeNotifier {
 
   Future<bool> updatePackage(ServicePackage package) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     try {
       final updatedPackage = await _packageService.updatePackage(package);
@@ -77,9 +106,9 @@ class PackageProvider with ChangeNotifier {
       if (index != -1) {
         _packages[index] = updatedPackage;
       }
-      notifyListeners();
       return true;
     } catch (e) {
+      _errorMessage = e.toString().replaceFirst('Exception: API Error: ', '').replaceFirst('Exception: ', '');
       debugPrint('Error updating package: $e');
       return false;
     } finally {

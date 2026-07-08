@@ -21,7 +21,7 @@ class _StaffNotificationScreenState extends State<StaffNotificationScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final salonId = int.tryParse(auth.user?.tenantName ?? '') ?? 0;
+      final salonId = auth.user?.salonId ?? int.tryParse(auth.user?.tenantName ?? '') ?? 0;
       Provider.of<NotificationProvider>(context, listen: false)
           .fetchNotifications(salonId: salonId, refresh: true);
     });
@@ -98,7 +98,7 @@ class _StaffNotificationScreenState extends State<StaffNotificationScreen> {
           onRefresh: () async {
             final auth = Provider.of<AuthProvider>(context, listen: false);
             await provider.fetchNotifications(
-              salonId: int.tryParse(auth.user?.tenantName ?? '') ?? 0,
+              salonId: auth.user?.salonId ?? int.tryParse(auth.user?.tenantName ?? '') ?? 0,
               refresh: true,
             );
           },
@@ -111,7 +111,7 @@ class _StaffNotificationScreenState extends State<StaffNotificationScreen> {
               if (index == provider.notifications.length) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   final auth = Provider.of<AuthProvider>(context, listen: false);
-                  provider.fetchNotifications(salonId: int.tryParse(auth.user?.tenantName ?? '') ?? 0);
+                  provider.fetchNotifications(salonId: auth.user?.salonId ?? int.tryParse(auth.user?.tenantName ?? '') ?? 0);
                 });
                 return const Center(
                   child: Padding(

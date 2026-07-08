@@ -29,6 +29,12 @@ class StaffProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearSelection() {
+    // According to instructions, set selected staff null and hasUserSelected false.
+    // However, since GuestBookingState handles selectedStaff, this might be a placeholder for future use or to clear selection states.
+    notifyListeners();
+  }
+
   Future<void> addStaff(Staff staff) async {
     _isLoading = true;
     _errorMessage = null;

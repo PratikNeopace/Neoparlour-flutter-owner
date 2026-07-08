@@ -17,18 +17,40 @@ class FeedbackScreen extends StatefulWidget {
   State<FeedbackScreen> createState() => _FeedbackScreenState();
 }
 
-class _FeedbackScreenState extends State<FeedbackScreen> {
+class _FeedbackScreenState extends State<FeedbackScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchData();
+      _fetchCurrentTab();
     });
   }
 
-  void _fetchData() {
-    Provider.of<FeedbackProvider>(context, listen: false).fetchPendingFeedback();
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) {
+      _fetchCurrentTab();
+    }
+  }
+
+  void _fetchCurrentTab() {
+    final provider = Provider.of<FeedbackProvider>(context, listen: false);
+    if (_tabController.index == 0) {
+      provider.fetchPendingFeedback();
+    } else {
+      provider.fetchApprovedFeedback();
+    }
   }
 
   @override
@@ -67,73 +89,93 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         child: Column(
           children: [
             _buildHeader(context),
+            // ─── TAB BAR ────────────────────────────────────────────────
+            Container(
+              color: Colors.white,
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: const Color(0XFFFF0B01),
+                indicatorWeight: 3,
+                labelColor: const Color(0XFFFF0B01),
+                unselectedLabelColor: const Color(0XFF909090),
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+                tabs: const [
+                  Tab(text: "PENDING"),
+                  Tab(text: "APPROVED"),
+                ],
+              ),
+            ),
+            // ─── TAB CONTENT ────────────────────────────────────────────
             Expanded(
-              child: Consumer<FeedbackProvider>(
-                builder: (context, provider, child) {
-                  if (provider.isLoading) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0XFFFF0B01)));
-                  }
-
-                  if (provider.errorMessage != null) {
-                    return Center(
-                      child: Text(
-                        provider.errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    );
-                  }
-
-                  return CustomRefreshIndicator(
-                    onRefresh: () async => _fetchData(),
-                    color: const Color(0XFFFF0B01),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "PENDING FEEDBACK",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const Divider(
-                            color: Color(0XFFFF0B01),
-                            thickness: 2,
-                            endIndent: 220,
-                          ),
-                          const SizedBox(height: 20),
-                          Expanded(
-                            child: provider.feedbacks.isEmpty
-                              ? ListView(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    const SizedBox(height: 200),
-                                    const Center(
-                                      child: Text(
-                                        "No Pending Feedback Found", 
-                                        style: TextStyle(color: Colors.grey)
-                                      )
-                                    ),
-                                  ],
-                                )
-                              : ListView.builder(
-                                  physics: const AlwaysScrollableScrollPhysics(),
-                                  itemCount: provider.feedbacks.length,
-                                  itemBuilder: (context, index) => _feedbackCard(provider.feedbacks[index], false),
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildFeedbackTab(isPending: true),
+                  _buildFeedbackTab(isPending: false),
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // ================= TAB CONTENT =================
+  Widget _buildFeedbackTab({required bool isPending}) {
+    return Consumer<FeedbackProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0XFFFF0B01)),
+          );
+        }
+
+        if (provider.errorMessage != null) {
+          return Center(
+            child: Text(
+              provider.errorMessage!,
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
+        }
+
+        final emptyLabel = isPending
+            ? "No Pending Feedback Found"
+            : "No Approved Feedback Found";
+
+        return CustomRefreshIndicator(
+          onRefresh: () async => _fetchCurrentTab(),
+          color: const Color(0XFFFF0B01),
+          child: provider.feedbacks.isEmpty
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    const SizedBox(height: 200),
+                    Center(
+                      child: Text(
+                        emptyLabel,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                )
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                  itemCount: provider.feedbacks.length,
+                  itemBuilder: (context, index) =>
+                      _feedbackCard(provider.feedbacks[index], isPending),
+                ),
+        );
+      },
     );
   }
 
@@ -198,7 +240,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               height: 30,
               width: 30,
               "assets/Images/FeedbackScreen/floating_btn.svg",
-              fit: BoxFit.contain
+              fit: BoxFit.contain,
             ),
           ),
         ),
@@ -208,30 +250,33 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
 
   // ================= FEEDBACK CARD =================
-  Widget _feedbackCard(dynamic feedback, bool isApproved) {
+  Widget _feedbackCard(dynamic feedback, bool isPending) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: const Color(0XFF909090)),
+        border: Border.all(
+          color: isPending
+              ? const Color(0XFF909090)
+              : Colors.green.withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              // Avatar
               Container(
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
+                  color: const Color(0XFFF0F0F0),
                   borderRadius: BorderRadius.circular(9),
-                  image: const DecorationImage(
-                    image: AssetImage("assets/Images/LeaveRequestScreen/circle_avatar.jpg"),
-                    fit: BoxFit.cover,
-                  ),
                 ),
+                child: const Icon(Icons.person, size: 28, color: Color(0XFFB0B0B0)),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -243,7 +288,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                       children: [
                         Text(
                           "Customer #${feedback.customerId ?? 'N/A'}",
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
                         ),
                         Row(
                           children: [
@@ -260,14 +306,56 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     const SizedBox(height: 4),
                     Text(
                       feedback.comment ?? '',
-                      style: const TextStyle(fontSize: 11, color: Color(0XFF8D8D8D)),
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0XFF8D8D8D)),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          if (!isApproved) ...[
+          // ── Approved badge ────────────────────────────────────────────
+          if (!isPending) ...[
+            const SizedBox(height: 10),
+            const Divider(height: 1, color: Color(0XFFE0E0E0)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
+                      SizedBox(width: 4),
+                      Text(
+                        "APPROVED",
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (feedback.createdAt != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatDate(feedback.createdAt!),
+                    style: const TextStyle(fontSize: 11, color: Color(0XFF8D8D8D)),
+                  ),
+                ],
+              ],
+            ),
+          ],
+          // ── Pending action buttons ─────────────────────────────────────
+          if (isPending) ...[
             const SizedBox(height: 15),
             const Divider(height: 1, color: Color(0XFFE0E0E0)),
             const SizedBox(height: 10),
@@ -279,66 +367,93 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       OutlinedButton(
-                        onPressed: provider.isLoading 
-                          ? null 
-                          : () async {
-                              try {
-                                await provider.rejectFeedback(feedback.id!);
-                                if (context.mounted) {
-                                  FlushbarHelper.show(context, "Feedback rejected successfully!", isSuccess: true);
+                        onPressed: provider.isLoading
+                            ? null
+                            : () async {
+                                try {
+                                  await provider.rejectFeedback(feedback.id!);
+                                  if (context.mounted) {
+                                    FlushbarHelper.show(
+                                        context, "Feedback rejected successfully!",
+                                        isSuccess: true);
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    FlushbarHelper.show(context, "Error: $e");
+                                  }
                                 }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  FlushbarHelper.show(context, "Error: $e");
-                                }
-                              }
-                            },
+                              },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.grey[700],
                           side: BorderSide(color: Colors.grey[400]!),
                           minimumSize: const Size(80, 32),
                           padding: const EdgeInsets.symmetric(horizontal: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6)),
                         ),
-                        child: const Text("REJECT", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: const Text("REJECT",
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                       const SizedBox(width: 10),
                       ElevatedButton(
-                        onPressed: provider.isLoading 
-                          ? null 
-                          : () async {
-                              try {
-                                await provider.approveFeedback(feedback.id!);
-                                if (context.mounted) {
-                                  FlushbarHelper.show(context, "Feedback approved successfully!", isSuccess: true);
+                        onPressed: provider.isLoading
+                            ? null
+                            : () async {
+                                try {
+                                  await provider.approveFeedback(feedback.id!);
+                                  if (context.mounted) {
+                                    FlushbarHelper.show(
+                                        context, "Feedback approved successfully!",
+                                        isSuccess: true);
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    FlushbarHelper.show(context, "Error: $e");
+                                  }
                                 }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  FlushbarHelper.show(context, "Error: $e");
-                                }
-                              }
-                            },
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0XFFFF0B01),
                           foregroundColor: Colors.white,
                           minimumSize: const Size(80, 32),
                           padding: const EdgeInsets.symmetric(horizontal: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6)),
                           elevation: 0,
                         ),
-                        child: provider.isLoading 
-                          ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text("APPROVE", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: provider.isLoading
+                            ? const SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2))
+                            : const Text("APPROVE",
+                                style: TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   );
-                }
+                },
               ),
             ),
           ],
         ],
       ),
     );
+  }
+
+  String _formatDate(String isoDate) {
+    try {
+      final dt = DateTime.parse(isoDate).toLocal();
+      final months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      return "${dt.day} ${months[dt.month - 1]} ${dt.year}";
+    } catch (_) {
+      return isoDate;
+    }
   }
 }
 

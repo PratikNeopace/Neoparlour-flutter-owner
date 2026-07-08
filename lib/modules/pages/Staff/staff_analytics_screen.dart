@@ -746,6 +746,54 @@ class _AppointmentDetailsDialogState extends State<AppointmentDetailsDialog> {
               ],
             ),
           ],
+          if (appointment.cancelReason != null && appointment.cancelReason!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.cancel_outlined, size: 14, color: Colors.red),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      "Cancel Reason: ${appointment.cancelReason}",
+                      style: const TextStyle(fontSize: 11, color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (appointment.ownerRescheduleReason != null && appointment.ownerRescheduleReason!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 14, color: Colors.blue),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      "Owner Reschedule Reason: ${appointment.ownerRescheduleReason}",
+                      style: const TextStyle(fontSize: 11, color: Colors.blue),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (appointment.customerRescheduleReason != null && appointment.customerRescheduleReason!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 14, color: Colors.orange),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      "Customer Reschedule Reason: ${appointment.customerRescheduleReason}",
+                      style: const TextStyle(fontSize: 11, color: Colors.orange),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,

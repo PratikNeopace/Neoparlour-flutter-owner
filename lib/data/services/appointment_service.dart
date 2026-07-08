@@ -61,7 +61,7 @@ class AppointmentService {
       final queryParameters = {'newTime': newTime};
 
       final response = await _apiClient.put(
-        'appointments/$appointmentId/reschedule',
+        'appointments/$appointmentId/owner-reschedule',
         queryParameters: queryParameters,
         data: reason,
       );
@@ -87,6 +87,22 @@ class AppointmentService {
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Failed to cancel appointment: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Future<void> startAppointment(int appointmentId) async {
+    try {
+      final response = await _apiClient.put(
+        'appointments/$appointmentId/start',
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204 && response.statusCode != 201) {
+        throw Exception('Failed to start appointment: ${response.statusCode}');
       }
     } on DioException catch (e) {
       throw Exception(ApiClient.handleDioError(e));
@@ -190,6 +206,74 @@ class AppointmentService {
           'Failed to complete appointment: ${response.statusCode}',
         );
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+  Future<Appointment> extendAppointment(
+    int appointmentId,
+    Appointment appointment,
+  ) async {
+    try {
+      final response = await _apiClient.put(
+        'appointments/$appointmentId/extend',
+        data: appointment.toJson(),
+      );
+
+      if (response.statusCode == 200) {
+        return Appointment.fromJson(response.data);
+      } else {
+        throw Exception(
+          'Failed to extend appointment: ${response.statusCode}',
+        );
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Future<List<dynamic>> getAvailableSlots(int staffId, DateTime date, int durationMinutes) async {
+    try {
+      final String dateStr = '${date.toIso8601String().split('T')[0]}T00:00:00Z';
+      final response = await _apiClient.get(
+        'appointments/staff/$staffId/available-slots',
+        queryParameters: {
+          'selectedDate': dateStr,
+          'durationMinutes': durationMinutes,
+        },
+      );
+      if (response.data is List) {
+        return response.data as List;
+      }
+      return [];
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Future<List<dynamic>> getAvailableStaff(String selectedTime, int durationMinutes, {int? salonId}) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'selectedTime': selectedTime,
+        'durationMinutes': durationMinutes,
+      };
+      if (salonId != null) {
+        queryParams['salonId'] = salonId;
+      }
+      final response = await _apiClient.get(
+        'appointments/public/available-staff',
+        queryParameters: queryParams,
+      );
+      if (response.data is List) {
+        return response.data as List;
+      }
+      return [];
     } on DioException catch (e) {
       throw Exception(ApiClient.handleDioError(e));
     } catch (e) {

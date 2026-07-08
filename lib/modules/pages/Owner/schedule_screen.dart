@@ -14,6 +14,9 @@ import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
+import 'package:neo_parlour_owner/core/utils/date_time_utils.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_booking_state.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_select_date_time_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -424,6 +427,54 @@ class AppointmentCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (appointment.cancelReason != null && appointment.cancelReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cancel_outlined, size: 14, color: Colors.red),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Cancel Reason: ${appointment.cancelReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (appointment.ownerRescheduleReason != null && appointment.ownerRescheduleReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: Colors.blue),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Owner Reschedule Reason: ${appointment.ownerRescheduleReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (appointment.customerRescheduleReason != null && appointment.customerRescheduleReason!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: Colors.orange),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          "Customer Reschedule Reason: ${appointment.customerRescheduleReason}",
+                          style: const TextStyle(fontSize: 11, color: Colors.orange),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 20),
               // Action Area
               if (isScheduled)
@@ -567,110 +618,24 @@ class AppointmentCard extends StatelessWidget {
 
   Future<void> _handleReschedule(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+    final salonId = int.tryParse(authProvider.user?.tenantName ?? '') ?? 0;
+    
+    final bookingState = GuestBookingState(salonId: salonId);
+    bookingState.fromAppointment(appointment);
 
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: appointment.appointmentAt.toLocal(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0XFFFF0B01),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedDate == null) return;
-    if (!context.mounted) return;
-
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(appointment.appointmentAt.toLocal()),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0XFFFF0B01),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedTime == null) return;
-
-    final newDateTime = DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
-
-    if (!context.mounted) return;
-
-    final TextEditingController reasonController = TextEditingController();
-
-    final String? reason = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("Reschedule Reason"),
-        content: TextField(
-          controller: reasonController,
-          decoration: const InputDecoration(
-            hintText: "Enter reason for rescheduling",
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0XFFFF0B01)),
-            ),
-          ),
-          maxLines: 2,
+    final bool? success = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GuestSelectDateTimeScreen(
+          bookingState: bookingState,
+          isReschedule: true,
+          rescheduleAppointment: appointment,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
-            child: const Text(
-              "RESCHEDULE",
-              style: TextStyle(color: Color(0XFFFF0B01)),
-            ),
-          ),
-        ],
       ),
     );
 
-    if (reason == null || reason.isEmpty) return;
-
-    if (!context.mounted) return;
-
-    try {
-      await appointmentProvider.rescheduleAppointment(
-        appointmentId: appointment.id,
-        newDateTime: newDateTime,
-        reason: reason,
-        salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
-      );
-
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Appointment rescheduled successfully!", isSuccess: true);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        FlushbarHelper.show(context, "Error: $e");
-      }
+    if (success == true && context.mounted) {
+      FlushbarHelper.show(context, "Appointment rescheduled successfully", isSuccess: true);
     }
   }
 
@@ -753,9 +718,7 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final formattedTime = widget.appointment.appointmentAt
-          .toUtc()
-          .toIso8601String();
+      final formattedTime = DateTimeUtils.toIstIsoString(widget.appointment.appointmentAt);
       final duration = widget.appointment.serviceDuration ?? 30;
 
       Provider.of<StaffProvider>(context, listen: false).fetchAvailableStaff(

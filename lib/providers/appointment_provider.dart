@@ -43,6 +43,7 @@ class AppointmentProvider extends ChangeNotifier {
     int? salonId,
     int? staffId,
     String? status = 'booked',
+    DateTime? specificDate,
     int size = 10,
   }) async {
     _isLoading = true;
@@ -52,22 +53,68 @@ class AppointmentProvider extends ChangeNotifier {
     notifyListeners();
  
     try {
-      final fromDate = DateTimeUtils.nowIstIsoString();
+      final now = DateTime.now();
+      final targetDate = specificDate ?? now;
+      final startOfDay = DateTime(targetDate.year, targetDate.month, targetDate.day);
+      final fromDateStr = DateTimeUtils.toIstIsoString(startOfDay);
+      
+      String? toDateStr;
+      if (specificDate != null) {
+        final endOfDay = DateTime(targetDate.year, targetDate.month, targetDate.day, 23, 59, 59);
+        toDateStr = DateTimeUtils.toIstIsoString(endOfDay);
+      }
 
-      final response = await _service.fetchAppointments(
-        salonId: salonId,
-        staffId: staffId,
-        status: status,
-        fromDate: fromDate,
-        page: _currentPage,
-        size: size,
-      );
-      
-      _appointments = response.content;
-      _totalPages = response.totalPages;
-      _hasMore = _currentPage < _totalPages - 1;
-      
-      _appointments.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+      if (status == null) {
+        final responseBooked = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: 'booked',
+          fromDate: fromDateStr,
+          toDate: toDateStr,
+          page: _currentPage,
+          size: size,
+        );
+
+        final responseStarted = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: 'in_progress',
+          fromDate: fromDateStr,
+          toDate: toDateStr,
+          page: _currentPage,
+          size: size,
+        );
+
+        final Map<int, Appointment> uniqueMap = {};
+        for (var a in responseBooked.content) {
+          uniqueMap[a.id] = a;
+        }
+        for (var a in responseStarted.content) {
+          uniqueMap[a.id] = a; // Will overwrite the 'booked' one if it exists in both
+        }
+        final List<Appointment> merged = uniqueMap.values.toList();
+        merged.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+
+        _appointments = merged;
+        _totalPages = responseBooked.totalPages > responseStarted.totalPages 
+            ? responseBooked.totalPages 
+            : responseStarted.totalPages;
+        _hasMore = _currentPage < _totalPages - 1;
+      } else {
+        final response = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: status,
+          fromDate: fromDateStr,
+          toDate: toDateStr,
+          page: _currentPage,
+          size: size,
+        );
+        _appointments = response.content;
+        _totalPages = response.totalPages;
+        _hasMore = _currentPage < _totalPages - 1;
+        _appointments.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+      }
     } catch (e) {
       _errorMessage = ErrorHandler.parseError(e);
     } finally {
@@ -89,23 +136,67 @@ class AppointmentProvider extends ChangeNotifier {
 
     try {
       _currentPage++;
-      final fromDate = DateTimeUtils.nowIstIsoString();
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final fromDate = DateTimeUtils.toIstIsoString(todayStart);
 
-      final response = await _service.fetchAppointments(
-        salonId: salonId,
-        staffId: staffId,
-        status: status,
-        fromDate: fromDate,
-        page: _currentPage,
-        size: size,
-      );
+      if (status == null) {
+        final responseBooked = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: 'booked',
+          fromDate: fromDate,
+          page: _currentPage,
+          size: size,
+        );
 
-      _appointments.addAll(response.content);
-      _totalPages = response.totalPages;
-      _hasMore = _currentPage < _totalPages - 1;
-      
-      // Keep overall list sorted if needed, though append usually works for time-ordered data
-      _appointments.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+        final responseStarted = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: 'in_progress',
+          fromDate: fromDate,
+          page: _currentPage,
+          size: size,
+        );
+
+        final Map<int, Appointment> uniqueMap = {};
+        for (var a in _appointments) {
+          uniqueMap[a.id] = a;
+        }
+        for (var a in responseBooked.content) {
+          uniqueMap[a.id] = a;
+        }
+        for (var a in responseStarted.content) {
+          uniqueMap[a.id] = a;
+        }
+        _appointments = uniqueMap.values.toList();
+        _appointments.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+        
+        _totalPages = responseBooked.totalPages > responseStarted.totalPages 
+            ? responseBooked.totalPages 
+            : responseStarted.totalPages;
+        _hasMore = _currentPage < _totalPages - 1;
+      } else {
+        final response = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: status,
+          fromDate: fromDate,
+          page: _currentPage,
+          size: size,
+        );
+        final Map<int, Appointment> uniqueMap = {};
+        for (var a in _appointments) {
+          uniqueMap[a.id] = a;
+        }
+        for (var a in response.content) {
+          uniqueMap[a.id] = a;
+        }
+        _appointments = uniqueMap.values.toList();
+        _totalPages = response.totalPages;
+        _hasMore = _currentPage < _totalPages - 1;
+        _appointments.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+      }
     } catch (e) {
       _errorMessage = ErrorHandler.parseError(e);
       _currentPage--; // Revert on failure
@@ -152,22 +243,60 @@ class AppointmentProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final fromDate = DateTimeUtils.nowIstIsoString();
-      final response = await _service.fetchAppointments(
-        salonId: salonId,
-        staffId: staffId,
-        status: status,
-        fromDate: fromDate,
-        page: page,
-        size: size,
-      );
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final fromDate = DateTimeUtils.toIstIsoString(todayStart);
 
-      _appointments = response.content;
-      _currentPage = response.number;
-      _totalPages = response.totalPages;
-      _hasMore = _currentPage < _totalPages - 1;
-      
-      _appointments.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+      if (status == null) {
+        final responseBooked = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: 'booked',
+          fromDate: fromDate,
+          page: page,
+          size: size,
+        );
+
+        final responseStarted = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: 'in_progress',
+          fromDate: fromDate,
+          page: page,
+          size: size,
+        );
+
+        final Map<int, Appointment> uniqueMap = {};
+        for (var a in responseBooked.content) {
+          uniqueMap[a.id] = a;
+        }
+        for (var a in responseStarted.content) {
+          uniqueMap[a.id] = a;
+        }
+        final List<Appointment> merged = uniqueMap.values.toList();
+        merged.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+
+        _appointments = merged;
+        _currentPage = page;
+        _totalPages = responseBooked.totalPages > responseStarted.totalPages 
+            ? responseBooked.totalPages 
+            : responseStarted.totalPages;
+        _hasMore = _currentPage < _totalPages - 1;
+      } else {
+        final response = await _service.fetchAppointments(
+          salonId: salonId,
+          staffId: staffId,
+          status: status,
+          fromDate: fromDate,
+          page: page,
+          size: size,
+        );
+        _appointments = response.content;
+        _currentPage = response.number;
+        _totalPages = response.totalPages;
+        _hasMore = _currentPage < _totalPages - 1;
+        _appointments.sort((a, b) => a.appointmentAt.compareTo(b.appointmentAt));
+      }
     } catch (e) {
       _errorMessage = ErrorHandler.parseError(e);
     } finally {
@@ -252,6 +381,100 @@ class AppointmentProvider extends ChangeNotifier {
       await fetchUpcomingAppointments(salonId: salonId);
     } catch (e) {
       debugPrint("DEBUG: Error canceling appointment: $e");
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> startAppointment({
+    required int appointmentId,
+    int? staffId,
+  }) async {
+    // Check if the staff member already has an in-progress appointment
+    Appointment? targetApt;
+    for (var list in [_appointments, _staffAppointments, _scheduleAppointments]) {
+      try {
+        targetApt = list.firstWhere((a) => a.id == appointmentId);
+        break;
+      } catch (_) {}
+    }
+
+    if (targetApt != null) {
+      final int aptStaffId = targetApt.staffId ?? staffId ?? 0;
+      
+      bool hasInProgress = false;
+      for (var list in [_appointments, _staffAppointments, _scheduleAppointments]) {
+        if (list.any((a) => a.staffId == aptStaffId && a.status.toLowerCase() == 'in_progress' && a.id != appointmentId)) {
+          hasInProgress = true;
+          break;
+        }
+      }
+
+      if (hasInProgress) {
+        throw Exception("Cannot start appointment. An ongoing appointment already exists.");
+      }
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _service.startAppointment(appointmentId);
+      
+      void updateLocalList(List<Appointment> list) {
+        final index = list.indexWhere((a) => a.id == appointmentId);
+        if (index != -1) {
+          list[index] = list[index].copyWith(
+            status: 'IN_PROGRESS',
+          );
+        }
+      }
+
+      updateLocalList(_appointments);
+      updateLocalList(_scheduleAppointments);
+      updateLocalList(_staffAppointments);
+      updateLocalList(_historyAppointments);
+
+      if (staffId != null) {
+        await fetchUpcomingAppointments(staffId: staffId, status: null);
+      }
+    } catch (e) {
+      debugPrint("DEBUG: Error starting appointment: $e");
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> extendAppointment({
+    required Appointment originalAppointment,
+    required Appointment updatedAppointment,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final newApt = await _service.extendAppointment(originalAppointment.id, updatedAppointment);
+      
+      void updateLocalList(List<Appointment> list) {
+        final index = list.indexWhere((a) => a.id == originalAppointment.id);
+        if (index != -1) {
+          list[index] = newApt;
+        }
+      }
+
+      updateLocalList(_appointments);
+      updateLocalList(_scheduleAppointments);
+      updateLocalList(_staffAppointments);
+      updateLocalList(_historyAppointments);
+
+    } catch (e) {
+      debugPrint("DEBUG: Error extending appointment: $e");
       rethrow;
     } finally {
       _isLoading = false;

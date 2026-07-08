@@ -244,6 +244,7 @@ class _StaffRegisterScreenState extends State<StaffRegisterScreen> {
                                 Colors.white),
                           ],
                         ),
+                        SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
                       ],
                     ),
                   ),

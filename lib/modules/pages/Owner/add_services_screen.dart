@@ -1,11 +1,7 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:neo_parlour_owner/core/utils/error_handler.dart';
-import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
@@ -13,8 +9,8 @@ import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:neo_parlour_owner/providers/service_provider.dart';
 import 'package:neo_parlour_owner/data/models/service_model.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
-import 'package:neo_parlour_owner/widgets/premium_image.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
+import 'package:neo_parlour_owner/widgets/premium_service_card.dart';
 
 class AddServiceScreen extends StatefulWidget {
   final bool showAsTab;
@@ -34,9 +30,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
+  final TextEditingController _customCategoryController = TextEditingController();
+  bool _isCustomCategory = false;
   
-  XFile? _imageFile;
-  final ImagePicker _picker = ImagePicker();
    String? _selectedCategory;
    String? _selectedCommonService;
     bool _isCustomServiceName = false;
@@ -88,18 +84,103 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     }
 
   final List<String> _categories = [
-    'Hair',
-    'Skin',
-    'Facial',
-    'Nails',
-    'Massage',
-    'Makeup',
-    'Hair Removal',
-    'Spa',
-    'Unisex',
-    'Combo',
-    'Threading',
+    "Hair Services",
+    "Skin Care",
+    "Hair Removal",
+    "Nail Care",
+    "Makeup",
+    "Grooming",
+    "Spa & Massage",
+    "Bridal Packages",
+    "Hair Treatment",
+    "Other(Type Custom Category)"
   ];
+
+  final Map<String, List<String>> _categorySubCategories = {
+    "Hair Services": [
+      "Hair Cut",
+      "Hair Styling",
+      "Hair Wash",
+      "Blow Dry",
+      "Hair Coloring",
+      "Highlights / Streaks",
+      "Hair Spa",
+      "Hair Treatment",
+      "Keratin Treatment",
+      "Hair Smoothening",
+      "Hair Straightening",
+      "Perming / Curling",
+      "Hair Extensions"
+    ],
+    "Skin Care": [
+      "Facial",
+      "Cleanup",
+      "Skin Polishing",
+      "Bleaching",
+      "De-Tan Treatment",
+      "Face Treatment",
+      "Anti-Aging Treatment",
+      "Acne Treatment",
+      "Skin Brightening Treatment",
+      "Chemical Peel"
+    ],
+    "Hair Removal": [
+      "Waxing",
+      "Threading",
+      "Eyebrow Shaping",
+      "Upper Lip",
+      "Forehead",
+      "Full Face Waxing",
+      "Full Body Waxing"
+    ],
+    "Nail Care": [
+      "Manicure",
+      "Pedicure",
+      "Nail Cutting",
+      "Nail Shaping",
+      "Nail Art",
+      "Nail Extensions",
+      "Gel Polish"
+    ],
+    "Makeup": [
+      "Party Makeup",
+      "Bridal Makeup",
+      "Engagement Makeup",
+      "Reception Makeup",
+      "HD Makeup",
+      "Basic Makeup"
+    ],
+    "Grooming": [
+      "Beard Trim",
+      "Beard Styling",
+      "Shaving",
+      "Moustache Styling",
+      "Eyebrow Styling",
+      "Eyelash Services"
+    ],
+    "Spa & Massage": [
+      "Head Massage",
+      "Body Massage",
+      "Relaxation Massage",
+      "Aroma Therapy",
+      "Body Scrub",
+      "Body Wrap"
+    ],
+    "Bridal Packages": [
+      "Bridal Hair",
+      "Bridal Makeup",
+      "Bridal Facial",
+      "Bridal Manicure/Pedicure",
+      "Pre-Bridal Package"
+    ],
+    "Hair Treatment": [
+      "Hair Fall Treatment",
+      "Dandruff Treatment",
+      "Scalp Treatment",
+      "Damage Repair",
+      "Protein Treatment"
+    ],
+  };
 
   @override
   void initState() {
@@ -137,17 +218,37 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     _priceController.dispose();
     _durationController.dispose();
     _scrollController.dispose();
+    _customCategoryController.dispose();
     super.dispose();
   }
 
-   void _populateFields(NeoService service) {
+  void _populateFields(NeoService service) {
     setState(() {
       _nameController.text = service.name;
       _priceController.text = service.price.toString();
       _durationController.text = service.duration.toString();
-      _selectedCategory = service.category;
-      _imageFile = null;
-      _isCustomServiceName = true; 
+
+      final cat = service.category;
+      if (_categories.contains(cat) && cat != "Other(Type Custom Category)") {
+        _selectedCategory = cat;
+        _isCustomCategory = false;
+        _customCategoryController.clear();
+
+        final subs = _categorySubCategories[cat] ?? [];
+        if (subs.contains(service.name)) {
+          _selectedCommonService = service.name;
+          _isCustomServiceName = false;
+        } else {
+          _selectedCommonService = "Other(Type Custom Category)";
+          _isCustomServiceName = true;
+        }
+      } else {
+        _selectedCategory = "Other(Type Custom Category)";
+        _isCustomCategory = true;
+        _customCategoryController.text = cat;
+        _selectedCommonService = "Other(Type Custom Category)";
+        _isCustomServiceName = true;
+      }
     });
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -166,102 +267,18 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       _nameController.clear();
       _priceController.clear();
       _durationController.clear();
+      _customCategoryController.clear();
       _selectedCategory = null;
       _selectedCommonService = null;
       _isCustomServiceName = false;
-      _imageFile = null;
+      _isCustomCategory = false;
       _lastSyncedServiceId = null;
       _selectedGender = 'FEMALE';
     });
     Provider.of<ServiceProvider>(context, listen: false).clearEditingService();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: source,
-        maxWidth: 1080,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
-      if (pickedFile != null) {
-        setState(() {
-          _imageFile = pickedFile;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        FlushbarHelper.show(context, "Error picking image: $e");
-      }
-    }
-  }
 
-  void _showImageSourcePicker() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Select Image Source",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildPickerOption(
-                    icon: "assets/Images/ServicesScreen/camera_icon.svg",
-                    label: "Camera",
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.camera);
-                    },
-                  ),
-                  _buildPickerOption(
-                    icon: "assets/Images/ServicesScreen/gallery_icon.svg",
-                    label: "Gallery",
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.gallery);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPickerOption({required String icon, required String label, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: const Color(0XFF909090).withValues(alpha: 0.3)),
-            ),
-            child: SvgPicture.asset(icon, width: 30, height: 30),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
 
   bool _validateForm() {
     final name = _nameController.text.trim();
@@ -270,6 +287,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
     if (_selectedCategory == null) {
       _showError("Please select a category");
+      return false;
+    }
+
+    if (_isCustomCategory && _customCategoryController.text.trim().isEmpty) {
+      _showError("Custom category name cannot be empty");
       return false;
     }
 
@@ -329,28 +351,26 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       final duration = int.parse(_durationController.text.trim());
       final serviceProvider = Provider.of<ServiceProvider>(context, listen: false);
       
-      String? imageBase64;
-      if (_imageFile != null) {
-        final bytes = await _imageFile!.readAsBytes();
-        imageBase64 = base64Encode(bytes);
-      }
-
       final editingService = serviceProvider.editingService;
       
-      String? finalImage = imageBase64;
-      if (finalImage == null && editingService == null) {
+      String? finalImage;
+      if (editingService == null) {
         // Try to get automatic image for new service
         finalImage = _getServiceImagePath(_nameController.text, _selectedGender);
       } else {
-        finalImage ??= editingService?.image;
+        finalImage = editingService.image;
       }
+
+      final categoryValue = _isCustomCategory 
+          ? _customCategoryController.text.trim() 
+          : _selectedCategory!;
 
       final serviceData = NeoService(
         id: editingService?.id,
         name: _nameController.text.trim(),
         duration: duration,
         price: price,
-        category: _selectedCategory!,
+        category: categoryValue,
         image: finalImage,
         active: editingService?.active ?? true,
         popularityCount: editingService?.popularityCount ?? 0,
@@ -412,22 +432,24 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (!widget.showAsTab) _buildHeader(context, size),
             Expanded(
               child: CustomRefreshIndicator(
                 onRefresh: () async {
                   await Provider.of<ServiceProvider>(context, listen: false).fetchServices();
                 },
                 color: const Color(0XFFFF0B01),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  controller: _scrollController,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!widget.showAsTab || widget.initialTabIndex == 0) ...[
+                child: (!widget.showAsTab || widget.initialTabIndex == 0)
+                  ? SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      controller: widget.showAsTab ? null : _scrollController,
+                      child: Column(
+                        children: [
+                          if (!widget.showAsTab) _buildHeader(context, size),
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                           const SizedBox(height: 20),
                           Row(
                             children: [
@@ -462,79 +484,80 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                             endIndent: provider.editingService != null ? 100 : 180,
                           ),
                           const SizedBox(height: 20),
-                          
-                          // Image Picker Section
-                          GestureDetector(
-                            onTap: _showImageSourcePicker,
-                            child: Container(
-                              height: 120,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0XFF909090)),
-                                borderRadius: BorderRadius.circular(9),
-                                color: const Color(0XFFF8F8F8),
-                              ),
-                              child: _imageFile != null
-                                  ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(9),
-                                      child: kIsWeb
-                                        ? Image.network(_imageFile!.path, fit: BoxFit.cover)
-                                        : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
-                                    )
-                                  : provider.editingService != null && (provider.editingService!.imageUrl != null || provider.editingService!.image != null)
-                                      ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(9),
-                                          child: provider.editingService!.imageUrl != null && provider.editingService!.imageUrl!.isNotEmpty
-                                            ? PremiumImageWidget(imageUrl: provider.editingService!.imageUrl, width: double.infinity, height: 120)
-                                            : provider.editingService!.image!.startsWith('assets/')
-                                              ? Image.asset(provider.editingService!.image!, fit: BoxFit.cover)
-                                              : Image.memory(base64Decode(provider.editingService!.image!), fit: BoxFit.cover),
-                                        )
-                                      : Center(
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              SvgPicture.asset("assets/Images/ServicesScreen/camera_inside.svg", width: 28, height: 28),
-                                              const SizedBox(height: 8),
-                                              const Text("Tap to upload service image", style: TextStyle(color: Color(0XFF909090), fontSize: 12)),
-                                            ],
-                                          ),
-                                        ),
+
+                          // ─── CATEGORY (First) ────────────────────────────────────────
+                          // Standard category dropdown
+                          if (!_isCustomCategory) ...[
+                            _buildDropdownField(
+                              "Category",
+                              "assets/Images/ServicesScreen/category_icon.svg",
+                              items: _categories,
+                              value: _selectedCategory,
+                              onChanged: (val) {
+                                setState(() {
+                                  if (val == "Other(Type Custom Category)") {
+                                    _selectedCategory = val;
+                                    _isCustomCategory = true;
+                                    _customCategoryController.clear();
+                                  } else {
+                                    _selectedCategory = val;
+                                    _isCustomCategory = false;
+                                    _customCategoryController.clear();
+                                  }
+                                  // Reset service name when category changes
+                                  _selectedCommonService = null;
+                                  _isCustomServiceName = false;
+                                  _nameController.clear();
+                                });
+                              },
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              GestureDetector(
-                                onTap: () => _pickImage(ImageSource.camera),
-                                child: _buildIconLabel("assets/Images/ServicesScreen/camera_icon.svg", "Camera"),
-                              ),
-                              const SizedBox(width: 40),
-                              GestureDetector(
-                                onTap: () => _pickImage(ImageSource.gallery),
-                                child: _buildIconLabel("assets/Images/ServicesScreen/gallery_icon.svg", "Gallery"),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 25),
-                          
-                          // Service Name Selection (Dropdown or Manual)
-                          if (!_isCustomServiceName && provider.editingService == null) ...[
-                            Consumer<ServiceProvider>(
-                              builder: (context, provider, child) {
-                                return _buildDropdownField(
-                                  "Select Service Name", 
+                          ] else ...[
+                            // Custom category text field
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                    controller: _customCategoryController,
+                                    hint: "Type Custom Category",
+                                    icon: "assets/Images/ServicesScreen/category_icon.svg",
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => setState(() {
+                                    _isCustomCategory = false;
+                                    _selectedCategory = null;
+                                    _customCategoryController.clear();
+                                    _selectedCommonService = null;
+                                    _isCustomServiceName = false;
+                                    _nameController.clear();
+                                  }),
+                                  child: const Text("Select Preloaded", style: TextStyle(fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+
+                          // ─── SERVICE NAME (Second, filtered by category) ───────────────
+                          if (!_isCustomCategory) ...[
+                            // Only show subcategory dropdown when a standard category is selected
+                            if (_selectedCategory != null && provider.editingService == null) ...[
+                              if (!_isCustomServiceName) ...[
+                                _buildDropdownField(
+                                  "Select Service Name",
                                   "assets/Images/ServicesScreen/service_name_icon.svg",
                                   items: [
-                                    ...provider.commonServices,
-                                    "Add custom service..."
+                                    ...(_categorySubCategories[_selectedCategory!] ?? []),
+                                    "Other(Type Custom Category)",
                                   ],
-                                  value: _selectedCommonService,
+                                  value: (_categorySubCategories[_selectedCategory!] ?? []).contains(_selectedCommonService)
+                                      ? _selectedCommonService
+                                      : null,
                                   onChanged: (val) {
-                                    if (val == "Add custom service...") {
+                                    if (val == "Other(Type Custom Category)") {
                                       setState(() {
                                         _isCustomServiceName = true;
+                                        _selectedCommonService = null;
                                         _nameController.clear();
                                       });
                                     } else {
@@ -543,43 +566,73 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                         _nameController.text = val ?? "";
                                       });
                                     }
-                                  }
-                                );
-                              },
-                            ),
-                          ] else ...[
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _buildTextField(
-                                    controller: _nameController, 
-                                    hint: "Service Name", 
-                                    icon: "assets/Images/ServicesScreen/service_name_icon.svg"
-                                  ),
+                                  },
                                 ),
-                                if (provider.editingService == null) 
-                                  TextButton(
-                                    onPressed: () => setState(() {
-                                      _isCustomServiceName = false;
-                                      _selectedCommonService = null;
-                                      _nameController.clear();
-                                    }),
-                                    child: const Text("Select Preloaded", style: TextStyle(fontSize: 12)),
-                                  ),
+                              ] else ...[
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildTextField(
+                                        controller: _nameController,
+                                        hint: "Service Name",
+                                        icon: "assets/Images/ServicesScreen/service_name_icon.svg",
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => setState(() {
+                                        _isCustomServiceName = false;
+                                        _selectedCommonService = null;
+                                        _nameController.clear();
+                                      }),
+                                      child: const Text("Select Preloaded", style: TextStyle(fontSize: 12)),
+                                    ),
+                                  ],
+                                ),
                               ],
+                            ] else if (provider.editingService != null) ...[
+                              // Editing mode – show text field directly
+                              _buildTextField(
+                                controller: _nameController,
+                                hint: "Service Name",
+                                icon: "assets/Images/ServicesScreen/service_name_icon.svg",
+                              ),
+                            ] else ...[
+                              // No category selected yet – show disabled placeholder
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0XFFF0F0F0),
+                                  border: Border.all(color: const Color(0XFF909090)),
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                child: Row(
+                                  children: [
+                                    SvgPicture.asset("assets/Images/ServicesScreen/service_name_icon.svg", width: 20, height: 20),
+                                    const SizedBox(width: 10),
+                                    const Text("Select a category first", style: TextStyle(fontSize: 14, color: Color(0XFFB0B0B0))),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ] else ...[
+                            // Custom category selected – service name is always a text field
+                            _buildTextField(
+                              controller: _nameController,
+                              hint: "Service Name",
+                              icon: "assets/Images/ServicesScreen/service_name_icon.svg",
                             ),
                           ],
                           const SizedBox(height: 20),
-                          _buildDropdownField("Category", "assets/Images/ServicesScreen/category_icon.svg", value: _selectedCategory),
-                          const SizedBox(height: 20),
+
+                          // ─── GENDER ─────────────────────────────────────────────────
                           _buildDropdownField(
-                            "Gender", 
+                            "Gender",
                             "assets/Images/AddStaffScreen/gender_icon.svg",
                             items: ['MALE', 'FEMALE'],
                             value: _selectedGender,
                             onChanged: (val) {
                               if (val != null) setState(() => _selectedGender = val);
-                            }
+                            },
                           ),
                           const SizedBox(height: 20),
                           _buildTextField(controller: _priceController, hint: "Price", icon: "assets/Images/ServicesScreen/price_icon.svg", keyboardType: TextInputType.number),
@@ -619,20 +672,13 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                             ],
                           ),
                           const SizedBox(height: 40),
-                        ],
-                        
-                        if (!widget.showAsTab || widget.initialTabIndex == 1) ...[
-                          const Text("MANAGE SERVICES", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                          const Divider(color: Color(0XFFFF0B01), thickness: 2, endIndent: 220),
-                          const SizedBox(height: 15),
-                          
-                          _buildServicesList(),
-                          const SizedBox(height: 100),
-                        ],
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ),
+                  )
+                : _buildManageServicesList(context, size),
               ),
             ),
           ],
@@ -641,109 +687,206 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     );
   }
 
-  Widget _buildServicesList() {
+  Widget _buildManageServicesList(BuildContext context, Size size) {
     return Consumer<ServiceProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading && provider.services.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (provider.services.isEmpty) {
-          return const Center(child: Text("No services found."));
-        }
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+        
+        return ReorderableListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(20, widget.showAsTab ? 0 : 20, 20, 100),
+          proxyDecorator: (Widget child, int index, Animation<double> animation) {
+            return AnimatedBuilder(
+              animation: animation,
+              builder: (BuildContext context, Widget? child) {
+                final double animValue = Curves.easeInOut.transform(animation.value);
+                final double scale = 1.0 + (0.03 * animValue);
+                return Transform.scale(
+                  scale: scale,
+                  child: child,
+                );
+              },
+              child: child,
+            );
+          },
+          onReorder: (oldIndex, newIndex) {
+            provider.reorderServicesShift(oldIndex, newIndex);
+          },
+          header: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!widget.showAsTab) _buildHeader(context, size),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Service List (Customer Preview)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text("Preview how customers will see your services.", style: TextStyle(color: Colors.grey, fontSize: 15)),
+              const SizedBox(height: 16),
+              _buildCustomerPreview(),
+              
+              const SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Manage Services", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.black)),
+                  OutlinedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.swap_vert, size: 16),
+                    label: const Text("Reorder"),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.black87,
+                      side: BorderSide(color: Colors.grey.shade300),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Row(
+                children: [
+                  Text("ⓘ ", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  Text("Hold and drag services to change display order.", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              if (provider.services.isEmpty)
+                const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No services found."))),
+            ],
+          ),
           itemCount: provider.services.length,
           itemBuilder: (context, index) {
             final service = provider.services[index];
             final isActive = service.active;
+            return PremiumServiceCard(
+              key: ValueKey(service.id ?? index.toString()),
+              service: service,
+              isActive: isActive,
+              index: index,
+              onEdit: () {
+                Provider.of<ServiceProvider>(context, listen: false).setEditingService(service);
+                if (DefaultTabController.maybeOf(context) != null) {
+                  DefaultTabController.of(context).animateTo(1);
+                }
+              },
+              onToggleVisibility: () {
+                if (isActive) {
+                  _confirmDeactivate(service.id!);
+                } else {
+                  Provider.of<ServiceProvider>(context, listen: false).toggleServiceStatus(service.id!, true);
+                }
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _getCategoryIconSvg(String category) {
+    final categoryLower = category.toLowerCase().trim();
+    if (categoryLower.contains("color") || categoryLower == "coloring") {
+      return "assets/Images/HomeScreen/hair_coloring_services.svg";
+    } else if (categoryLower.contains("spa") || categoryLower.contains("span")) {
+      return "assets/Images/HomeScreen/hair_spa_services.svg";
+    } else if (categoryLower.contains("styling")) {
+      return "assets/Images/HomeScreen/hair_styling_services.svg";
+    } else if (categoryLower.contains("wash")) {
+      return "assets/Images/HomeScreen/hair_wash_services.svg";
+    } else if (categoryLower.contains("shav")) {
+      return "assets/Images/HomeScreen/shaving_services.svg";
+    } else if (categoryLower.contains("straight")) {
+      return "assets/Images/HomeScreen/straightning_services.svg";
+    } else if (categoryLower.contains("cut") || categoryLower == "hair" || categoryLower == "hair services" || categoryLower == "hair cut") {
+      return "assets/Images/HomeScreen/hair_cut_services.svg";
+    } else if (categoryLower == "skin care" || categoryLower == "facial" || categoryLower.contains("skin") || categoryLower.contains("facial") || categoryLower.contains("lighting")) {
+      return "assets/Images/HomeScreen/Skin care.svg";
+    } else if (categoryLower == "hair removal" || categoryLower.contains("removal")) {
+      return "assets/Images/HomeScreen/Hair removal.svg";
+    } else if (categoryLower == "nail care" || categoryLower.contains("nail")) {
+      return "assets/Images/HomeScreen/Nail care.svg";
+    } else if (categoryLower == "makeup" || categoryLower.contains("makeup")) {
+      return "assets/Images/HomeScreen/makeup.svg";
+    } else if (categoryLower == "grooming" || categoryLower.contains("grooming")) {
+      return "assets/Images/HomeScreen/grooming.svg";
+    } else if (categoryLower == "spa & massage" || categoryLower.contains("massage")) {
+      return "assets/Images/HomeScreen/spa & massage.svg";
+    } else if (categoryLower == "hair treatment" || categoryLower.contains("treatment")) {
+      return "assets/Images/HomeScreen/Hair treatment.svg";
+    } else if (categoryLower == "more") {
+      return "assets/Images/HomeScreen/more_services.svg";
+    } else {
+      return "assets/Images/HomeScreen/common_service.svg";
+    }
+  }
+
+  Widget _buildCustomerPreview() {
+    return Consumer<ServiceProvider>(
+      builder: (context, provider, child) {
+        if (provider.services.isEmpty) return const SizedBox.shrink();
+        
+        // Extract unique categories in the order they appear in the services list
+        final List<String> displayCategories = [];
+        for (final service in provider.services) {
+          final cat = service.category;
+          if (cat.isNotEmpty && !displayCategories.contains(cat)) {
+            displayCategories.add(cat);
+          }
+        }
+        
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 90,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            mainAxisExtent: 110,
+          ),
+          itemCount: displayCategories.length,
+          itemBuilder: (context, index) {
+            final catName = displayCategories[index];
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isActive ? Colors.white : Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  if (isActive) BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
                 ],
               ),
-              child: Opacity(
-                opacity: isActive ? 1.0 : 0.6,
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: (service.imageUrl != null && service.imageUrl!.isNotEmpty)
-                        ? PremiumImageWidget(
-                            imageUrl: service.imageUrl,
-                            width: 50,
-                            height: 50,
-                            borderRadius: BorderRadius.circular(8),
-                          )
-                        : (service.image != null && service.image!.isNotEmpty)
-                          ? (service.image!.startsWith('assets/')
-                              ? Image.asset(service.image!, width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage())
-                              : Image.memory(base64Decode(service.image!), width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage()))
-                          : _buildPlaceholderImage(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Color(0XFFF8F9FB),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(child: Text(service.name,maxLines:1, style: const TextStyle(fontWeight: FontWeight.bold))),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: isActive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  isActive ? "ACTIVE" : "INACTIVE",
-                                  style: TextStyle(
-                                    color: isActive ? Colors.green : Colors.red,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text("${service.category} • ${service.duration} min", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                          Text("\u{20B9}${service.price}", style: const TextStyle(color: Color(0XFFFF0B01), fontWeight: FontWeight.bold)),
-                        ],
-                      ),
+                    child: SvgPicture.asset(_getCategoryIconSvg(catName), width: 28, height: 28),
+                  ),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      catName,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Colors.black87),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    IconButton(
-                      onPressed: () {
-                        // Set editing service in provider so the form tab can see it
-                        Provider.of<ServiceProvider>(context, listen: false).setEditingService(service);
-                        // Automatically switch to the "Add/Edit" tab
-                        DefaultTabController.of(context).animateTo(0);
-                      },
-                      icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
-                      tooltip: "Edit",
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        if (isActive) {
-                          _confirmDeactivate(service.id!);
-                        } else {
-                          Provider.of<ServiceProvider>(context, listen: false).toggleServiceStatus(service.id!, true);
-                        }
-                      },
-                      icon: Icon(
-                        isActive ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        color: isActive ? Colors.orange : Colors.green,
-                        size: 20,
-                      ),
-                      tooltip: isActive ? "Deactivate" : "Activate",
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           },
@@ -782,23 +925,9 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     }
   }
 
-  Widget _buildPlaceholderImage() {
-    return Container(
-      width: 50, height: 50,
-      color: Colors.grey[200],
-      child: const Icon(Icons.image_not_supported, size: 20, color: Colors.grey),
-    );
-  }
 
-  Widget _buildIconLabel(String icon, String label) {
-    return Row(
-      children: [
-        SvgPicture.asset(icon, width: 18, height: 18),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0XFF909090))),
-      ],
-    );
-  }
+
+
 
   Widget _buildTextField({required TextEditingController controller, required String hint, required String icon, TextInputType keyboardType = TextInputType.text}) {
     return TextField(
@@ -860,8 +989,16 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
           top: MediaQuery.of(context).padding.top + 10,
           left: 16,
           child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: CircleAvatar(backgroundColor: Colors.white.withValues(alpha: 0.5), child: const Icon(Icons.arrow_back_ios_new, size: 18)),
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+            child: CircleAvatar(
+              backgroundColor: Colors.white.withValues(alpha: 0.5), 
+              child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black)
+            ),
           ),
         ),
       ],

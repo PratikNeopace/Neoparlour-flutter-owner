@@ -44,6 +44,24 @@ class OfferProvider extends ChangeNotifier {
     }
   }
 
+  Future<Offer?> getOfferById(int id) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final offer = await _service.getOfferById(id);
+      _isLoading = false;
+      notifyListeners();
+      return offer;
+    } catch (e) {
+      _errorMessage = ErrorHandler.parseError(e);
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<bool> addOffer(Offer offer) async {
     _isLoading = true;
     _errorMessage = null;

@@ -154,7 +154,7 @@ class EmailLoginScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 127),
+                  SizedBox(height: 127 + MediaQuery.of(context).padding.bottom),
                 ],
               ),
             ),

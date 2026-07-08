@@ -2,6 +2,7 @@ import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
+import 'package:neo_parlour_owner/modules/pages/Owner/owner_login.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -74,7 +75,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (success) {
       if (!mounted) return;
       FlushbarHelper.show(context, "Password reset successfully. Please login.", isSuccess: true);
-      Navigator.pop(context);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const SalonOwnerLoginScreen()),
+            (route) => false,
+          );
+        }
+      });
     } else {
       if (!mounted) return;
       final error = Provider.of<AuthProvider>(context, listen: false).errorMessage;

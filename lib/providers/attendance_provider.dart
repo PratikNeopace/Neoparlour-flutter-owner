@@ -98,6 +98,24 @@ class AttendanceProvider with ChangeNotifier {
     } on DioException catch (e) {
       debugPrint("DEBUG: AttendanceProvider.checkIn error (DioException): $e");
       _errorMessage = ApiClient.handleDioError(e);
+      // If the backend says already checked in, sync the state
+      if (e.response?.statusCode == 400 && e.response?.data != null) {
+        final msg = e.response?.data['message']?.toString().toLowerCase() ?? '';
+        if (msg.contains('already checked in')) {
+           await fetchTodayAttendance(staffId);
+           if (_todayAttendance == null) {
+             _todayAttendance = StaffAttendance(
+               salonId: 0,
+               staffId: staffId,
+               attendanceDate: DateTime.now(),
+               checkIn: DateTime.now(),
+               status: 'PRESENT',
+             );
+           }
+           _errorMessage = null; // Clear error since we handled it gracefully
+           return true; 
+        }
+      }
       return false;
     } catch (e) {
       debugPrint("DEBUG: AttendanceProvider.checkIn error: $e");
@@ -122,6 +140,34 @@ class AttendanceProvider with ChangeNotifier {
     } on DioException catch (e) {
       debugPrint("DEBUG: AttendanceProvider.checkOut error (DioException): $e");
       _errorMessage = ApiClient.handleDioError(e);
+      if (e.response?.statusCode == 400 && e.response?.data != null) {
+        final msg = e.response?.data['message']?.toString().toLowerCase() ?? '';
+        if (msg.contains('already checked out') || msg.contains('not checked in')) {
+           await fetchTodayAttendance(staffId);
+           if (_todayAttendance == null) {
+             _todayAttendance = StaffAttendance(
+               salonId: 0,
+               staffId: staffId,
+               attendanceDate: DateTime.now(),
+               checkIn: DateTime.now(),
+               checkOut: DateTime.now(),
+               status: 'PRESENT',
+             );
+           } else if (_todayAttendance!.checkOut == null) {
+             _todayAttendance = StaffAttendance(
+               salonId: _todayAttendance!.salonId,
+               staffId: _todayAttendance!.staffId,
+               attendanceDate: _todayAttendance!.attendanceDate,
+               checkIn: _todayAttendance!.checkIn,
+               checkOut: DateTime.now(),
+               status: _todayAttendance!.status,
+               id: _todayAttendance!.id,
+             );
+           }
+           _errorMessage = null; 
+           return true; 
+        }
+      }
       return false;
     } catch (e) {
       debugPrint("DEBUG: AttendanceProvider.checkOut error: $e");

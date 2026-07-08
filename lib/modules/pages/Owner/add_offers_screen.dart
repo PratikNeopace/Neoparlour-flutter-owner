@@ -33,6 +33,9 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
   DateTime validTo = DateTime.now().add(const Duration(days: 30));
   List<int> selectedServiceIds = [];
 
+  final ScrollController _scrollController = ScrollController();
+  int? editingOfferId;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +43,49 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
       Provider.of<OfferProvider>(context, listen: false).fetchOffers();
       Provider.of<ServiceProvider>(context, listen: false).fetchActiveServices();
     });
+  }
+
+  void _clearForm() {
+    setState(() {
+      editingOfferId = null;
+      nameController.clear();
+      descriptionController.clear();
+      valueController.clear();
+      usageLimitPerCustomerController.clear();
+      totalUsageLimitController.clear();
+      selectedDiscountType = DiscountType.PERCENTAGE;
+      validFrom = DateTime.now();
+      validTo = DateTime.now().add(const Duration(days: 30));
+      selectedServiceIds = [];
+    });
+  }
+
+  Future<void> _populateFormForEdit(Offer offerListModel) async {
+    final provider = Provider.of<OfferProvider>(context, listen: false);
+    
+    // Fetch full details
+    final fullOffer = await provider.getOfferById(offerListModel.id!);
+    if (!mounted) return;
+    
+    final offer = fullOffer ?? offerListModel;
+
+    setState(() {
+      editingOfferId = offer.id;
+      nameController.text = offer.name;
+      descriptionController.text = offer.description ?? '';
+      valueController.text = offer.discountValue.toString();
+      totalUsageLimitController.text = offer.totalUsageLimit?.toString() ?? '';
+      usageLimitPerCustomerController.text = offer.usageLimitPerCustomer?.toString() ?? '';
+      selectedDiscountType = offer.discountType;
+      validFrom = offer.validFrom;
+      validTo = offer.validTo;
+      selectedServiceIds = offer.applicableServiceIds.toList();
+    });
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   Future<void> _selectDate(BuildContext context, bool isFrom) async {
@@ -98,41 +144,48 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
       return;
     }
 
+    if (totalUsageLimitController.text.trim().isEmpty) {
+      FlushbarHelper.show(context, "Total usage limit is required");
+      return;
+    }
+
     int? totalUsageLimit;
-    if (totalUsageLimitController.text.trim().isNotEmpty) {
-      totalUsageLimit = int.tryParse(totalUsageLimitController.text.trim());
-      if (totalUsageLimit == null) {
-        FlushbarHelper.show(context, "Please enter a valid total usage limit");
-        return;
-      }
-      if (totalUsageLimit <= 0) {
-        FlushbarHelper.show(context, "Total usage limit must be greater than 0");
-        return;
-      }
-      if (totalUsageLimit > 1000000) {
-        FlushbarHelper.show(context, "Total usage limit cannot exceed 1,000,000");
-        return;
-      }
+    totalUsageLimit = int.tryParse(totalUsageLimitController.text.trim());
+    if (totalUsageLimit == null) {
+      FlushbarHelper.show(context, "Please enter a valid total usage limit");
+      return;
+    }
+    if (totalUsageLimit <= 0) {
+      FlushbarHelper.show(context, "Total usage limit must be greater than 0");
+      return;
+    }
+    if (totalUsageLimit > 1000000) {
+      FlushbarHelper.show(context, "Total usage limit cannot exceed 1,000,000");
+      return;
+    }
+
+    if (usageLimitPerCustomerController.text.trim().isEmpty) {
+      FlushbarHelper.show(context, "Usage limit per customer is required");
+      return;
     }
 
     int? usageLimitPerCustomer;
-    if (usageLimitPerCustomerController.text.trim().isNotEmpty) {
-      usageLimitPerCustomer = int.tryParse(usageLimitPerCustomerController.text.trim());
-      if (usageLimitPerCustomer == null) {
-        FlushbarHelper.show(context, "Please enter a valid usage limit per customer");
-        return;
-      }
-      if (usageLimitPerCustomer <= 0) {
-        FlushbarHelper.show(context, "Usage limit per customer must be greater than 0");
-        return;
-      }
-      if (usageLimitPerCustomer > 100000) {
-        FlushbarHelper.show(context, "Usage limit per customer cannot exceed 100,000");
-        return;
-      }
+    usageLimitPerCustomer = int.tryParse(usageLimitPerCustomerController.text.trim());
+    if (usageLimitPerCustomer == null) {
+      FlushbarHelper.show(context, "Please enter a valid usage limit per customer");
+      return;
+    }
+    if (usageLimitPerCustomer <= 0) {
+      FlushbarHelper.show(context, "Usage limit per customer must be greater than 0");
+      return;
+    }
+    if (usageLimitPerCustomer > 100000) {
+      FlushbarHelper.show(context, "Usage limit per customer cannot exceed 100,000");
+      return;
     }
 
     final offer = Offer(
+      id: editingOfferId,
       name: nameController.text.trim(),
       description: descriptionController.text.trim(),
       discountType: selectedDiscountType,
@@ -144,21 +197,23 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
       usageLimitPerCustomer: usageLimitPerCustomer,
     );
 
-    final success = await Provider.of<OfferProvider>(
-      context,
-      listen: false,
-    ).addOffer(offer);
+    final provider = Provider.of<OfferProvider>(context, listen: false);
+    final success = editingOfferId == null 
+        ? await provider.addOffer(offer)
+        : await provider.updateOffer(offer);
+        
     if (!mounted) return;
     if (success) {
-      nameController.clear();
-      descriptionController.clear();
-      valueController.clear();
-      totalUsageLimitController.clear();
-      usageLimitPerCustomerController.clear();
-      setState(() {
-        selectedServiceIds = [];
-      });
-      FlushbarHelper.show(context, "Offer created successfully", isSuccess: true);
+      final wasEditing = editingOfferId != null;
+      _clearForm();
+      FlushbarHelper.show(
+        context, 
+        wasEditing ? "Successfully edited the offer" : "Successfully created the offer", 
+        isSuccess: true
+      );
+    } else {
+      final errorMsg = provider.errorMessage ?? "Failed to save offer";
+      FlushbarHelper.show(context, errorMsg);
     }
   }
 
@@ -206,6 +261,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
             _buildHeader(context),
             Expanded(
               child: SingleChildScrollView(
+                controller: _scrollController,
                 padding: EdgeInsets.fromLTRB(
                   20,
                   20,
@@ -216,22 +272,36 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.add, size: 20),
-                        SizedBox(width: 4),
+                      children: [
+                        Icon(
+                          editingOfferId != null ? Icons.edit_note_rounded : Icons.add,
+                          size: 20,
+                          color: editingOfferId != null ? Colors.blue : Colors.black,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
-                          "CREATE NEW OFFER",
+                          editingOfferId != null ? "EDITING OFFER" : "CREATE NEW OFFER",
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
+                            color: editingOfferId != null ? Colors.blue : Colors.black,
                           ),
                         ),
+                        if (editingOfferId != null) ...[
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: _clearForm,
+                            icon: const Icon(Icons.close, size: 16),
+                            label: const Text("Cancel Edit"),
+                            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+                          ),
+                        ],
                       ],
                     ),
-                    const Divider(
-                      color: Color(0XFFFF0B01),
+                    Divider(
+                      color: editingOfferId != null ? Colors.blue : const Color(0XFFFF0B01),
                       thickness: 2,
-                      endIndent: 200,
+                      endIndent: editingOfferId != null ? 100 : 200,
                     ),
                     const SizedBox(height: 20),
 
@@ -471,6 +541,12 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
               ),
               child: ListTile(
                 title: Text(offer.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                  onPressed: () => _populateFormForEdit(offer),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

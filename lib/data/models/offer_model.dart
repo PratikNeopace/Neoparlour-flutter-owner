@@ -1,4 +1,5 @@
 // ignore_for_file: constant_identifier_names
+import 'package:neo_parlour_owner/core/utils/date_time_utils.dart';
 
 enum DiscountType { FLAT, PERCENTAGE }
 
@@ -39,18 +40,26 @@ class Offer {
       discountType: json['discountType'] == 'PERCENTAGE' 
           ? DiscountType.PERCENTAGE 
           : DiscountType.FLAT,
-      discountValue: (json['discountValue'] as num?)?.toDouble() ?? 0.0,
+      discountValue: (json['discountValue'] as num?)?.toDouble() ?? 
+                     (json['percentage'] as num?)?.toDouble() ?? 
+                     (json['flatAmount'] as num?)?.toDouble() ?? 0.0,
       validFrom: DateTime.parse(json['validFrom']),
       validTo: DateTime.parse(json['validTo']),
       active: json['active'] ?? true,
       applicableServiceIds: (json['applicableServiceIds'] as List<dynamic>?)
               ?.map((e) => e as int)
+              .toList() ?? 
+              (json['applicableServices'] as List<dynamic>?)
+              ?.map((e) => e['id'] as int)
               .toList() ?? [],
       serviceNames: (json['serviceNames'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ?? 
               (json['applicableServiceNames'] as List<dynamic>?)
               ?.map((e) => e.toString())
+              .toList() ?? 
+              (json['applicableServices'] as List<dynamic>?)
+              ?.map((e) => e['name'].toString())
               .toList() ?? [],
       usageLimitPerCustomer: json['usageLimitPerCustomer'],
       totalUsageLimit: json['totalUsageLimit'],
@@ -64,8 +73,8 @@ class Offer {
       'description': description,
       'discountType': discountType == DiscountType.PERCENTAGE ? 'PERCENTAGE' : 'FLAT',
       'discountValue': discountValue,
-      'validFrom': validFrom.toUtc().toIso8601String(),
-      'validTo': validTo.toUtc().toIso8601String(),
+      'validFrom': DateTimeUtils.toIstIsoString(validFrom),
+      'validTo': DateTimeUtils.toIstIsoString(validTo),
       'active': active,
       'applicableServiceIds': applicableServiceIds,
       'usageLimitPerCustomer': usageLimitPerCustomer,
@@ -79,8 +88,8 @@ class Offer {
       'description': description,
       'discountType': discountType == DiscountType.PERCENTAGE ? 'PERCENTAGE' : 'FLAT',
       'discountValue': discountValue,
-      'validFrom': validFrom.toUtc().toIso8601String(),
-      'validTo': validTo.toUtc().toIso8601String(),
+      'validFrom': DateTimeUtils.toIstIsoString(validFrom),
+      'validTo': DateTimeUtils.toIstIsoString(validTo),
       'active': active,
       'applicableServiceIds': applicableServiceIds,
       'usageLimitPerCustomer': usageLimitPerCustomer,

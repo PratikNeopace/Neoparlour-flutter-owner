@@ -256,7 +256,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                         ),
                       ),
 
-                      SizedBox(height: h * 0.02),
+                      SizedBox(height: (h * 0.02) + MediaQuery.of(context).padding.bottom),
                     ],
                   ),
                 ),

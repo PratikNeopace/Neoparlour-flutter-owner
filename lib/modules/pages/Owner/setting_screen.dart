@@ -8,6 +8,8 @@ import 'edit_profile_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/active_subscription_screen.dart';
 import 'about_us_screen.dart';
 import 'support_screen.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/leave_request_staff_screen.dart';
+import 'package:neo_parlour_owner/modules/pages/Staff/inventory_staff_screen.dart';
 
 
 
@@ -146,6 +148,31 @@ Widget build(BuildContext context) {
                         );
                       }
                     ),
+                  ] else ...[
+                    _divider(),
+                    _buildRowIcon(
+                      Icons.exit_to_app,
+                      'Leave Request',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LeaveRequestStaffScreen()),
+                        );
+                      }
+                    ),
+                    _divider(),
+                    _buildRowIcon(
+                      Icons.inventory,
+                      'Inventory',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const InventoryStaffScreen()),
+                        );
+                      }
+                    ),
                   ],
                 ]);
               },
@@ -223,6 +250,23 @@ Widget build(BuildContext context) {
     return ListTile(
       visualDensity: const VisualDensity(vertical: -2),
       leading: SvgPicture.asset(icon),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right,
+        size: 15,
+        color: Color(0XFF868686),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildRowIcon(IconData iconData, String title, {VoidCallback? onTap}) {
+    return ListTile(
+      visualDensity: const VisualDensity(vertical: -2),
+      leading: Icon(iconData, size: 24, color: const Color(0XFF2D2D2D)),
       title: Text(
         title,
         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
