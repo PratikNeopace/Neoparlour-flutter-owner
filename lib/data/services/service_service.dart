@@ -41,7 +41,7 @@ class ServiceService {
     }
   }
 
-  Future<void> reorderServices(List<String> serviceIds) async {
+  Future<void> reorderServices(List<int> serviceIds) async {
     try {
       final response = await _apiClient.put(
         'services/reorder',
@@ -133,6 +133,8 @@ class ServiceService {
       } else {
         throw Exception('Failed to fetch common services');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }

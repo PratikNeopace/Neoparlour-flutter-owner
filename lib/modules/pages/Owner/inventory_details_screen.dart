@@ -11,6 +11,7 @@ import 'package:neo_parlour_owner/modules/pages/Owner/assigned_staff_screen.dart
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
 import 'package:neo_parlour_owner/widgets/premium_image.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class InventoryDetailsScreen extends StatefulWidget {
   const InventoryDetailsScreen({super.key});
@@ -48,7 +49,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () => provider.fetchInventory(),
-                  child: const Text("Retry"),
+                  child: Text(AppLocalizations.of(context)!.retryBtn),
                 ),
               ],
             ),
@@ -56,7 +57,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
         }
 
         if (provider.inventoryItems.isEmpty) {
-          return const Center(child: Text("No inventory items found"));
+          return Center(child: Text(AppLocalizations.of(context)!.noInventoryItemsFound));
         }
 
         return CustomRefreshIndicator(
@@ -65,7 +66,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                _buildDropdownField("Categories", "assets/Images/ServicesScreen/category_icon.svg"),
+                _buildDropdownField(AppLocalizations.of(context)!.categoriesLabel , "assets/Images/ServicesScreen/category_icon.svg"),
                 const SizedBox(height: 25),
                 ListView.separated(
                   shrinkWrap: true,
@@ -141,7 +142,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  "Qty - ${item.currentStock}",
+                  "${AppLocalizations.of(context)!.qtyLabel}${item.currentStock}",
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -153,18 +154,18 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
               children: [
                 Row(
                   children: [
-                    Expanded(child: Text("Category : ${item.category?.name ?? 'N/A'}", overflow: TextOverflow.ellipsis)),
+                    Expanded(child: Text("${AppLocalizations.of(context)!.categoryPrefix}${item.category?.name ?? 'N/A'}", overflow: TextOverflow.ellipsis)),
                     const SizedBox(width: 10),
-                    Expanded(child: Text("Unit : ${item.unitType.name}", overflow: TextOverflow.ellipsis)),
+                    Expanded(child: Text("${AppLocalizations.of(context)!.unitPrefix}${item.unitType.name}", overflow: TextOverflow.ellipsis)),
                   ],
                 ),
                 const SizedBox(height: 5),
                 Row(
                   children: [
-                    Text("Cost : ₹${item.costPrice}"),
+                    Text("${AppLocalizations.of(context)!.costPrefix}${item.costPrice}"),
                     const Spacer(),
                     if (item.reorderLevel != null)
-                      Text("Reorder : ${item.reorderLevel}", style: TextStyle(color: (item.currentStock <= item.reorderLevel!) ? Colors.red : Colors.grey)),
+                      Text("${AppLocalizations.of(context)!.reorderPrefix}${item.reorderLevel}", style: TextStyle(color: (item.currentStock <= item.reorderLevel!) ? Colors.red : Colors.grey)),
                   ],
                 ),
                 const Divider(height: 25),
@@ -182,7 +183,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             minimumSize: const Size(0, 36),
                           ),
-                          child: const Text("Assign Staff", style: TextStyle(fontSize: 12)),
+                          child: Text(AppLocalizations.of(context)!.assignStaffBtn, style: const TextStyle(fontSize: 12)),
                         ),
                         OutlinedButton(
                           onPressed: () {
@@ -199,7 +200,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             minimumSize: const Size(0, 36),
                           ),
-                          child: const Text("View Assigned Staff", style: TextStyle(fontSize: 12)),
+                          child: Text(AppLocalizations.of(context)!.viewAssignedStaffBtn, style: const TextStyle(fontSize: 12)),
                         ),
                       ],
                     ),
@@ -229,13 +230,13 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
             return Consumer<StaffProvider>(
               builder: (consumerContext, staffProvider, _) {
                 return AlertDialog(
-                  title: Text("Assign ${item.name}"),
+                  title: Text("${AppLocalizations.of(context)!.assignPrefix}${item.name}"),
                   content: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Select Staff Member"),
+                        Text(AppLocalizations.of(context)!.selectStaffMemberTitle),
                         const SizedBox(height: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -247,7 +248,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                             child: DropdownButton<int>(
                               isExpanded: true,
                               value: selectedStaffId,
-                              hint: const Text("Choose Staff"),
+                              hint: Text(AppLocalizations.of(context)!.chooseStaffHint),
                               items: staffProvider.staffMembers.map((Staff staff) {
                                 return DropdownMenuItem<int>(
                                   value: staff.id,
@@ -261,24 +262,24 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        const Text("Allocated Quantity"),
+                        Text(AppLocalizations.of(context)!.allocatedQuantityLabel),
                         const SizedBox(height: 10),
                         TextField(
                           controller: quantityController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            hintText: "Enter quantity",
+                            hintText: AppLocalizations.of(context)!.enterQuantityHint,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
                         const SizedBox(height: 20),
-                        const Text("Notes (Optional)"),
+                        Text(AppLocalizations.of(context)!.notesOptionalLabel),
                         const SizedBox(height: 10),
                         TextField(
                           controller: notesController,
                           maxLines: 3,
                           decoration: InputDecoration(
-                            hintText: "Add notes...",
+                            hintText: AppLocalizations.of(context)!.addNotesHint,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
@@ -288,7 +289,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(dialogContext),
-                      child: const Text("CANCEL"),
+                      child: Text(AppLocalizations.of(context)!.cancelBtn),
                     ),
                     ElevatedButton(
                       onPressed: () async {
@@ -325,7 +326,7 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0XFFFF0B01)),
-                      child: const Text("ASSIGN", style: TextStyle(color: Colors.white)),
+                      child: Text(AppLocalizations.of(context)!.assignActionBtn, style: const TextStyle(color: Colors.white)),
                     ),
                   ],
                 );
@@ -359,9 +360,9 @@ class _InventoryDetailsScreenState extends State<InventoryDetailsScreen> {
             ],
           ),
           items: [
-            const DropdownMenuItem<ProductType>(
+             DropdownMenuItem<ProductType>(
               value: null,
-              child: Text("All Categories"),
+              child: Text(AppLocalizations.of(context)!.allCategoriesLabel),
             ),
             ...ProductType.values.map((ProductType value) {
               final name = value.name[0].toUpperCase() + value.name.substring(1);

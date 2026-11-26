@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:neo_parlour_owner/core/api_client.dart';
 import 'package:neo_parlour_owner/data/models/salon_qr_model.dart';
 import 'package:neo_parlour_owner/data/models/salon_profile_model.dart';
@@ -11,6 +12,8 @@ class SalonService {
         'salons/home-service-charges',
         queryParameters: {'charges': charges},
       );
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -23,6 +26,8 @@ class SalonService {
         return double.tryParse(response.data.toString()) ?? 0.0;
       }
       return 0.0;
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -34,6 +39,8 @@ class SalonService {
         'salons/weekly-off',
         queryParameters: {'day': day},
       );
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -43,6 +50,8 @@ class SalonService {
     try {
       final response = await _apiClient.get('salons/qr');
       return SalonQRCode.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -56,6 +65,8 @@ class SalonService {
       } else {
         throw Exception('Failed to fetch salon profile');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -69,6 +80,8 @@ class SalonService {
       } else {
         throw Exception('Failed to update salon profile');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }

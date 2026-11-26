@@ -2,9 +2,16 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:neo_parlour_owner/core/interceptors/owner_maintenance_interceptor.dart';
+import 'package:neo_parlour_owner/main.dart';
 
 class ApiClient {
-  static const String baseUrl = 'https://sb.neoparlour.com/api/';
+  // Environment URLs
+  static const String prodUrl = 'https://sb.neoparlour.com/api/';
+  static const String uatUrl = 'https://uat.neoparlour.com/api/';
+
+  // Active Base URL (change here to switch environments)
+  static const String baseUrl = prodUrl;
   late Dio dio;
 
   ApiClient() {
@@ -19,7 +26,9 @@ class ApiClient {
         },
       ),
     );
-    debugPrint('DEBUG: ApiClient initialized with baseUrl: $baseUrl');
+    debugPrint('DEBUG: ApiClient initialized with baseUrl: \$baseUrl');
+
+    dio.interceptors.add(OwnerMaintenanceInterceptor(navigatorKey: navigatorKey));
 
     dio.interceptors.add(
       InterceptorsWrapper(

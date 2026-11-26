@@ -10,6 +10,9 @@ import 'package:neo_parlour_owner/modules/pages/Owner/owner_register_screen.dart
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_login.dart';
 import 'package:neo_parlour_owner/modules/pages/forgot_password_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
+import 'package:neo_parlour_owner/widgets/language_selector_button.dart';
+import 'package:neo_parlour_owner/core/data/services/app_icon_service.dart';
 
 class SalonOwnerLoginScreen extends StatefulWidget {
   const SalonOwnerLoginScreen({super.key});
@@ -25,6 +28,14 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
 
   final TextEditingController salonIdController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppIconService.checkAndApplySeasonalIcon(context);
+    });
+  }
 
   @override
   void dispose() {
@@ -62,12 +73,12 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (!isAgreeTerms || !isRememberMe) {
-      FlushbarHelper.show(context, "Please accept all agreements to continue.");
+      FlushbarHelper.show(context, AppLocalizations.of(context)!.pleaseAcceptAgreements);
       return;
     }
 
     if (salonIdController.text.isEmpty || passwordController.text.isEmpty) {
-      FlushbarHelper.show(context, "Please enter both ID and Password");
+      FlushbarHelper.show(context, AppLocalizations.of(context)!.pleaseEnterIdAndPassword);
       return;
     }
 
@@ -116,6 +127,16 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
           ),
 
           /// FLOATING LOGIN CARD
+          // 🔹 Language Selector
+          const SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: EdgeInsets.only(right: 20, top: 10),
+                child: LanguageSelectorButton(),
+              ),
+            ),
+          ),
           Positioned(
             left: 0,
             right: 0,
@@ -152,7 +173,7 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                       /// Tabs (Salon Owner Active)
                       Row(
                         children: [
-                          _buildTabItem("SALON OWNER", true, () {
+                          _buildTabItem(AppLocalizations.of(context)!.salonOwnerTab, true, () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -162,7 +183,7 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                             );
                           }),
                           SizedBox(width: w * 0.1),
-                          _buildTabItem("STAFF", false, () {
+                          _buildTabItem(AppLocalizations.of(context)!.staffTab, false, () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -178,7 +199,7 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                       /// Salon ID FIELD
                       _customInputField(
                         imageIcon: "assets/Images/LoginScreen/call.svg",
-                        hint: 'Salon ID or Email',
+                        hint: AppLocalizations.of(context)!.mobileOrEmail,
                         controller: salonIdController,
                         h: h,
                       ),
@@ -186,7 +207,7 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                       /// PASSWORD FIELD
                       _customInputField(
                         imageIcon: "assets/Images/LoginScreen/password.svg",
-                        hint: 'Password',
+                        hint: AppLocalizations.of(context)!.password,
                         controller: passwordController,
                         obscure: !_isPasswordVisible,
                         isPassword: true,
@@ -216,9 +237,9 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                               ? const CircularProgressIndicator(
                                   color: Colors.white,
                                 )
-                              : const Text(
-                                  "LOGIN",
-                                  style: TextStyle(
+                              : Text(
+                                  AppLocalizations.of(context)!.loginTitle,
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.w800,
                                     color: Colors.white,
                                     fontSize: 14,
@@ -253,9 +274,9 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                                   fontFamily: 'Inter',
                                 ),
                                 children: [
-                                  const TextSpan(text: "I agree to the "),
+                                  TextSpan(text: AppLocalizations.of(context)!.iAgreeToThe),
                                   TextSpan(
-                                    text: "Privacy Policy",
+                                    text: AppLocalizations.of(context)!.privacyPolicy,
                                     style: const TextStyle(
                                       color: Color(0XFFFF0B01),
                                       fontWeight: FontWeight.bold,
@@ -264,9 +285,9 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = openOwnerPrivacy,
                                   ),
-                                  const TextSpan(text: ", "),
+                                  TextSpan(text: AppLocalizations.of(context)!.comma),
                                   TextSpan(
-                                    text: "Terms of Use",
+                                    text: AppLocalizations.of(context)!.termsOfUse,
                                     style: const TextStyle(
                                       color: Color(0XFFFF0B01),
                                       fontWeight: FontWeight.bold,
@@ -275,9 +296,9 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = openOwnerTerms,
                                   ),
-                                  const TextSpan(text: " And "),
+                                  TextSpan(text: AppLocalizations.of(context)!.and),
                                   TextSpan(
-                                    text: "Terms of Service",
+                                    text: AppLocalizations.of(context)!.termsOfService,
                                     style: const TextStyle(
                                       color: Color(0XFFFF0B01),
                                       fontWeight: FontWeight.bold,
@@ -312,9 +333,9 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: const Text(
-                              "I agree to receive marketing notifications with offers and news",
-                              style: TextStyle(
+                            child: Text(
+                              AppLocalizations.of(context)!.iAgreeMarketing,
+                              style: const TextStyle(
                                 color: Color(0XFF909090),
                                 fontSize: 11,
                               ),
@@ -334,32 +355,33 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
                             ),
                           );
                         },
-                        child: const Text(
-                          "Forgot Password?",
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(context)!.forgotPassword,
+                          style: const TextStyle(
                             color: Color(0XFFFF0B01),
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
-
+                      
                       SizedBox(height: h * 0.02),
 
                       /// Register
                       RichText(
                         text: TextSpan(
+                          text: AppLocalizations.of(context)!.dontHaveAccount,
                           style: const TextStyle(
-                            color: Color(0XFF909090),
+                            color: Color(0XFF141414),
                             fontSize: 12,
                           ),
                           children: [
-                            const TextSpan(text: "Don't have an account? "),
                             TextSpan(
-                              text: "Register",
+                              text: AppLocalizations.of(context)!.register,
                               style: const TextStyle(
                                 color: Color(0XFFFF0B01),
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
                               ),
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
@@ -433,49 +455,64 @@ class _SalonOwnerLoginScreenState extends State<SalonOwnerLoginScreen> {
   }) {
     return Container(
       margin: EdgeInsets.only(bottom: h * 0.02),
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        decoration: InputDecoration(
-          prefixIcon: Padding(
-            padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              height: 22,
-              width: 22,
-              child: SvgPicture.asset(imageIcon),
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, child) {
+          final text = value.text;
+          // If it only contains digits (or is empty and the user might type digits),
+          // actually, let's just say if it matches numbers only, max length 10, else 50.
+          // Wait, if they start typing numbers, it's 10. If they type a letter, it's 50.
+          final isNumber = RegExp(r'^[0-9]*$').hasMatch(text);
+          final maxLength = isNumber ? 10 : 50;
+          
+          return TextField(
+            controller: controller,
+            obscureText: obscure,
+            maxLength: isPassword ? null : maxLength,
+            decoration: InputDecoration(
+              counterText: "", // Hide the length counter
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: SvgPicture.asset(imageIcon),
+                ),
+              ),
+
+              // EYE ICON HERE
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        obscure ? Icons.visibility_off : Icons.visibility,
+                        color: const Color(0XFFADADAD),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    )
+                  : null,
+
+              filled: true,
+              fillColor: const Color(0XFFF9F9F9),
+              hintText: hint,
+              hintStyle: const TextStyle(
+                color: Color(0XFFADADAD),
+                fontSize: 13,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0XFFE0E0E0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0XFFFF0B01)),
+              ),
             ),
-          ),
-
-          // EYE ICON HERE
-          suffixIcon: isPassword
-              ? IconButton(
-                  icon: Icon(
-                    _isPasswordVisible
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                    color: const Color(0XFF909090),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  },
-                )
-              : null,
-
-          hintText: hint,
-          hintStyle: const TextStyle(color: Color(0XFFADADAD), fontSize: 13),
-          filled: true,
-          fillColor: const Color(0XFFF9F9F9),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0XFFE0E0E0)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0XFFFF0B01)),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

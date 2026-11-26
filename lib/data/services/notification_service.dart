@@ -55,9 +55,12 @@ class NotificationService {
   debugPrint("Initializing Local Notifications...");
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
+  const DarwinInitializationSettings iosSettings =
+      DarwinInitializationSettings();
 
   final InitializationSettings settings = InitializationSettings(
     android: androidSettings,
+    iOS: iosSettings,
   );
 
   await _localNotifications.initialize(
@@ -138,12 +141,17 @@ Future<void> _showForegroundNotification(RemoteMessage message) async {
     importance: Importance.max,
     priority: Priority.high,
   );
+  const DarwinNotificationDetails iosDetails =
+      DarwinNotificationDetails();
 
   await _localNotifications.show(
     id: 0,
     title: message.notification?.title ?? "Neo Parlour",
     body: message.notification?.body ?? "",
-    notificationDetails: NotificationDetails(android: androidDetails),
+    notificationDetails: NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    ),
     payload: jsonEncode(message.data),
   );
 }

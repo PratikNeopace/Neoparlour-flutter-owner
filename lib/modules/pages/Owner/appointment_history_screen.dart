@@ -9,6 +9,7 @@ import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AppointmentHistoryScreen extends StatefulWidget {
   final int userId;
@@ -77,7 +78,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
                   const SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () => provider.fetchHistory(widget.userId),
-                    child: const Text("Retry"),
+                    child: Text(AppLocalizations.of(context)!.retryBtn),
                   ),
                 ],
               ),
@@ -91,7 +92,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
           final totalRevenue = appointments.fold(0.0, (sum, item) => sum + item.finalAmount);
           final lastVisit = appointments.isNotEmpty 
               ? DateFormat('dd MMM').format(appointments.first.appointmentAt.toLocal()) 
-              : 'N/A';
+              : AppLocalizations.of(context)!.notAvailableText;
           final memberSince = appointments.isNotEmpty 
               ? appointments.last.createdAt.year.toString() 
               : '2026';
@@ -106,16 +107,16 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(widget.customerName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                      Text("Member Since $memberSince", style: const TextStyle(color: Color(0XFF909090), fontSize: 11)),
+                      Text("${AppLocalizations.of(context)!.memberSincePrefix}$memberSince", style: const TextStyle(color: Color(0XFF909090), fontSize: 11)),
                       const SizedBox(height: 5),
-                      _buildStatsRow(totalVisits.toString(), totalRevenue.toStringAsFixed(0), lastVisit),
+                      _buildStatsRow(context, totalVisits.toString(), totalRevenue.toStringAsFixed(0), lastVisit),
                       const SizedBox(height: 22),
-                      const Text("Appointment History", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+                      Text(AppLocalizations.of(context)!.appointmentHistoryTitle, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
                       const SizedBox(height: 16),
                       if (appointments.isEmpty)
-                        const Center(child: Padding(
-                          padding: EdgeInsets.only(top: 20),
-                          child: Text("No history available"),
+                        Center(child: Padding(
+                          padding: const EdgeInsets.only(top: 20),
+                          child: Text(AppLocalizations.of(context)!.noHistoryAvailable),
                         ))
                       else
                         _buildAppointmentList(appointments),
@@ -155,7 +156,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
               color: Colors.black.withValues(alpha: 0.3),
               padding: const EdgeInsets.only(left: 25, bottom: 60),
               alignment: Alignment.bottomLeft,
-              child: const Text("HISTORY", style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w500)),
+              child: Text(AppLocalizations.of(context)!.historyTitle, style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w500)),
             ),
           ),
         ),
@@ -179,13 +180,13 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
     );
   }
 
-  Widget _buildStatsRow(String visits, String revenue, String lastVisit) {
+  Widget _buildStatsRow(BuildContext context, String visits, String revenue, String lastVisit) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _statBox(visits, "Visits", "assets/Images/HistoryScreen/visits.svg"),
-        _statBox(revenue, "Revenue", "assets/Images/HistoryScreen/revenue.svg"),
-        _statBox(lastVisit, "Last Visit", "assets/Images/HistoryScreen/last_visit.svg"),
+        _statBox(visits, AppLocalizations.of(context)!.visitsLabel, "assets/Images/HistoryScreen/visits.svg"),
+        _statBox(revenue, AppLocalizations.of(context)!.revenueLabel, "assets/Images/HistoryScreen/revenue.svg"),
+        _statBox(lastVisit, AppLocalizations.of(context)!.lastVisitLabel, "assets/Images/HistoryScreen/last_visit.svg"),
       ],
     );
   }
@@ -214,7 +215,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
       itemCount: appointments.length,
       itemBuilder: (context, index) {
         final item = appointments[index];
-        final serviceName = item.serviceNames.isNotEmpty ? item.serviceNames.join(", ") : "No Services";
+        final serviceName = item.serviceNames.isNotEmpty ? item.serviceNames.join(", ") : AppLocalizations.of(context)!.noServicesText;
         final formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(item.appointmentAt.toLocal());
         
         Color statusColor = const Color(0XFF4CAF50); // Completed/Booked
@@ -268,7 +269,7 @@ class _AppointmentHistoryScreenState extends State<AppointmentHistoryScreen> {
                     children: [
                       const Icon(Icons.person_outline, size: 12, color: Color(0XFFFF0B01)),
                       const SizedBox(width: 4),
-                      Text("Staff: $staffName", style: const TextStyle(fontSize: 10, color: Color(0XFFFF0B01), fontWeight: FontWeight.w500)),
+                      Text("${AppLocalizations.of(context)!.staffPrefix}$staffName", style: const TextStyle(fontSize: 10, color: Color(0XFFFF0B01), fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ],

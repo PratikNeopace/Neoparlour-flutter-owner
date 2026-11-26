@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
@@ -11,7 +12,7 @@ class AboutUsScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         title: Text(
-          "ABOUT US",
+          AppLocalizations.of(context)!.aboutUsTitle,
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -63,7 +64,7 @@ class AboutUsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "About Neo Parlour",
+                      AppLocalizations.of(context)!.aboutNeoParlour,
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -82,7 +83,7 @@ class AboutUsScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     
                     Text(
-                      "Neo Parlour is a smart salon management application built to simplify the way salons operate. We understand that managing a salon involves juggling multiple tasks—appointment bookings, inventory tracking, and staff coordination—all at the same time. These everyday challenges can create confusion and take focus away from what truly matters: growing your business and serving your customers.",
+                      AppLocalizations.of(context)!.aboutNeoParlourP1,
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
@@ -93,7 +94,7 @@ class AboutUsScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     
                     Text(
-                      "That’s where Neo Parlour comes in.",
+                      AppLocalizations.of(context)!.aboutNeoParlourP2,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -103,7 +104,7 @@ class AboutUsScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     
                     Text(
-                      "Our platform brings everything together in one place, allowing salon owners to efficiently manage appointments, monitor inventory, and organize staff schedules with ease. By reducing manual work and minimizing errors, Neo Parlour helps bring clarity, structure, and control to your daily operations.",
+                      AppLocalizations.of(context)!.aboutNeoParlourP3,
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
@@ -119,7 +120,7 @@ class AboutUsScreen extends StatelessWidget {
               
               // Version & Branding Info
               Text(
-                'Version 1.0.0',
+                AppLocalizations.of(context)!.versionFooter,
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -128,7 +129,7 @@ class AboutUsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Powered By Neopaceinfotech LLP',
+                AppLocalizations.of(context)!.drawerPoweredBy,
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,

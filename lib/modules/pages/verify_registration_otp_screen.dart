@@ -6,14 +6,17 @@ import 'package:neo_parlour_owner/data/services/auth_service.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_login.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/new_subscription_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 import 'dart:async';
 
 class VerifyRegistrationOtpScreen extends StatefulWidget {
   final UserRegistrationRequest registrationRequest;
+  final String? initialOtp;
 
   const VerifyRegistrationOtpScreen({
     super.key,
     required this.registrationRequest,
+    this.initialOtp,
   });
 
   @override
@@ -37,6 +40,13 @@ class _VerifyRegistrationOtpScreenState
   void initState() {
     super.initState();
     _startTimer();
+    
+    // Autofill OTP if provided
+    if (widget.initialOtp != null && widget.initialOtp!.length == 6) {
+      for (int i = 0; i < 6; i++) {
+        _controllers[i].text = widget.initialOtp![i];
+      }
+    }
   }
 
   void _startTimer() {
@@ -69,7 +79,7 @@ class _VerifyRegistrationOtpScreenState
           if (mounted) {
             FlushbarHelper.show(
               context,
-              "OTP resent successfully",
+              AppLocalizations.of(context)!.otpResentSuccessfully,
               isSuccess: true,
             );
           }
@@ -82,7 +92,7 @@ class _VerifyRegistrationOtpScreenState
           if (mounted) {
             FlushbarHelper.show(
               context,
-              "Failed to resend OTP: ${e.toString()}",
+              "${AppLocalizations.of(context)!.failedToResendOtp}${e.toString()}",
             );
           }
         });
@@ -107,7 +117,7 @@ class _VerifyRegistrationOtpScreenState
   void _verifyOtp() async {
     String otp = _controllers.map((e) => e.text).join();
     if (otp.length < 6) {
-      FlushbarHelper.show(context, "Please enter full 6-digit OTP");
+      FlushbarHelper.show(context, AppLocalizations.of(context)!.enterFull6DigitOtp);
       return;
     }
 
@@ -139,8 +149,8 @@ class _VerifyRegistrationOtpScreenState
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text("Registration Successful"),
-            content: const Text("Your account has been created. Please login."),
+            title: Text(AppLocalizations.of(context)!.registrationSuccessful),
+            content: Text(AppLocalizations.of(context)!.accountCreatedPleaseLogin),
             actions: [
               TextButton(
                 onPressed: () {
@@ -152,7 +162,7 @@ class _VerifyRegistrationOtpScreenState
                     (route) => false,
                   );
                 },
-                child: const Text("LOGIN NOW"),
+                child: Text(AppLocalizations.of(context)!.loginNow),
               ),
             ],
           ),
@@ -162,7 +172,7 @@ class _VerifyRegistrationOtpScreenState
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          FlushbarHelper.show(context, "Verification Failed: ${e.toString()}");
+          FlushbarHelper.show(context, "${AppLocalizations.of(context)!.verificationFailed}${e.toString()}");
         }
       });
     } finally {
@@ -175,56 +185,58 @@ class _VerifyRegistrationOtpScreenState
     final Size size = MediaQuery.of(context).size;
     final double w = size.width;
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Stack(
-          children: [
-            // Background Image
-            Positioned.fill(
-              child: Image.asset(
-                'assets/Images/SplashScreen/splash_screen_one_bg.jpg',
-                fit: BoxFit.cover,
+    return PopScope(
+      canPop: !_isLoading,
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Stack(
+            children: [
+              // Background Image
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/Images/SplashScreen/splash_screen_one_bg.jpg',
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
 
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SafeArea(
-                top: false,
-                child: Container(
-                  width: double.infinity,
-                  margin: EdgeInsets.symmetric(horizontal: w * 0.05),
-                  padding: const EdgeInsets.fromLTRB(25, 30, 25, 30),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(35),
-                      topRight: Radius.circular(35),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: SafeArea(
+                  top: false,
+                  child: Container(
+                    width: double.infinity,
+                    margin: EdgeInsets.symmetric(horizontal: w * 0.05),
+                    padding: const EdgeInsets.fromLTRB(25, 30, 25, 30),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(35),
+                        topRight: Radius.circular(35),
+                      ),
                     ),
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: const Icon(Icons.arrow_back),
-                            ),
-                            const SizedBox(width: 15),
-                            const Text(
-                              "OWNER & SALON REGISTRATION",
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: _isLoading ? null : () => Navigator.pop(context),
+                                child: const Icon(Icons.arrow_back),
+                              ),
+                              const SizedBox(width: 15),
+                              Text(
+                                AppLocalizations.of(context)!.ownerAndSalonRegistration,
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         _buildStepperHeader(),
-                        const Text(
-                          "VERIFY OTP",
+                        Text(
+                          AppLocalizations.of(context)!.verifyOtpTitle,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -238,7 +250,7 @@ class _VerifyRegistrationOtpScreenState
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      "We sent a verification code to your\nmobile number ${widget.registrationRequest.phone.length >= 4 ? ('${widget.registrationRequest.phone.substring(0, 2)}******${widget.registrationRequest.phone.substring(widget.registrationRequest.phone.length - 2)}') : widget.registrationRequest.phone}",
+                      "${AppLocalizations.of(context)!.sentVerificationCodeTo}${widget.registrationRequest.phone.length >= 4 ? ('${widget.registrationRequest.phone.substring(0, 2)}******${widget.registrationRequest.phone.substring(widget.registrationRequest.phone.length - 2)}') : widget.registrationRequest.phone}",
                       style: const TextStyle(
                         color: Color(0XFF909090),
                         fontSize: 13,
@@ -250,37 +262,73 @@ class _VerifyRegistrationOtpScreenState
                       children: List.generate(6, (index) => _otpBox(index)),
                     ),
                     const SizedBox(height: 40),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _verifyOtp,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0XFFFF0B01),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    if (_isLoading) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0XFFFF0B01).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0XFFFF0B01).withValues(alpha: 0.25),
+                            width: 1.2,
                           ),
                         ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                            : const Text(
-                                "VERIFY",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Color(0XFFFF0B01),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                AppLocalizations.of(context)!.uploadingRegistrationPhotosPleaseWait,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0XFF2D2D2D),
+                                  height: 1.4,
                                 ),
                               ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: _verifyOtp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0XFFFF0B01),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context)!.verifyBtn,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 25),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          "Didn't receive OTP? ",
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.didntReceiveOtp,
+                          style: const TextStyle(
                             color: Color(0XFF909090),
                             fontSize: 13,
                           ),
@@ -289,8 +337,8 @@ class _VerifyRegistrationOtpScreenState
                           onTap: _canResend ? _resendOtp : null,
                           child: Text(
                             _canResend
-                                ? "Resend OTP"
-                                : "Resend in ${_secondsRemaining}s",
+                                ? AppLocalizations.of(context)!.resendOtpBtn
+                                : "${AppLocalizations.of(context)!.resendIn}${_secondsRemaining}s",
                             style: TextStyle(
                               color: _canResend
                                   ? const Color(0XFFFF0B01)
@@ -307,16 +355,22 @@ class _VerifyRegistrationOtpScreenState
                 ),
               ),
             ),
-            ),
           ),
-        ],
-      ),
-      ),
-    );
+        ),
+      ],
+    ),
+  ),
+),
+);
   }
 
   Widget _buildStepperHeader() {
-    final steps = ['PERSONAL', 'SALON', 'KYC', 'OTP'];
+    final steps = [
+      AppLocalizations.of(context)!.stepPersonal,
+      AppLocalizations.of(context)!.stepSalon,
+      AppLocalizations.of(context)!.stepKyc,
+      AppLocalizations.of(context)!.stepOtp,
+    ];
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Stack(

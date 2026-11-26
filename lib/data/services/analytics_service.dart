@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'package:neo_parlour_owner/core/api_client.dart';
 import 'package:neo_parlour_owner/data/models/revenue_model.dart';
@@ -36,6 +37,8 @@ class AnalyticsService {
       } else {
         throw Exception('Failed to fetch revenue graph data');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -69,6 +72,8 @@ class AnalyticsService {
       } else {
         throw Exception('Failed to fetch total revenue');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -98,6 +103,8 @@ class AnalyticsService {
       } else {
         throw Exception('Failed to fetch staff appointments');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -127,6 +134,8 @@ class AnalyticsService {
       } else {
         throw Exception('Failed to fetch staff revenue');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -154,6 +163,8 @@ class AnalyticsService {
       } else {
         throw Exception('Failed to fetch dashboard data');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -168,6 +179,8 @@ class AnalyticsService {
       } else {
         throw Exception('Failed to fetch offer usage limits');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }

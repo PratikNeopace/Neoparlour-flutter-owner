@@ -2,6 +2,8 @@ import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
+import 'package:neo_parlour_owner/core/widgets/reason_dialog.dart';
+import 'package:neo_parlour_owner/core/constants/reasons.dart';
 import 'package:intl/intl.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/providers/appointment_provider.dart';
@@ -17,6 +19,7 @@ import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:neo_parlour_owner/core/utils/date_time_utils.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_booking_state.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_select_date_time_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -87,18 +90,18 @@ class _ScheduleScreenState extends State<ScheduleScreen>
               indicatorWeight: 3,
               indicatorSize: TabBarIndicatorSize.label,
               labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              tabs: const [
-                Tab(text: "SCHEDULED"),
-                Tab(text: "CANCELLED"),
-                Tab(text: "COMPLETED"),
+              tabs: [
+                Tab(text: AppLocalizations.of(context)!.scheduledTab),
+                Tab(text: AppLocalizations.of(context)!.cancelledTab),
+                Tab(text: AppLocalizations.of(context)!.completedTab),
               ],
             ),
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                "To Mark appointment as complete connect with the staff",
-                style: TextStyle(
+                AppLocalizations.of(context)!.markAppointmentCompleteHint,
+                style: const TextStyle(
                   fontSize: 12,
                   color: Color(0XFF909090),
                   fontStyle: FontStyle.italic,
@@ -189,10 +192,10 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     AppointmentProvider provider,
   ) {
     if (appointments.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          "No appointments found",
-          style: TextStyle(color: Colors.grey),
+          AppLocalizations.of(context)!.noAppointmentsFound,
+          style: const TextStyle(color: Colors.grey),
         ),
       );
     }
@@ -260,12 +263,12 @@ class _ScheduleScreenState extends State<ScheduleScreen>
             ),
           ),
         ),
-        const Positioned(
+        Positioned(
           bottom: 30,
           left: 23,
           child: Text(
-            "SCHEDULE",
-            style: TextStyle(
+            AppLocalizations.of(context)!.scheduleTitle,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 26,
               fontWeight: FontWeight.w500,
@@ -375,7 +378,7 @@ class AppointmentCard extends StatelessWidget {
                         if (appointment.staffName.isNotEmpty) ...[
                           const SizedBox(height: 4),
                           Text(
-                            "Staff: ${appointment.staffName}",
+                            "${AppLocalizations.of(context)!.staffPrefix}${appointment.staffName}",
                             style: const TextStyle(
                               color: Color(0XFFFF0B01),
                               fontSize: 11,
@@ -436,7 +439,7 @@ class AppointmentCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          "Cancel Reason: ${appointment.cancelReason}",
+                          "${AppLocalizations.of(context)!.cancelReasonPrefix}${appointment.cancelReason}",
                           style: const TextStyle(fontSize: 11, color: Colors.red),
                         ),
                       ),
@@ -452,7 +455,7 @@ class AppointmentCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          "Owner Reschedule Reason: ${appointment.ownerRescheduleReason}",
+                          "${AppLocalizations.of(context)!.ownerRescheduleReasonPrefix}${appointment.ownerRescheduleReason}",
                           style: const TextStyle(fontSize: 11, color: Colors.blue),
                         ),
                       ),
@@ -468,7 +471,7 @@ class AppointmentCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          "Customer Reschedule Reason: ${appointment.customerRescheduleReason}",
+                          "${AppLocalizations.of(context)!.customerRescheduleReasonPrefix}${appointment.customerRescheduleReason}",
                           style: const TextStyle(fontSize: 11, color: Colors.orange),
                         ),
                       ),
@@ -496,9 +499,9 @@ class AppointmentCard extends StatelessWidget {
                                   vertical: 10,
                                 ),
                               ),
-                              child: const Text(
-                                "RESCHEDULE",
-                                style: TextStyle(
+                              child: Text(
+                                AppLocalizations.of(context)!.rescheduleBtn,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -519,9 +522,9 @@ class AppointmentCard extends StatelessWidget {
                                   vertical: 10,
                                 ),
                               ),
-                              child: const Text(
-                                "CANCEL",
-                                style: TextStyle(
+                              child: Text(
+                                AppLocalizations.of(context)!.cancelBtn,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -540,9 +543,9 @@ class AppointmentCard extends StatelessWidget {
                           width: 18,
                           height: 18,
                         ),
-                        label: const Text(
-                          "ASSIGN STAFF",
-                          style: TextStyle(
+                        label: Text(
+                          AppLocalizations.of(context)!.assignStaffBtn,
+                          style: const TextStyle(
                             color: Color(0XFF8D8D8D),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -578,9 +581,9 @@ class AppointmentCard extends StatelessWidget {
                       shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    child: const Text(
-                      "DOWNLOAD INVOICE",
-                      style: TextStyle(
+                    child: Text(
+                      AppLocalizations.of(context)!.downloadInvoiceBtn,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1,
@@ -635,42 +638,20 @@ class AppointmentCard extends StatelessWidget {
     );
 
     if (success == true && context.mounted) {
-      FlushbarHelper.show(context, "Appointment rescheduled successfully", isSuccess: true);
+      FlushbarHelper.show(context, AppLocalizations.of(context)!.appointmentCancelledSuccess, isSuccess: true);
     }
   }
 
   Future<void> _handleCancel(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-    final TextEditingController reasonController = TextEditingController();
-
     final String? reason = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("Cancellation Reason"),
-        content: TextField(
-          controller: reasonController,
-          decoration: const InputDecoration(
-            hintText: "Enter reason for cancellation",
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0XFFFF0B01)),
-            ),
-          ),
-          maxLines: 2,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("BACK", style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
-            child: const Text(
-              "CANCEL APPOINTMENT",
-              style: TextStyle(color: Color(0XFFFF0B01)),
-            ),
-          ),
-        ],
+      builder: (dialogContext) => ReasonDialog(
+        title: AppLocalizations.of(context)!.cancellationReasonTitle,
+        hintText: AppLocalizations.of(context)!.enterCancellationReasonHint,
+        predefinedReasons: Reasons.cancellationReasons,
+        confirmText: AppLocalizations.of(context)!.cancelAppointmentBtn,
       ),
     );
 
@@ -686,7 +667,7 @@ class AppointmentCard extends StatelessWidget {
       );
 
       if (context.mounted) {
-        FlushbarHelper.show(context, "Appointment cancelled!", isSuccess: true);
+        FlushbarHelper.show(context, AppLocalizations.of(context)!.appointmentCancelledSuccess, isSuccess: true);
       }
     } catch (e) {
       if (context.mounted) {
@@ -731,9 +712,9 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text(
-        "Assign New Staff",
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+      title: Text(
+        AppLocalizations.of(context)!.assignNewStaffTitle,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       content: Consumer<StaffProvider>(
@@ -750,9 +731,9 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
           final staffList = staffProvider.staffMembers.toList();
 
           if (staffList.isEmpty) {
-            return const SizedBox(
+            return SizedBox(
               height: 100,
-              child: Center(child: Text("No staff available")),
+              child: Center(child: Text(AppLocalizations.of(context)!.noStaffAvailable)),
             );
           }
 
@@ -795,7 +776,7 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
                         Navigator.pop(context);
                         FlushbarHelper.show(
                           context,
-                          "Staff assigned to ${staff.name} successfully",
+                          "${AppLocalizations.of(context)!.staffAssignedToPrefix}${staff.name}${AppLocalizations.of(context)!.successfullySuffix}",
                           isSuccess: true,
                         );
                       }
@@ -814,9 +795,9 @@ class _StaffAssignmentDialogState extends State<_StaffAssignmentDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text(
-            "CANCEL",
-            style: TextStyle(
+          child: Text(
+            AppLocalizations.of(context)!.cancelBtn,
+            style: const TextStyle(
               color: Color(0XFF909090),
               fontWeight: FontWeight.bold,
             ),

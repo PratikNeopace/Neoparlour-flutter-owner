@@ -75,7 +75,7 @@ class SalonProvider with ChangeNotifier {
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = e.toString();
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
       notifyListeners();
       return false;
     }

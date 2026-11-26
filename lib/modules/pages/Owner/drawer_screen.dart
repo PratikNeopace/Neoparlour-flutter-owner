@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'about_us_screen.dart';
 import 'support_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 
 class DrawerScreen extends StatelessWidget {
@@ -74,12 +75,12 @@ class DrawerScreen extends StatelessWidget {
                           return _buildGroupContainer([
                             _buildRow(
                               "assets/Images/DrawerScreen/profile_icon.svg",
-                              'Profile',
+                              AppLocalizations.of(context)!.drawerProfile,
                             ),
                             _divider(),
                             _buildRow(
                               "assets/Images/DrawerScreen/about_us_icon.svg",
-                              'About Us',
+                              AppLocalizations.of(context)!.drawerAboutUs,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (_) => const AboutUsScreen()),
@@ -88,7 +89,7 @@ class DrawerScreen extends StatelessWidget {
                             _divider(),
                             _buildRow(
                               "assets/Images/DrawerScreen/support_icon.svg",
-                              'Support',
+                              AppLocalizations.of(context)!.drawerSupport,
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (_) => const SupportScreen()),
@@ -97,13 +98,13 @@ class DrawerScreen extends StatelessWidget {
                             _divider(),
                             _buildRow(
                               "assets/Images/DrawerScreen/booking_icon.svg",
-                              'My Bookings',
+                              AppLocalizations.of(context)!.drawerMyBookings,
                             ),
                             if (isOwner) ...[
                               _divider(),
                               _buildRow(
                                 "assets/Images/DrawerScreen/subscription_icon.svg",
-                                'Subscription',
+                                AppLocalizations.of(context)!.drawerSubscription,
                               ),
                             ],
                           ]);
@@ -115,22 +116,22 @@ class DrawerScreen extends StatelessWidget {
                       _buildGroupContainer([
                         _buildRow(
                           "assets/Images/DrawerScreen/password_icon.svg",
-                          'Change Password',
+                          AppLocalizations.of(context)!.drawerChangePassword,
                         ),
                         _divider(),
                         _buildRow(
                           "assets/Images/DrawerScreen/logout_icon.svg",
-                          'LOGOUT',
+                          AppLocalizations.of(context)!.drawerLogout,
                         ),
                       ]),
       
                       const Spacer(),
       
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Text(
-                          'Powered By Neopaceinfotech LLP',
-                          style: TextStyle(
+                          AppLocalizations.of(context)!.drawerPoweredBy,
+                          style: const TextStyle(
                             color: Color(0XFF626262),
                             fontSize: 10,
                           ),

@@ -7,6 +7,7 @@ import 'package:neo_parlour_owner/providers/staff_provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class StaffMainScreen extends StatefulWidget {
   const StaffMainScreen({super.key});
@@ -79,9 +80,9 @@ class _StaffMainScreenState extends State<StaffMainScreen> with SingleTickerProv
               indicatorWeight: 2,
               indicatorSize: TabBarIndicatorSize.label,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              tabs: const [
-                Tab(text: "ADD STAFF"),
-                Tab(text: "STAFF LIST"),
+              tabs: [
+                Tab(text: AppLocalizations.of(context)!.addStaffTab),
+                Tab(text: AppLocalizations.of(context)!.staffListTab),
               ],
             ),
             Expanded(
@@ -127,9 +128,9 @@ class _StaffMainScreenState extends State<StaffMainScreen> with SingleTickerProv
                   ],
                 ),
               ),
-              child: const Text(
-                "STAFF",
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.staffTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 25,
                   fontWeight: FontWeight.w500,

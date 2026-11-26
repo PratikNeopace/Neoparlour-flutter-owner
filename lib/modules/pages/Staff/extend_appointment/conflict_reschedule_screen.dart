@@ -10,12 +10,16 @@ class ConflictRescheduleScreen extends StatefulWidget {
   final int collidedAppointmentId;
   final int staffId;
   final int durationMinutes;
+  final int? overrideAppointmentId;
+  final int? overrideDuration;
 
   const ConflictRescheduleScreen({
     super.key,
     required this.collidedAppointmentId,
     required this.staffId,
     required this.durationMinutes,
+    this.overrideAppointmentId,
+    this.overrideDuration,
   });
 
   @override
@@ -47,13 +51,17 @@ class _ConflictRescheduleScreenState extends State<ConflictRescheduleScreen> {
         widget.staffId,
         _selectedDate,
         widget.durationMinutes,
+        excludeAppointmentId: widget.collidedAppointmentId,
+        overrideAppointmentId: widget.overrideAppointmentId,
+        overrideDuration: widget.overrideDuration,
       );
       setState(() {
         _availableSlots = slots;
       });
     } catch (e) {
       if (mounted) {
-        FlushbarHelper.show(context, "Failed to load slots: $e");
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
+        FlushbarHelper.show(context, errorMsg);
       }
     } finally {
       setState(() {
@@ -175,9 +183,10 @@ class _ConflictRescheduleScreenState extends State<ConflictRescheduleScreen> {
                               // e.g. slot.displayTime = "10:00"
                               final time = slot.displayTime.isNotEmpty ? slot.displayTime : DateFormat("HH:mm").format(slot.startTime);
                               final isSelected = _selectedTime == time;
+                              final isBusy = slot.busy;
 
                             return GestureDetector(
-                              onTap: () {
+                              onTap: isBusy ? null : () {
                                 setState(() {
                                   _selectedTime = time;
                                   _selectedSlotTime = slot.startTime;
@@ -186,15 +195,16 @@ class _ConflictRescheduleScreenState extends State<ConflictRescheduleScreen> {
                               child: Container(
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0XFFFF0B01) : Colors.white,
-                                  border: Border.all(color: isSelected ? const Color(0XFFFF0B01) : Colors.grey.shade300),
+                                  color: isBusy ? Colors.grey.shade200 : (isSelected ? const Color(0XFFFF0B01) : Colors.white),
+                                  border: Border.all(color: isSelected && !isBusy ? const Color(0XFFFF0B01) : Colors.grey.shade300),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   time,
                                   style: GoogleFonts.poppins(
-                                    color: isSelected ? Colors.white : Colors.black87,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                    color: isBusy ? Colors.grey.shade400 : (isSelected ? Colors.white : Colors.black87),
+                                    fontWeight: isSelected && !isBusy ? FontWeight.w600 : FontWeight.w400,
+                                    decoration: isBusy ? TextDecoration.lineThrough : null,
                                   ),
                                 ),
                               ),

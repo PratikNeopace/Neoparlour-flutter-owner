@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_register_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_login.dart';
@@ -128,6 +129,12 @@ class _StaffRegisterScreenState extends State<StaffRegisterScreen> {
                             "assets/Images/RegisterScreen/call.svg",
                             "Mobile Number",
                             mobileController,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            maxLength: 10,
                             isVerify: true),
                         _customInputField(
                             "assets/Images/RegisterScreen/username.svg",
@@ -286,12 +293,22 @@ class _StaffRegisterScreenState extends State<StaffRegisterScreen> {
 
   Widget _customInputField(String icon, String hint,
       TextEditingController controller,
-      {bool obscure = false, bool isVerify = false}) {
+      {bool obscure = false,
+      bool isVerify = false,
+      TextInputType? keyboardType,
+      List<TextInputFormatter>? inputFormatters,
+      int? maxLength}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: controller,
         obscureText: obscure,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        maxLength: maxLength,
+        buildCounter: maxLength != null
+            ? (context, {required currentLength, required isFocused, maxLength}) => null
+            : null,
         decoration: InputDecoration(
           prefixIcon: Padding(
             padding: const EdgeInsets.all(12),

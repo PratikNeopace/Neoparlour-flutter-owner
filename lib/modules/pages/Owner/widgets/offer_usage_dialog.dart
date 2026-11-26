@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neo_parlour_owner/providers/analytics_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class OfferUsageDialog extends StatelessWidget {
   const OfferUsageDialog({super.key});
@@ -25,7 +26,7 @@ class OfferUsageDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Offer Claim Details",
+                  AppLocalizations.of(context)!.offerClaimDetailsTitle,
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -52,9 +53,9 @@ class OfferUsageDialog extends StatelessWidget {
                   }
 
                   if (analyticsProvider.offerUsageLimits.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(40.0),
-                      child: Text("No usage data found"),
+                    return Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Text(AppLocalizations.of(context)!.noUsageDataFound),
                     );
                   }
 
@@ -85,7 +86,7 @@ class OfferUsageDialog extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "Total Limit: ${usage.totalUsageLimit == 0 ? 'Unlimited' : usage.totalUsageLimit}",
+                                    "${AppLocalizations.of(context)!.totalLimitLabel}${usage.totalUsageLimit == 0 ? AppLocalizations.of(context)!.unlimitedLabel : usage.totalUsageLimit}",
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: const Color(0XFF8B8989),
@@ -119,7 +120,7 @@ class OfferUsageDialog extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "USED",
+                                  AppLocalizations.of(context)!.usedLabel,
                                   style: GoogleFonts.inter(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w800,

@@ -9,10 +9,12 @@ import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/providers/appointment_provider.dart';
 import 'package:neo_parlour_owner/providers/analytics_provider.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
-import 'package:neo_parlour_owner/modules/pages/Owner/analytics_two_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/appointment_history_screen.dart';
+import 'package:neo_parlour_owner/core/widgets/reason_dialog.dart';
+import 'package:neo_parlour_owner/core/constants/reasons.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/notification_screen.dart';
 import 'package:neo_parlour_owner/data/models/appointment_response.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 import 'package:neo_parlour_owner/main.dart'; // To access global routeObserver
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
@@ -21,6 +23,8 @@ import 'package:neo_parlour_owner/data/models/staff_model.dart';
 import 'package:neo_parlour_owner/core/utils/date_time_utils.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_booking_state.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_select_date_time_screen.dart';
+import 'package:neo_parlour_owner/widgets/language_selector_button.dart';
+import 'package:neo_parlour_owner/core/data/services/app_icon_service.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -35,9 +39,10 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       _refreshData();
+      AppIconService.checkAndApplySeasonalIcon(context);
     });
   }
 
@@ -104,68 +109,39 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
     );
 
     if (success == true && mounted) {
-      FlushbarHelper.show(context, "Appointment rescheduled successfully", isSuccess: true);
+      FlushbarHelper.show(context, AppLocalizations.of(context)!.appointmentRescheduled, isSuccess: true);
       _refreshData();
     }
   }
 
   Future<void> _handleCancel(Appointment appointment) async {
-    final reasonController = TextEditingController();
-    final bool? confirm = await showDialog<bool>(
+    final String? cancelReason = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Cancel Appointment"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Are you sure you want to cancel this appointment?"),
-            const SizedBox(height: 15),
-            TextField(
-              controller: reasonController,
-              decoration: const InputDecoration(
-                hintText: "Enter cancellation reason...",
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("NO"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text(
-              "CANCEL APPOINTMENT",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
+      builder: (context) => ReasonDialog(
+        title: AppLocalizations.of(context)!.cancelAppointmentTitle,
+        hintText: AppLocalizations.of(context)!.enterCancelReason,
+        predefinedReasons: Reasons.cancellationReasons,
       ),
     );
 
-    if (confirm == true && mounted) {
+    if (cancelReason != null && cancelReason.isNotEmpty && mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(
-        context,
-        listen: false,
-      );
+      final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+      final salonId = int.tryParse(authProvider.user?.tenantName ?? '') ?? 0;
 
       try {
         await appointmentProvider.cancelAppointment(
           appointmentId: appointment.id,
-          reason: reasonController.text,
-          salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
+          reason: cancelReason,
+          salonId: salonId,
         );
         if (mounted) {
-          FlushbarHelper.show(context, "Appointment cancelled successfully", isSuccess: true);
+          FlushbarHelper.show(context, AppLocalizations.of(context)!.appointmentCancelled, isSuccess: true);
           _refreshData();
         }
       } catch (e) {
         if (mounted) {
-          FlushbarHelper.show(context, "Error: $e");
+          FlushbarHelper.show(context, "${AppLocalizations.of(context)!.errorPrefix}$e");
         }
       }
     }
@@ -187,7 +163,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
     final staff = await showDialog<Staff>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Select Staff"),
+        title: Text(AppLocalizations.of(context)!.selectStaff),
         content: SizedBox(
           width: double.maxFinite,
           child: Consumer<StaffProvider>(
@@ -196,7 +172,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                 return const Center(child: CircularProgressIndicator());
               }
               if (provider.staffMembers.isEmpty) {
-                return const Text("No staff available");
+                return Text(AppLocalizations.of(context)!.noStaffAvailable);
               }
               return ListView.builder(
                 shrinkWrap: true,
@@ -228,12 +204,12 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
           salonId: int.tryParse(authProvider.user?.tenantName ?? ''),
         );
         if (mounted) {
-          FlushbarHelper.show(context, "Staff assigned successfully", isSuccess: true);
+          FlushbarHelper.show(context, AppLocalizations.of(context)!.staffAssignedSuccessfully, isSuccess: true);
           _refreshData();
         }
       } catch (e) {
         if (mounted) {
-          FlushbarHelper.show(context, "Error: $e");
+          FlushbarHelper.show(context, "${AppLocalizations.of(context)!.errorPrefix}$e");
         }
       }
     }
@@ -336,14 +312,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                   padding: const EdgeInsets.only(right: 100, bottom: 5),
                   child: Consumer<AuthProvider>(
                     builder: (context, auth, child) {
-                      final userName = auth.user?.name ?? "Owner";
+                      final userName = auth.user?.name ?? AppLocalizations.of(context)!.ownerDefaultName;
 
                       return FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          // "WELCOME ${(auth.user?.name ?? "Owner").toUpperCase()}",
-                           "WELCOME ${userName.toUpperCase()}",
+                           "${AppLocalizations.of(context)!.welcomePrefix}${userName.toUpperCase()}",
                            maxLines: 1,
                           style: GoogleFonts.poppins(
                             color: Colors.white,
@@ -356,6 +331,16 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+        // 🔹 Language Selector
+        const SafeArea(
+          child: Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: EdgeInsets.only(right: 20, top: 10),
+              child: LanguageSelectorButton(),
             ),
           ),
         ),
@@ -427,20 +412,20 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
   Widget _buildTodayOverview() {
     return Consumer<AnalyticsProvider>(
       builder: (context, provider, child) {
-        String title = "TODAY OVERVIEW";
+        String title = AppLocalizations.of(context)!.todayOverview;
         switch (provider.viewType) {
           case 'week':
-            title = "WEEKLY OVERVIEW";
+            title = AppLocalizations.of(context)!.weeklyOverview;
             break;
           case 'month':
-            title = "MONTHLY OVERVIEW";
+            title = AppLocalizations.of(context)!.monthlyOverview;
             break;
           case 'year':
-            title = "YEARLY OVERVIEW";
+            title = AppLocalizations.of(context)!.yearlyOverview;
             break;
           case 'day':
           default:
-            title = "TODAY OVERVIEW";
+            title = AppLocalizations.of(context)!.todayOverview;
         }
 
         return Padding(
@@ -475,13 +460,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                     },
                     padding: EdgeInsets.zero,
                     itemBuilder: (context) => [
-                      const PopupMenuItem(value: 'day', child: Text("Today")),
-                      const PopupMenuItem(value: 'week', child: Text("Weekly")),
-                      const PopupMenuItem(
+                      PopupMenuItem(value: 'day', child: Text(AppLocalizations.of(context)!.filterToday)),
+                      PopupMenuItem(value: 'week', child: Text(AppLocalizations.of(context)!.filterWeekly)),
+                      PopupMenuItem(
                         value: 'month',
-                        child: Text("Monthly"),
+                        child: Text(AppLocalizations.of(context)!.filterMonthly),
                       ),
-                      const PopupMenuItem(value: 'year', child: Text("Yearly")),
+                      PopupMenuItem(value: 'year', child: Text(AppLocalizations.of(context)!.filterYearly)),
                     ],
                   ),
                 ],
@@ -500,43 +485,43 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
         final periodLabel = provider.getPeriodLabel();
         final List<Map<String, dynamic>> dynamicStats = [
           {
-            "title": "Revenue",
-            "subtitle": "Total for $periodLabel",
+            "title": AppLocalizations.of(context)!.statRevenue,
+            "subtitle": "${AppLocalizations.of(context)!.totalFor}$periodLabel",
             "value": "₹ ${data?.revenue.toStringAsFixed(0) ?? '0'}",
             "icon": "assets/Images/HomeScreen/revenue_icon.svg",
             "valueColor": const Color(0XFFFF0B01),
           },
           {
-            "title": "Bookings",
-            "subtitle": "Count for $periodLabel",
+            "title": AppLocalizations.of(context)!.statBookings,
+            "subtitle": "${AppLocalizations.of(context)!.countFor}$periodLabel",
             "value": data?.booked.toString() ?? "00",
             "icon": "assets/Images/HomeScreen/today_overview.svg",
             "valueColor": const Color(0XFFFF0B01),
           },
           {
-            "title": "Offer Usage",
-            "subtitle": "Used $periodLabel",
+            "title": AppLocalizations.of(context)!.statOfferUsage,
+            "subtitle": "${AppLocalizations.of(context)!.usedPeriod}$periodLabel",
             "value": data?.offerUsage.toString() ?? "00",
             "icon": "assets/Images/HomeScreen/offer_anaytics_icon.svg",
             "valueColor": const Color(0XFFFF0B01),
           },
           {
-            "title": "Completed",
-            "subtitle": "Total $periodLabel",
+            "title": AppLocalizations.of(context)!.statCompleted,
+            "subtitle": "${AppLocalizations.of(context)!.totalPeriod}$periodLabel",
             "value": data?.completed.toString() ?? "00",
             "icon": "assets/Images/HomeScreen/staff_analytics_icon.svg",
             "valueColor": const Color(0XFFFF0B01),
           },
           {
-            "title": "Cancelled",
-            "subtitle": "Total $periodLabel",
+            "title": AppLocalizations.of(context)!.statCancelled,
+            "subtitle": "${AppLocalizations.of(context)!.totalPeriod}$periodLabel",
             "value": data?.cancelled.toString() ?? "00",
             "icon": "assets/Images/HomeScreen/staff_attendance_icon.svg",
             "valueColor": const Color(0XFFFF0B01),
           },
           {
-            "title": "Rescheduled",
-            "subtitle": "Total $periodLabel",
+            "title": AppLocalizations.of(context)!.statRescheduled,
+            "subtitle": "${AppLocalizations.of(context)!.totalPeriod}$periodLabel",
             "value": data?.rescheduled.toString() ?? "00",
             "icon": "assets/Images/HomeScreen/leave_request_icon.svg",
             "valueColor": const Color(0XFFFF0B01),
@@ -557,18 +542,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
             ),
             itemBuilder: (context, index) {
               final stat = dynamicStats[index];
-              return GestureDetector(
-                onTap: () {
-                  if (stat['title'] == "Offer Analytics") {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AnalyticsTwoScreen(),
-                      ),
-                    );
-                  }
-                },
-                child: Container(
+              return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: const Color(0XFFF9F9F9),
@@ -650,8 +624,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                       ),
                     ],
                   ),
-                ),
-              );
+                );
             },
           ),
         );
@@ -666,7 +639,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "UPCOMING APPOINTMENTS",
+            AppLocalizations.of(context)!.upcomingAppointments,
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -703,7 +676,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Text(
-                      "No upcoming appointments",
+                      AppLocalizations.of(context)!.noUpcomingAppointments,
                       style: GoogleFonts.poppins(color: Colors.grey),
                     ),
                   ),
@@ -783,7 +756,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                                         if (appointment.staffName.isNotEmpty) ...[
                                           const SizedBox(height: 2),
                                           Text(
-                                            "Staff: ${appointment.staffName}",
+                                            "${AppLocalizations.of(context)!.staffPrefix}${appointment.staffName}",
                                             style: GoogleFonts.poppins(
                                               fontSize: 10,
                                               fontWeight: FontWeight.w500,
@@ -797,9 +770,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      const Text(
-                                        "View details",
-                                        style: TextStyle(
+                                      Text(
+                                        AppLocalizations.of(context)!.viewDetails,
+                                        style: const TextStyle(
                                           fontSize: 8,
                                           color: Colors.black54,
                                         ),
@@ -851,7 +824,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
-                                          "Cancel Reason: ${appointment.cancelReason}",
+                                          "${AppLocalizations.of(context)!.cancelReasonPrefix}${appointment.cancelReason}",
                                           style: const TextStyle(fontSize: 11, color: Colors.red),
                                         ),
                                       ),
@@ -867,7 +840,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
-                                          "Owner Reschedule Reason: ${appointment.ownerRescheduleReason}",
+                                          "${AppLocalizations.of(context)!.ownerRescheduleReasonPrefix}${appointment.ownerRescheduleReason}",
                                           style: const TextStyle(fontSize: 11, color: Colors.blue),
                                         ),
                                       ),
@@ -883,7 +856,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
-                                          "Customer Reschedule Reason: ${appointment.customerRescheduleReason}",
+                                          "${AppLocalizations.of(context)!.customerRescheduleReasonPrefix}${appointment.customerRescheduleReason}",
                                           style: const TextStyle(fontSize: 11, color: Colors.orange),
                                         ),
                                       ),
@@ -894,34 +867,34 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> with RouteAware {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: GestureDetector(
-                                      onTap: () => _handleReschedule(appointment),
-                                      child: _appointmentButton(
-                                        "RESCHEDULE",
-                                        const Color(0XFFFF0B01),
-                                      ),
+                                      child: GestureDetector(
+                                        onTap: () => _handleReschedule(appointment),
+                                        child: _appointmentButton(
+                                          AppLocalizations.of(context)!.rescheduleBtn,
+                                          const Color(0XFFFF0B01),
+                                        ),
                                     ),
                                   ),
                                   const SizedBox(width: 15),
                                   Expanded(
-                                    child: GestureDetector(
-                                      onTap: () => _handleCancel(appointment),
-                                      child: _appointmentButton(
-                                        "CANCEL",
-                                        const Color(0XFF909090),
-                                      ),
+                                      child: GestureDetector(
+                                        onTap: () => _handleCancel(appointment),
+                                        child: _appointmentButton(
+                                          AppLocalizations.of(context)!.cancelBtn,
+                                          const Color(0XFF909090),
+                                        ),
                                     ),
                                   ),
                                 ],
                               ),
                               if (appointment.staffId == null || appointment.staffId == 0) ...[
                                 const SizedBox(height: 10),
-                                GestureDetector(
-                                  onTap: () => _handleAssignStaff(appointment),
-                                  child: _appointmentButton(
-                                    "ASSIGN STAFF",
-                                    const Color(0XFF2196F3),
-                                  ),
+                                  GestureDetector(
+                                    onTap: () => _handleAssignStaff(appointment),
+                                    child: _appointmentButton(
+                                      AppLocalizations.of(context)!.assignStaffBtn,
+                                      const Color(0XFF2196F3),
+                                    ),
                                 ),
                               ],
                             ],

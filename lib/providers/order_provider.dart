@@ -86,7 +86,9 @@ class OrderProvider with ChangeNotifier {
     _filteredOrders = _orders.where((order) {
       bool matchesMobile = true;
       if (_mobileQuery.isNotEmpty) {
-        matchesMobile = order.customerMobile.contains(_mobileQuery);
+        final query = _mobileQuery.toLowerCase();
+        matchesMobile = order.customerMobile.toLowerCase().contains(query) || 
+                        order.customerName.toLowerCase().contains(query);
       }
       bool matchesStatus = true;
       if (_selectedStatus != 'all') {

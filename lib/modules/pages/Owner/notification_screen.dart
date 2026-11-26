@@ -1,4 +1,5 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
@@ -16,6 +17,7 @@ import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -26,6 +28,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  Timer? _debounce;
   bool _notificationsLoaded = false;
   bool _birthdaysLoaded = false;
   bool _requestsLoaded = false;
@@ -73,6 +76,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -95,6 +99,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       extendBody: true,
       bottomNavigationBar: const OwnerBottomNavBar(),
@@ -129,11 +134,11 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             indicatorColor: const Color(0XFFFF0B01),
             labelColor: Colors.black,
             unselectedLabelColor: Colors.grey,
-            tabs: const [
-              Tab(text: "Notifications"),
-              Tab(text: "Birthdays"),
-              Tab(text: "Requests"),
-              Tab(text: "Orders"),
+            tabs: [
+              Tab(text: AppLocalizations.of(context)!.notificationsTab),
+              Tab(text: AppLocalizations.of(context)!.birthdaysTab),
+              Tab(text: AppLocalizations.of(context)!.requestsTab),
+              Tab(text: AppLocalizations.of(context)!.ordersTab),
             ],
           ),
           Expanded(
@@ -160,7 +165,23 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             : provider.errorMessage != null
                 ? Center(child: Text(provider.errorMessage!, style: const TextStyle(color: Colors.red)))
                 : provider.notifications.isEmpty
-                    ? const Center(child: Text("No notifications yet"))
+                    ? CustomRefreshIndicator(
+                        onRefresh: () async {
+                          final auth = Provider.of<AuthProvider>(context, listen: false);
+                          await provider.fetchNotifications(
+                            salonId: int.tryParse(auth.user?.tenantName ?? '') ?? 0,
+                            refresh: true,
+                          );
+                        },
+                        color: const Color(0XFFFF0B01),
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                            Center(child: Text(AppLocalizations.of(context)!.noNotificationsYet)),
+                          ],
+                        ),
+                      )
                     : CustomRefreshIndicator(
                         onRefresh: () async {
                           final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -216,7 +237,23 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             : provider.birthdaysErrorMessage != null
                 ? Center(child: Text(provider.birthdaysErrorMessage!, style: const TextStyle(color: Colors.red)))
                 : provider.birthdays.isEmpty
-                    ? const Center(child: Text("No Birthdays found !"))
+                    ? CustomRefreshIndicator(
+                        onRefresh: () async {
+                          final auth = Provider.of<AuthProvider>(context, listen: false);
+                          await provider.fetchBirthdays(
+                            salonId: int.tryParse(auth.user?.tenantName ?? '') ?? 0,
+                            refresh: true,
+                          );
+                        },
+                        color: const Color(0XFFFF0B01),
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                            Center(child: Text(AppLocalizations.of(context)!.noBirthdaysFound)),
+                          ],
+                        ),
+                      )
                     : CustomRefreshIndicator(
                         onRefresh: () async {
                           final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -275,7 +312,20 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
         }
 
         if (swaps.isEmpty && leaves.isEmpty) {
-          return const Center(child: Text("No pending requests"));
+          return CustomRefreshIndicator(
+            onRefresh: () async {
+              await inventoryProvider.fetchPendingSwapRequests();
+              await attendanceProvider.fetchPendingLeaveRequests();
+            },
+            color: const Color(0XFFFF0B01),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                Center(child: Text(AppLocalizations.of(context)!.noPendingRequests)),
+              ],
+            ),
+          );
         }
 
         return CustomRefreshIndicator(
@@ -289,13 +339,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             physics: const BouncingScrollPhysics(),
             children: [
               if (swaps.isNotEmpty) ...[
-                const Text("SWAP REQUESTS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey)),
+                Text(AppLocalizations.of(context)!.swapRequestsHeader, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey)),
                 const SizedBox(height: 10),
                 ...swaps.map((req) => _buildSwapRequestCard(context, req, inventoryProvider)),
                 const SizedBox(height: 20),
               ],
               if (leaves.isNotEmpty) ...[
-                const Text("LEAVE REQUESTS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey)),
+                Text(AppLocalizations.of(context)!.leaveRequestsHeader, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey)),
                 const SizedBox(height: 10),
                 ...leaves.map((req) => _buildLeaveRequestCard(context, req, attendanceProvider)),
               ],
@@ -363,7 +413,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text("APPROVE", style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
+                  child: Text(AppLocalizations.of(context)!.approveBtn, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 10),
@@ -386,7 +436,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text("REJECT", style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
+                  child: Text(AppLocalizations.of(context)!.rejectBtn, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
                 ),
               ),
             ],
@@ -449,7 +499,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text("APPROVE", style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
+                  child: Text(AppLocalizations.of(context)!.approveBtn, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 10),
@@ -472,7 +522,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text("REJECT", style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
+                  child: Text(AppLocalizations.of(context)!.rejectBtn, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
                 ),
               ),
 
@@ -497,14 +547,17 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                 children: [
                   TextField(
                     onChanged: (value) {
-                      final auth = Provider.of<AuthProvider>(context, listen: false);
-                      final salonId = int.tryParse(auth.user?.tenantName ?? '') ?? 0;
-                      provider.setMobileQuery(value, salonId);
+                      if (_debounce?.isActive ?? false) _debounce?.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        final auth = Provider.of<AuthProvider>(context, listen: false);
+                        final salonId = int.tryParse(auth.user?.tenantName ?? '') ?? 0;
+                        provider.setMobileQuery(value, salonId);
+                      });
                     },
-                    keyboardType: TextInputType.phone,
+                    keyboardType: TextInputType.text, // Changed from phone to text
                     decoration: InputDecoration(
-                      hintText: 'Search by Mobile Number...',
-                      prefixIcon: const Icon(Icons.phone, color: Colors.grey),
+                      hintText: AppLocalizations.of(context)!.searchByNameOrMobile,
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -525,12 +578,19 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
                     child: Row(
-                      children: ['All', 'Ordered', 'Completed', 'Cancelled'].map((status) {
+                      children: [
+                        {'key': 'All', 'label': AppLocalizations.of(context)!.filterAll},
+                        {'key': 'Ordered', 'label': AppLocalizations.of(context)!.filterOrdered},
+                        {'key': 'Completed', 'label': AppLocalizations.of(context)!.filterCompleted},
+                        {'key': 'Cancelled', 'label': AppLocalizations.of(context)!.filterCancelled},
+                      ].map((item) {
+                        final status = item['key']!;
+                        final label = item['label']!;
                         final isSelected = provider.selectedStatus.toLowerCase() == status.toLowerCase();
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: ChoiceChip(
-                            label: Text(status),
+                            label: Text(label),
                             selected: isSelected,
                             selectedColor: const Color(0XFFFF0B01).withValues(alpha: 0.1),
                             labelStyle: TextStyle(
@@ -565,7 +625,23 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   : provider.errorMessage != null
                       ? Center(child: Text(provider.errorMessage!, style: const TextStyle(color: Colors.red)))
                       : provider.orders.isEmpty
-                          ? const Center(child: Text("No product requests found"))
+                          ? CustomRefreshIndicator(
+                              onRefresh: () async {
+                                final auth = Provider.of<AuthProvider>(context, listen: false);
+                                await provider.fetchOrders(
+                                  salonId: int.tryParse(auth.user?.tenantName ?? '') ?? 0,
+                                  refresh: true,
+                                );
+                              },
+                              color: const Color(0XFFFF0B01),
+                              child: ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                                  Center(child: Text(AppLocalizations.of(context)!.noProductRequestsFound)),
+                                ],
+                              ),
+                            )
                           : CustomRefreshIndicator(
                               onRefresh: () async {
                                 final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -674,7 +750,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Total Amount", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              Text(AppLocalizations.of(context)!.totalAmountLabel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               Text("₹${order.totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0XFFFF0B01))),
             ],
           ),
@@ -701,7 +777,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text("APPROVE", style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
+                    child: Text(AppLocalizations.of(context)!.approveBtn, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -724,7 +800,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text("REJECT", style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
+                    child: Text(AppLocalizations.of(context)!.rejectBtn, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w700, fontSize: 10, letterSpacing: 2, color: Colors.white)),
                   ),
                 ),
               ],
@@ -776,12 +852,12 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             ),
           ),
         ),
-        const Positioned(
+        Positioned(
           bottom: 30,
           left: 23,
           child: Text(
-            "NOTIFICATIONS",
-            style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w500),
+            AppLocalizations.of(context)!.notificationsTab.toUpperCase(),
+            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w500),
           ),
         ),
         Positioned(

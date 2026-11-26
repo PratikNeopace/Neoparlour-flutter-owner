@@ -104,7 +104,12 @@ class AuthProvider extends ChangeNotifier {
       }
       
       // CRITICAL: Preserve the original userId to prevent ID-switching bugs
-      _user = profile.copyWith(id: userId);
+      // Also preserve token and role if backend profile API omits them
+      _user = profile.copyWith(
+        id: userId,
+        token: (profile.token.isEmpty && _user != null) ? _user!.token : profile.token,
+        role: (profile.role.isEmpty && _user != null) ? _user!.role : profile.role,
+      );
     } catch (e) {
       _errorMessage = ErrorHandler.parseError(e);
       if (e.toString().contains('401')) {
@@ -113,6 +118,27 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> refreshUserToken() async {
+    try {
+      final response = await _authService.refreshToken();
+      if (response.token.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', response.token);
+        await prefs.setString('auth_token', response.token);
+        
+        if (_user != null) {
+          _user = _user!.copyWith(token: response.token);
+          notifyListeners();
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint("Failed to refresh token: $e");
+      return false;
     }
   }
 
@@ -231,21 +257,21 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> deleteAccount() async {
-    if (_user == null) return false;
+  Future<String?> deleteAccount() async {
+    if (_user == null) return null;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _authService.deleteAccount(_user!.id);
+      final message = await _authService.deleteAccount(_user!.id);
       await logout(); // Clear session after deletion
-      return true;
+      return message;
     } catch (e) {
       _isLoading = false;
       _errorMessage = ErrorHandler.parseError(e);
       notifyListeners();
-      return false;
+      return null;
     } finally {
       _isLoading = false;
       notifyListeners();

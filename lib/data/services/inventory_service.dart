@@ -26,8 +26,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -46,8 +44,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -61,8 +57,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -78,8 +72,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -96,8 +88,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -113,8 +103,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -126,8 +114,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -144,8 +130,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -163,8 +147,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -182,8 +164,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -200,8 +180,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -223,8 +201,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -261,8 +237,6 @@ class InventoryService {
         return e.response!.data?.toString() ?? "Swap request submitted";
       }
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -279,8 +253,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -306,8 +278,6 @@ class InventoryService {
         return e.response!.data?.toString() ?? "Swap approved successfully";
       }
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -333,8 +303,6 @@ class InventoryService {
         return e.response!.data?.toString() ?? "Swap rejected";
       }
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -350,8 +318,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
   Future<StaffOpenInventoryResponse> openProduct(int staffInventoryId, double openQuantity, String? notes) async {
@@ -370,8 +336,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -387,8 +351,6 @@ class InventoryService {
       }
     } on DioException catch (e) {
       throw _handleError(e);
-    } catch (e) {
-      rethrow;
     }
   }
 }

@@ -17,6 +17,7 @@ import 'package:neo_parlour_owner/data/models/offer_model.dart';
 import '../../../providers/staff_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AnalyticsMainScreen extends StatefulWidget {
   const AnalyticsMainScreen({super.key});
@@ -132,8 +133,6 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
   }
 
   Widget _buildHeader() {
-    String title = "ANALYTICS";
-
     return Stack(
       children: [
         ClipPath(
@@ -163,7 +162,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                 ),
               ),
               child: Text(
-                title,
+                AppLocalizations.of(context)!.analyticsTitle,
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 26,
@@ -259,7 +258,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _tabs[index],
+                            _tabs[index] == "REVENUE" ? AppLocalizations.of(context)!.revenueTab : _tabs[index] == "OFFER" ? AppLocalizations.of(context)!.offerTab : AppLocalizations.of(context)!.staffTab,
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
@@ -304,11 +303,11 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
               analyticsProvider.setViewType(value, salonId: salonId);
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(value: 'day', child: Text("Today")),
-              const PopupMenuItem(value: 'week', child: Text("Weekly")),
-              const PopupMenuItem(value: 'month', child: Text("Monthly")),
-              const PopupMenuItem(value: 'year', child: Text("Yearly")),
-              const PopupMenuItem(value: 'custom', child: Text("Custom Range")),
+              PopupMenuItem(value: 'day', child: Text(AppLocalizations.of(context)!.filterToday)),
+              PopupMenuItem(value: 'week', child: Text(AppLocalizations.of(context)!.filterWeekly)),
+              PopupMenuItem(value: 'month', child: Text(AppLocalizations.of(context)!.filterMonthly)),
+              PopupMenuItem(value: 'year', child: Text(AppLocalizations.of(context)!.filterYearly)),
+              PopupMenuItem(value: 'custom', child: Text(AppLocalizations.of(context)!.filterCustomRange)),
             ],
           ),
         ],
@@ -337,7 +336,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
         if (provider.viewType == 'custom') ...[
           const SizedBox(height: 30),
           Text(
-            "Custom",
+            AppLocalizations.of(context)!.customLabel,
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -348,9 +347,9 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
           _buildFigmaDatePickers(context, provider),
         ],
         const SizedBox(height: 25),
-        const Text(
-          "REVENUE TRENDS",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Text(
+          AppLocalizations.of(context)!.revenueTrendsTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 15),
         _buildRevenueChartContainer(provider),
@@ -380,7 +379,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Total Revenue",
+                AppLocalizations.of(context)!.totalRevenueLabel,
                 style: GoogleFonts.inter(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 16,
@@ -434,7 +433,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
           child: _figmaDatePicker(
             context,
             provider.graphStartDate == null
-                ? "Select Date"
+                ? AppLocalizations.of(context)!.selectDateHint
                 : DateFormat('dd-MM-yyyy').format(provider.graphStartDate!.toLocal()),
                 () => _selectDate(context, true),
           ),
@@ -444,7 +443,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
           child: _figmaDatePicker(
             context,
             provider.graphEndDate == null
-                ? "Select Date"
+                ? AppLocalizations.of(context)!.selectDateHint
                 : DateFormat('dd-MM-yyyy').format(provider.graphEndDate!.toLocal()),
                 () => _selectDate(context, false),
           ),
@@ -492,8 +491,8 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
 
   Widget _buildOfferContent(AnalyticsProvider provider) {
     final List<String> offerTitles = [
-      "Claimed Offer",
-      "Offer Revenue",
+      AppLocalizations.of(context)!.claimedOfferCard,
+      AppLocalizations.of(context)!.offerRevenueCard,
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +521,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                   listen: false,
                 );
 
-                if (title == "Offer Revenue") {
+                if (title == AppLocalizations.of(context)!.offerRevenueCard) {
                   final offerProvider = Provider.of<OfferProvider>(
                     context,
                     listen: false,
@@ -540,7 +539,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                       salonId: int.tryParse(authProvider.user?.tenantName ?? ''),
                     );
                   }
-                } else if (title == "Claimed Offer") {
+                } else if (title == AppLocalizations.of(context)!.claimedOfferCard) {
                   showDialog(
                     context: context,
                     builder: (context) => const OfferUsageDialog(),
@@ -552,9 +551,9 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
           },
         ),
         const SizedBox(height: 25),
-        const Text(
-          "ALL OFFERS",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Text(
+          AppLocalizations.of(context)!.allOffersTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 15),
         Consumer<OfferProvider>(
@@ -564,10 +563,10 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
             }
 
             if (offerProv.offers.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Text("No offers found.", style: TextStyle(color: Colors.grey)),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(AppLocalizations.of(context)!.noOffersFound, style: const TextStyle(color: Colors.grey)),
                 ),
               );
             }
@@ -645,8 +644,8 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
 
   Widget _buildAttendanceContent(AnalyticsProvider provider) {
     final List<String> staffTitles = [
-      "Appointments Per Staff",
-      "Staff Revenue",
+      AppLocalizations.of(context)!.appointmentsPerStaffCard,
+      AppLocalizations.of(context)!.staffRevenueCard,
       // "Total Revenue By Staff",
       // "Total Clients Served"
     ];
@@ -700,9 +699,9 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
           },
         ),
         const SizedBox(height: 25),
-        const Text(
-          "STAFF ATTENDANCE",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Text(
+          AppLocalizations.of(context)!.staffAttendanceTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 15),
         Consumer2<AttendanceProvider, StaffProvider>(
@@ -712,10 +711,10 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
             }
 
             if (attendanceProv.attendanceHistory.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Text("No attendance records found.", style: TextStyle(color: Colors.grey)),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(AppLocalizations.of(context)!.noAttendanceRecords, style: const TextStyle(color: Colors.grey)),
                 ),
               );
             }
@@ -730,7 +729,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                 final staffName = staffProv.staffMembers
                     .where((s) => s.id == attendance.staffId || s.userId == attendance.staffId)
                     .map((s) => s.name)
-                    .firstWhere((name) => true, orElse: () => "Staff ID: ${attendance.staffId}");
+                    .firstWhere((name) => true, orElse: () => "${AppLocalizations.of(context)!.staffIdPrefix}${attendance.staffId}");
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -841,7 +840,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              onTap != null ? "View Details" : "Coming Soon",
+              onTap != null ? AppLocalizations.of(context)!.viewDetailsBtn : AppLocalizations.of(context)!.comingSoonLabel,
               style: const TextStyle(color: Color(0XFF909090), fontSize: 10),
             ),
             const Spacer(),
@@ -898,7 +897,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
               child: CircularProgressIndicator(color: Color(0XFFFF0B01)),
             )
                 : provider.revenuePoints.isEmpty
-                ? const Center(child: Text("No data available"))
+                ? Center(child: Text(AppLocalizations.of(context)!.noDataAvailable))
                 : LineChart(
               LineChartData(
                 minY: 0,
@@ -913,9 +912,9 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                   ),
                   leftTitles: AxisTitles(
                     sideTitles: const SideTitles(showTitles: false),
-                    axisNameWidget: const Text(
-                      "Revenue",
-                      style: TextStyle(
+                    axisNameWidget: Text(
+                      AppLocalizations.of(context)!.revenueLabel,
+                      style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: Color(0XFF606060),
@@ -924,11 +923,11 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
                     axisNameSize: 20,
                   ),
                   bottomTitles: AxisTitles(
-                    axisNameWidget: const Padding(
-                      padding: EdgeInsets.only(top: 10),
+                    axisNameWidget: Padding(
+                      padding: const EdgeInsets.only(top: 10),
                       child: Text(
-                        "Date",
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.dateLabel,
+                        style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: Color(0XFF606060),
@@ -1091,7 +1090,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
         _miniDateButton(
           context,
           provider.graphStartDate == null
-              ? "From"
+              ? AppLocalizations.of(context)!.fromLabel
               : DateFormat('dd/MM/yy').format(provider.graphStartDate!),
           true,
         ),
@@ -1102,7 +1101,7 @@ class _AnalyticsMainScreenState extends State<AnalyticsMainScreen> {
         _miniDateButton(
           context,
           provider.graphEndDate == null
-              ? "To"
+              ? AppLocalizations.of(context)!.toLabel
               : DateFormat('dd/MM/yy').format(provider.graphEndDate!),
           false,
         ),

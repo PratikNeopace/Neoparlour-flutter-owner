@@ -1,0 +1,13 @@
+Date,Day,Task,Status
+25-Aug-2026,Tuesday,Fixed automatic update (in_app_update) navigation bug in Splash Screen,Completed
+25-Aug-2026,Tuesday,Incremented app version to 0.1.4+6 for Play Store deployment,Completed
+24-Aug-2026,Monday,Localized Notifications tab header text for multi-language support,Completed
+24-Aug-2026,Monday,Drafted Google Play Store release notes and bumped version to 0.1.3+5,Completed
+20-Aug-2026,Thursday,Fixed UI spacing constraints for upload buttons in KYC Registration screen,Completed
+19-Aug-2026,Wednesday,Removed unintended page redirect from Offer Usage card on Dashboard,Completed
+19-Aug-2026,Wednesday,Guided Apple Developer account enrollment and Legal Authority verification,Completed
+19-Aug-2026,Wednesday,Drafted iOS stabilization implementation plan for Customer App,Completed
+18-Aug-2026,Tuesday,Fixed fatal iOS startup crashes (Firebase init & Google Fonts),Completed
+18-Aug-2026,Tuesday,Fixed local notifications (FlutterLocalNotificationsPlugin) crash on iOS,Completed
+18-Aug-2026,Tuesday,Refactored _customInputField into a globally reusable widget,Completed
+18-Aug-2026,Tuesday,Fixed compilation error caused by unused google_maps_flutter import,Completed

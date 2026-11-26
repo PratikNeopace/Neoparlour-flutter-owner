@@ -9,6 +9,7 @@ class NeoService {
   final String category;
   final bool active;
   final int popularityCount;
+  final int? displayOrder;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -23,6 +24,7 @@ class NeoService {
     required this.category,
     this.active = true,
     this.popularityCount = 0,
+    this.displayOrder,
     this.createdAt,
     this.updatedAt,
   });
@@ -42,22 +44,36 @@ class NeoService {
       category: json['category'] ?? '',
       active: json['active'] ?? true,
       popularityCount: json['popularityCount'] ?? 0,
+      displayOrder: json['displayOrder'],
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      if (id != null) 'id': id,
+    final Map<String, dynamic> data = {
       'name': name,
       'duration': duration,
       'price': price,
-      if (image != null && !image!.startsWith('assets/')) 'image': image,
       'pdfUrl': pdfUrl,
       'category': category,
       'active': active,
       'popularityCount': popularityCount,
+      'displayOrder': displayOrder,
     };
+    
+    if (id != null) {
+      data['id'] = id;
+    }
+    
+    if (image != null && !image!.startsWith('assets/')) {
+      data['image'] = image;
+    }
+    
+    if (imageUrl != null) {
+      data['imageUrl'] = imageUrl;
+    }
+    
+    return data;
   }
 }

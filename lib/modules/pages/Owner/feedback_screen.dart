@@ -8,7 +8,7 @@ import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
-
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -106,9 +106,9 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                   fontWeight: FontWeight.w500,
                   fontSize: 13,
                 ),
-                tabs: const [
-                  Tab(text: "PENDING"),
-                  Tab(text: "APPROVED"),
+                tabs: [
+                  Tab(text: AppLocalizations.of(context)!.pendingTab),
+                  Tab(text: AppLocalizations.of(context)!.approvedTab),
                 ],
               ),
             ),
@@ -148,8 +148,8 @@ class _FeedbackScreenState extends State<FeedbackScreen>
         }
 
         final emptyLabel = isPending
-            ? "No Pending Feedback Found"
-            : "No Approved Feedback Found";
+            ? AppLocalizations.of(context)!.noPendingFeedback
+            : AppLocalizations.of(context)!.noApprovedFeedback;
 
         return CustomRefreshIndicator(
           onRefresh: () async => _fetchCurrentTab(),
@@ -208,9 +208,9 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                   ],
                 ),
               ),
-              child: const Text(
-                "FEEDBACK",
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.feedbackTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 25,
                   fontWeight: FontWeight.w500,
@@ -287,7 +287,7 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Customer #${feedback.customerId ?? 'N/A'}",
+                          "${AppLocalizations.of(context)!.customerPrefix}${feedback.customerId ?? AppLocalizations.of(context)!.notAvailableText}",
                           style: const TextStyle(
                               fontSize: 14, fontWeight: FontWeight.bold),
                         ),
@@ -330,12 +330,12 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
-                      SizedBox(width: 4),
+                    children: [
+                      const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
+                      const SizedBox(width: 4),
                       Text(
-                        "APPROVED",
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.approvedTab,
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: Colors.green,
@@ -374,12 +374,12 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                                   await provider.rejectFeedback(feedback.id!);
                                   if (context.mounted) {
                                     FlushbarHelper.show(
-                                        context, "Feedback rejected successfully!",
+                                        context, AppLocalizations.of(context)!.feedbackRejectedSuccess,
                                         isSuccess: true);
                                   }
                                 } catch (e) {
                                   if (context.mounted) {
-                                    FlushbarHelper.show(context, "Error: $e");
+                                    FlushbarHelper.show(context, "${AppLocalizations.of(context)!.errorPrefix}$e");
                                   }
                                 }
                               },
@@ -391,8 +391,8 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(6)),
                         ),
-                        child: const Text("REJECT",
-                            style: TextStyle(
+                        child: Text(AppLocalizations.of(context)!.rejectBtn,
+                            style: const TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                       const SizedBox(width: 10),
@@ -404,12 +404,12 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                                   await provider.approveFeedback(feedback.id!);
                                   if (context.mounted) {
                                     FlushbarHelper.show(
-                                        context, "Feedback approved successfully!",
+                                        context, AppLocalizations.of(context)!.feedbackApprovedSuccess,
                                         isSuccess: true);
                                   }
                                 } catch (e) {
                                   if (context.mounted) {
-                                    FlushbarHelper.show(context, "Error: $e");
+                                    FlushbarHelper.show(context, "${AppLocalizations.of(context)!.errorPrefix}$e");
                                   }
                                 }
                               },
@@ -428,8 +428,8 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                                 width: 16,
                                 child: CircularProgressIndicator(
                                     color: Colors.white, strokeWidth: 2))
-                            : const Text("APPROVE",
-                                style: TextStyle(
+                            : Text(AppLocalizations.of(context)!.approveBtn,
+                                style: const TextStyle(
                                     fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ],

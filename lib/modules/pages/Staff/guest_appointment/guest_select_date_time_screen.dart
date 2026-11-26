@@ -6,6 +6,8 @@ import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:neo_parlour_owner/data/models/available_slot.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import 'package:neo_parlour_owner/core/widgets/reason_dialog.dart';
+import 'package:neo_parlour_owner/core/constants/reasons.dart';
 import 'package:neo_parlour_owner/providers/appointment_provider.dart';
 import 'package:neo_parlour_owner/data/models/appointment_response.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
@@ -34,15 +36,22 @@ class _GuestSelectDateTimeScreenState extends State<GuestSelectDateTimeScreen> {
   bool _isLoadingSlots = false;
   late DateTime _selectedDate;
   final List<DateTime> _dates = [];
+  final ScrollController _dateScrollController = ScrollController(initialScrollOffset: 15 * 62.0); // approx item width is 62
+
+  @override
+  void dispose() {
+    _dateScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
     _selectedDate = widget.bookingState.selectedDate;
     
-    // Generate next 7 days
+    // Generate 15 past days + today + 29 future days
     final now = DateTime.now();
-    for (int i = 0; i < 7; i++) {
+    for (int i = -15; i < 30; i++) {
       _dates.add(now.add(Duration(days: i)));
     }
 
@@ -57,10 +66,25 @@ class _GuestSelectDateTimeScreenState extends State<GuestSelectDateTimeScreen> {
 
     try {
       final String dateStr = '${_selectedDate.toIso8601String().split('T')[0]}T00:00:00Z';
-      final response = await _apiClient.get(
-        'appointments/salon-slots',
-        queryParameters: {'selectedDate': dateStr},
-      );
+      
+      final staffId = widget.bookingState.selectedStaff?.id;
+      final int duration = widget.bookingState.totalDuration > 0 ? widget.bookingState.totalDuration : 30;
+
+      dynamic response;
+      if (staffId != null) {
+        response = await _apiClient.get(
+          'appointments/staff/$staffId/available-slots',
+          queryParameters: {
+            'selectedDate': dateStr,
+            'durationMinutes': duration,
+          },
+        );
+      } else {
+        response = await _apiClient.get(
+          'appointments/salon-slots',
+          queryParameters: {'selectedDate': dateStr},
+        );
+      }
 
       if (response.data is List) {
         final List<AvailableSlot> fetchedSlots = (response.data as List)
@@ -121,11 +145,23 @@ class _GuestSelectDateTimeScreenState extends State<GuestSelectDateTimeScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16 * scale),
+                child: Text(
+                  DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14 * scale,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
               // Horizontal Date timeline
               Container(
                 height: 80 * scale,
                 margin: EdgeInsets.symmetric(vertical: 10 * scale),
                 child: ListView.builder(
+                  controller: _dateScrollController,
                   scrollDirection: Axis.horizontal,
                   padding: EdgeInsets.symmetric(horizontal: 16 * scale),
                   itemCount: _dates.length,
@@ -220,9 +256,10 @@ class _GuestSelectDateTimeScreenState extends State<GuestSelectDateTimeScreen> {
                               final isSelected = widget.bookingState.selectedSlot?.displayTime == slot.displayTime &&
                                   DateFormat('yyyy-MM-dd').format(widget.bookingState.selectedSlot!.startTime) ==
                                       DateFormat('yyyy-MM-dd').format(slot.startTime);
+                              final isBusy = slot.busy;
 
                               return GestureDetector(
-                                onTap: () {
+                                onTap: isBusy ? null : () {
                                   setState(() {
                                     widget.bookingState.selectedSlot = slot;
                                   });
@@ -230,13 +267,13 @@ class _GuestSelectDateTimeScreenState extends State<GuestSelectDateTimeScreen> {
                                 child: Container(
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    color: isSelected ? const Color(0XFFFF0B01) : Colors.white,
+                                    color: isBusy ? Colors.grey.shade200 : (isSelected ? const Color(0XFFFF0B01) : Colors.white),
                                     borderRadius: BorderRadius.circular(8 * scale),
                                     border: Border.all(
-                                      color: isSelected ? const Color(0XFFFF0B01) : const Color(0XFF909090),
-                                      width: isSelected ? 2 : 1,
+                                      color: isSelected && !isBusy ? const Color(0XFFFF0B01) : (isBusy ? Colors.transparent : const Color(0XFF909090)),
+                                      width: isSelected && !isBusy ? 2 : 1,
                                     ),
-                                    boxShadow: const [
+                                    boxShadow: isBusy ? null : const [
                                       BoxShadow(
                                         color: Color(0x08000000),
                                         blurRadius: 4,
@@ -247,9 +284,9 @@ class _GuestSelectDateTimeScreenState extends State<GuestSelectDateTimeScreen> {
                                   child: Text(
                                     slot.displayTime,
                                     style: GoogleFonts.poppins(
-                                      color: isSelected ? Colors.white : Colors.black,
-                                      fontSize: 12 * scale,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isBusy ? Colors.grey.shade400 : (isSelected ? Colors.white : Colors.black),
+                                      fontWeight: isSelected && !isBusy ? FontWeight.w600 : FontWeight.w500,
+                                      fontSize: 13 * scale,
                                     ),
                                   ),
                                 ),
@@ -360,37 +397,17 @@ class _GuestSelectDateTimeScreenState extends State<GuestSelectDateTimeScreen> {
   Future<void> _showRescheduleReasonDialog(BuildContext context, AppointmentProvider provider) async {
     if (widget.rescheduleAppointment == null || widget.bookingState.selectedSlot == null) return;
     
-    final reasonController = TextEditingController();
-    final bool? confirm = await showDialog<bool>(
+    final String? reason = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Reschedule Reason"),
-        content: TextField(
-          controller: reasonController,
-          decoration: const InputDecoration(
-            hintText: "Enter reason for rescheduling...",
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("CANCEL"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0XFFFF0B01),
-            ),
-            child: const Text(
-              "RESCHEDULE",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
+      builder: (context) => ReasonDialog(
+        title: "Reschedule Reason",
+        hintText: "Enter reason for rescheduling...",
+        predefinedReasons: Reasons.rescheduleReasons,
+        confirmText: "RESCHEDULE",
       ),
     );
 
-    if (confirm == true && mounted) {
+    if (reason != null && reason.isNotEmpty && mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       
       try {
@@ -405,7 +422,7 @@ class _GuestSelectDateTimeScreenState extends State<GuestSelectDateTimeScreen> {
         await provider.rescheduleAppointment(
           appointmentId: widget.rescheduleAppointment!.id,
           newDateTime: newDateTime,
-          reason: reasonController.text,
+          reason: reason,
           salonId: int.tryParse(authProvider.user?.tenantName ?? '') ?? 0,
         );
         if (mounted) {

@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
+import 'package:neo_parlour_owner/core/api_client.dart';
+import 'package:neo_parlour_owner/core/utils/download_helper.dart';
+import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/data/services/subscription_service.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class ActiveSubscriptionScreen extends StatefulWidget {
   const ActiveSubscriptionScreen({super.key});
@@ -28,7 +33,7 @@ class _ActiveSubscriptionScreenState extends State<ActiveSubscriptionScreen> {
 
   Future<void> _fetchSubscriptions() async {
     final authProvider = context.read<AuthProvider>();
-    final salonId = authProvider.user?.salonId ?? authProvider.user?.id;
+    final salonId = authProvider.user?.salonId ?? int.tryParse(authProvider.user?.tenantName ?? '');
     
     if (salonId == null) {
       setState(() {
@@ -58,7 +63,7 @@ class _ActiveSubscriptionScreenState extends State<ActiveSubscriptionScreen> {
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         title: Text(
-          "MY SUBSCRIPTIONS",
+          AppLocalizations.of(context)!.mySubscriptionsTitle,
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -92,10 +97,10 @@ class _ActiveSubscriptionScreenState extends State<ActiveSubscriptionScreen> {
     }
 
     if (_subscriptions.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          "No subscriptions found.",
-          style: TextStyle(color: Colors.grey),
+          AppLocalizations.of(context)!.noSubscriptionsFound,
+          style: const TextStyle(color: Colors.grey),
         ),
       );
     }
@@ -146,7 +151,7 @@ class _ActiveSubscriptionScreenState extends State<ActiveSubscriptionScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Plan: ${planCode.toUpperCase()}",
+                  "${AppLocalizations.of(context)!.planLabel} ${planCode.toUpperCase()}",
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -176,7 +181,7 @@ class _ActiveSubscriptionScreenState extends State<ActiveSubscriptionScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Start Date", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(AppLocalizations.of(context)!.startDateLabel, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(height: 4),
                     Text(startDateStr, style: const TextStyle(fontWeight: FontWeight.w600)),
                   ],
@@ -184,7 +189,7 @@ class _ActiveSubscriptionScreenState extends State<ActiveSubscriptionScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text("End Date", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(AppLocalizations.of(context)!.endDateLabel, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(height: 4),
                     Text(endDateStr, style: const TextStyle(fontWeight: FontWeight.w600)),
                   ],
@@ -193,15 +198,60 @@ class _ActiveSubscriptionScreenState extends State<ActiveSubscriptionScreen> {
             ),
             if (sub['paymentId'] != null) ...[
               const Divider(height: 24),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.receipt_long, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Payment ID: ${sub['paymentId']}",
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2.0),
+                        child: Icon(Icons.receipt_long, size: 16, color: Colors.grey),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "${AppLocalizations.of(context)!.paymentIdLabel} ${sub['paymentId']}",
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                  if (sub['id'] != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                      onPressed: () async {
+                        try {
+                          if (context.mounted) {
+                            FlushbarHelper.show(context, AppLocalizations.of(context)!.downloadingInvoiceMsg);
+                          }
+                          final response = await ApiClient().get(
+                            'invoices/subscription/${sub['id']}',
+                            options: Options(responseType: ResponseType.bytes),
+                          );
+                          await downloadFileBytes(response.data, 'invoice_${sub['id']}.pdf');
+                          if (context.mounted) {
+                            FlushbarHelper.show(context, AppLocalizations.of(context)!.invoiceDownloadedMsg, isSuccess: true);
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            FlushbarHelper.show(context, "${AppLocalizations.of(context)!.failedDownloadInvoiceMsg} $e");
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.download, size: 16, color: Color(0XFFFF0B01)),
+                      label: Text(
+                        AppLocalizations.of(context)!.downloadInvoiceBtn,
+                        style: const TextStyle(fontSize: 12, color: Color(0XFFFF0B01), fontWeight: FontWeight.bold),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(50, 30),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                    )],
               ),
             ]
           ],

@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:neo_parlour_owner/providers/salon_provider.dart';
 import 'package:neo_parlour_owner/data/models/service_model.dart';
-import 'package:neo_parlour_owner/widgets/premium_image.dart';
 
 class PremiumServiceCard extends StatelessWidget {
   final NeoService service;
@@ -56,23 +56,7 @@ class PremiumServiceCard extends StatelessWidget {
                 child: Icon(Icons.drag_indicator, color: Color(0XFFC4C4C4)),
               ),
             ),
-            const SizedBox(width: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: (service.imageUrl != null && service.imageUrl!.isNotEmpty)
-                  ? PremiumImageWidget(
-                      imageUrl: service.imageUrl,
-                      width: 70,
-                      height: 70,
-                      borderRadius: BorderRadius.circular(18),
-                    )
-                  : (service.image != null && service.image!.isNotEmpty)
-                      ? (service.image!.startsWith('assets/')
-                          ? Image.asset(service.image!, width: 70, height: 70, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage())
-                          : Image.memory(base64Decode(service.image!), width: 70, height: 70, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => _buildPlaceholderImage()))
-                      : _buildPlaceholderImage(),
-            ),
-            const SizedBox(width: 16),
+            // Photo removed as requested
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,9 +95,39 @@ class PremiumServiceCard extends StatelessWidget {
                     style: const TextStyle(color: Color(0XFF8A8A8A), fontSize: 13),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    "\u{20B9}${service.price.toStringAsFixed(0)}",
-                    style: const TextStyle(color: Color(0XFFFF0B01), fontWeight: FontWeight.bold, fontSize: 18),
+                  Builder(
+                    builder: (context) {
+                      final profile = Provider.of<SalonProvider>(context, listen: false).salonProfile;
+                      final bool hasGst = (profile?.includeGstInInvoice ?? false) &&
+                          (profile?.gstin != null && profile!.gstin!.trim().isNotEmpty);
+
+                      return Row(
+                        children: [
+                          Text(
+                            "\u{20B9}${service.price.toStringAsFixed(0)}",
+                            style: const TextStyle(color: Color(0XFFFF0B01), fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                          if (hasGst) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                "Incl. 18% GST",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF7C3AED),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -63,9 +64,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       ),
                       padding: const EdgeInsets.only(left: 20, bottom: 20),
                       alignment: Alignment.bottomLeft,
-                      child: const Text(
-                        "CHANGE PASSWORD",
-                        style: TextStyle(
+                      child: Text(
+                        AppLocalizations.of(context)!.changePasswordTitle,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 25,
                           fontWeight: FontWeight.w600,
@@ -119,9 +120,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Please Enter A New Password",
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.pleaseEnterNewPassword,
+                    style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: Colors.black),
@@ -129,7 +130,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   const SizedBox(height: 20),
 
                   _buildPasswordField(
-                    hint: "Enter Current Password",
+                    hint: AppLocalizations.of(context)!.enterCurrentPassword,
                     isObscured: _obscureCurrent,
                     onToggle: () =>
                         setState(() => _obscureCurrent = !_obscureCurrent),
@@ -137,7 +138,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   const SizedBox(height: 15),
 
                   _buildPasswordField(
-                    hint: "Create New Password",
+                    hint: AppLocalizations.of(context)!.createNewPassword,
                     isObscured: _obscureNew,
                     onToggle: () =>
                         setState(() => _obscureNew = !_obscureNew),
@@ -145,7 +146,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   const SizedBox(height: 15),
 
                   _buildPasswordField(
-                    hint: "Confirm New Password",
+                    hint: AppLocalizations.of(context)!.confirmNewPassword,
                     isObscured: _obscureConfirm,
                     onToggle: () =>
                         setState(() => _obscureConfirm = !_obscureConfirm),
@@ -165,9 +166,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        "SUBMIT",
-                        style: TextStyle(
+                      child: Text(
+                        AppLocalizations.of(context)!.submitBtn,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,

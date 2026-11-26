@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 import '../../../providers/offer_provider.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
@@ -16,12 +17,18 @@ class OfferScreen extends StatefulWidget {
 class _OfferScreenState extends State<OfferScreen> {
   int selectedIndex = 0; // Default selected card index
 
-  final List<String> titles = [
-    "Claimed Offer",
-    "Offer Revenue",
-    "Booking Via Offers",
-    "New Customers Via Offers"
-  ];
+  late final List<String> titles;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    titles = [
+      AppLocalizations.of(context)!.claimedOfferTitle,
+      AppLocalizations.of(context)!.offerRevenueTitle,
+      AppLocalizations.of(context)!.bookingViaOffersTitle,
+      AppLocalizations.of(context)!.newCustomersViaOffersTitle
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,11 +73,11 @@ class _OfferScreenState extends State<OfferScreen> {
                     ),
                     itemCount: titles.length,
                     itemBuilder: (context, index) =>
-                        _buildAnalyticsCard(titles[index], "View Details", index),
+                        _buildAnalyticsCard(titles[index], AppLocalizations.of(context)!.viewDetailsBtn, index),
                   ),
                   const SizedBox(height: 25),
-                  const Text("ALL BOOKINGS",
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(AppLocalizations.of(context)!.allBookingsTitle,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 15),
                   _buildChartPlaceholder(),
                 ],
@@ -166,12 +173,12 @@ class _OfferScreenState extends State<OfferScreen> {
             ),
           ),
         ),
-        const Positioned(
+        Positioned(
           bottom: 30,
           left: 23,
           child: Text(
-            "OFFER",
-            style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w500),
+            AppLocalizations.of(context)!.offerTitle,
+            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w500),
           ),
         ),
         Positioned(

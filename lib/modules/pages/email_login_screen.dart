@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
+import 'package:neo_parlour_owner/widgets/language_selector_button.dart';
 
 class EmailLoginScreen extends StatelessWidget {
   const EmailLoginScreen({super.key});
@@ -12,6 +14,16 @@ class EmailLoginScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // 🔹 Language Selector
+            const SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 20, top: 10),
+                  child: LanguageSelectorButton(),
+                ),
+              ),
+            ),
             // 🔹 Header with S-Curve
             Stack(
               children: [
@@ -43,12 +55,12 @@ class EmailLoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Positioned(
+                Positioned(
                   bottom: 20,
                   left: 30,
                   child: Text(
-                    "LOGIN",
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.loginTitle,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 25,
                       fontWeight: FontWeight.w500,
@@ -65,9 +77,10 @@ class EmailLoginScreen extends StatelessWidget {
                 children: [
                   const SizedBox(height: 20),
 
-                  const Text(
-                    "Create an account or log in to book and manage your appointments",
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.loginSubtitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
                       color: Color(0XFF8B8989),
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -77,30 +90,30 @@ class EmailLoginScreen extends StatelessWidget {
                   const SizedBox(height: 30),
 
                   _socialButton(
-                    "Continue with Google",
+                    AppLocalizations.of(context)!.continueWithGoogle,
                     "assets/Images/EmailLoginScreen/google_logo.svg",
                   ),
 
                   const SizedBox(height: 15),
 
                   _socialButton(
-                    "Continue with Facebook",
+                    AppLocalizations.of(context)!.continueWithFacebook,
                     "assets/Images/EmailLoginScreen/facebook_logo.svg",
                   ),
 
                   const SizedBox(height: 25),
 
-                  const Row(
+                  Row(
                     children: [
-                      Expanded(child: Divider()),
+                      const Expanded(child: Divider()),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
-                          "OR",
-                          style: TextStyle(color: Colors.grey),
+                          AppLocalizations.of(context)!.or,
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       ),
-                      Expanded(child: Divider()),
+                      const Expanded(child: Divider()),
                     ],
                   ),
 
@@ -109,7 +122,7 @@ class EmailLoginScreen extends StatelessWidget {
                   // 📧 Email Input
                   TextField(
                     decoration: InputDecoration(
-                      hintText: "Email address",
+                      hintText: AppLocalizations.of(context)!.emailAddress,
                       filled: true,
                       fillColor: const Color(0XFFF8F8F8),
                       contentPadding: const EdgeInsets.symmetric(
@@ -143,9 +156,9 @@ class EmailLoginScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(9),
                         ),
                       ),
-                      child: const Text(
-                        "CONTINUE",
-                        style: TextStyle(
+                      child: Text(
+                        AppLocalizations.of(context)!.continueBtn,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
                           fontSize: 12,

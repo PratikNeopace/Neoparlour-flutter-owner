@@ -123,12 +123,29 @@ class _ExtendSelectServicesScreenState extends State<ExtendSelectServicesScreen>
 
   int _calculateAdditionalDuration() {
     int duration = 0;
+    Set<int?> counted = {};
+
     for (var s in _selectedServices) {
       duration += s.duration;
+      counted.add(s.id);
     }
     if (_selectedPackage != null) {
       for (var s in _selectedPackage!.services) {
-        duration += s.duration;
+        if (!counted.contains(s.id)) {
+          duration += s.duration;
+          counted.add(s.id);
+        }
+      }
+    }
+    if (_selectedOffer != null) {
+      for (var id in _selectedOffer!.applicableServiceIds) {
+        if (!counted.contains(id)) {
+          try {
+            final s = _allServices.firstWhere((e) => e.id == id);
+            duration += s.duration;
+            counted.add(id);
+          } catch (_) {}
+        }
       }
     }
     return duration;
@@ -136,13 +153,28 @@ class _ExtendSelectServicesScreenState extends State<ExtendSelectServicesScreen>
 
   double _calculateAdditionalPrice() {
     double price = 0;
+    Set<int?> priced = {};
+
     for (var s in _selectedServices) {
       price += s.price;
+      priced.add(s.id);
     }
     if (_selectedPackage != null) {
       price += _selectedPackage!.packagePrice;
+      for (var s in _selectedPackage!.services) {
+        priced.add(s.id);
+      }
     }
     if (_selectedOffer != null) {
+      for (var id in _selectedOffer!.applicableServiceIds) {
+        if (!priced.contains(id)) {
+          try {
+            final s = _allServices.firstWhere((e) => e.id == id);
+            price += s.price;
+            priced.add(id);
+          } catch (_) {}
+        }
+      }
       if (_selectedOffer!.discountType == DiscountType.FLAT) {
         price -= _selectedOffer!.discountValue;
       } else {
@@ -155,11 +187,27 @@ class _ExtendSelectServicesScreenState extends State<ExtendSelectServicesScreen>
   void _onConfirmSelection() {
     final addedDuration = _calculateAdditionalDuration();
     if (addedDuration == 0) {
-      FlushbarHelper.show(context, "Please select at least one service or package.");
+      FlushbarHelper.show(context, "Please select at least one service, package, or offer with valid services.");
       return;
     }
+    
+    final List<NeoService> finalServices = List.from(_selectedServices);
+    final Set<int?> addedIds = _selectedServices.map((e) => e.id).toSet();
+
+    if (_selectedOffer != null) {
+      for (var id in _selectedOffer!.applicableServiceIds) {
+        if (!addedIds.contains(id)) {
+          try {
+            final s = _allServices.firstWhere((e) => e.id == id);
+            finalServices.add(s);
+            addedIds.add(id);
+          } catch (_) {}
+        }
+      }
+    }
+
     Navigator.pop(context, {
-      'addedServices': _selectedServices,
+      'addedServices': finalServices,
       'addedOffer': _selectedOffer,
       'addedPackage': _selectedPackage,
       'addedDuration': addedDuration,
@@ -394,13 +442,16 @@ class _ExtendSelectServicesScreenState extends State<ExtendSelectServicesScreen>
                   : "₹${offer.discountValue.toInt()} discount"),
               style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 12),
             ),
-            trailing: Radio<int?>(
-              value: offer.id,
-              groupValue: _selectedOffer?.id,
+            trailing: Checkbox(
+              value: isSelected,
               activeColor: const Color(0XFFFF0B01),
               onChanged: (val) {
                 setState(() {
-                  _selectedOffer = offer;
+                  if (val == true) {
+                    _selectedOffer = offer;
+                  } else {
+                    _selectedOffer = null;
+                  }
                 });
               },
             ),
@@ -434,13 +485,16 @@ class _ExtendSelectServicesScreenState extends State<ExtendSelectServicesScreen>
               "₹${package.packagePrice}",
               style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 12),
             ),
-            trailing: Radio<int?>(
-              value: package.id,
-              groupValue: _selectedPackage?.id,
+            trailing: Checkbox(
+              value: _selectedPackage?.id == package.id,
               activeColor: const Color(0XFFFF0B01),
               onChanged: (val) {
                 setState(() {
-                  _selectedPackage = package;
+                  if (val == true) {
+                    _selectedPackage = package;
+                  } else {
+                    _selectedPackage = null;
+                  }
                 });
               },
             ),

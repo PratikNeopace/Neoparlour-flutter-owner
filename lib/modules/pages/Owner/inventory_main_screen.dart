@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class InventoryMainScreen extends StatefulWidget {
   const InventoryMainScreen({super.key});
@@ -51,16 +52,16 @@ class _InventoryMainScreenState extends State<InventoryMainScreen> {
         body: Column(
           children: [
             _buildHeader(context),
-            const TabBar(
+            TabBar(
               labelColor: Colors.black,
-              unselectedLabelColor: Color(0XFFCBC8C8),
-              indicatorColor: Color(0XFFFF0B01),
+              unselectedLabelColor: const Color(0XFFCBC8C8),
+              indicatorColor: const Color(0XFFFF0B01),
               indicatorWeight: 2,
               indicatorSize: TabBarIndicatorSize.label,
-              labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               tabs: [
-                Tab(text: "ADD ITEMS"),
-                Tab(text: "INVENTORY DETAILS"),
+                Tab(text: AppLocalizations.of(context)!.addItemsTab),
+                Tab(text: AppLocalizations.of(context)!.inventoryDetailsTab),
               ],
             ),
             const Expanded(
@@ -107,9 +108,9 @@ class _InventoryMainScreenState extends State<InventoryMainScreen> {
                     ],
                   ),
                 ),
-                child: const Text(
-                  "INVENTORY",
-                  style: TextStyle(
+                child: Text(
+                  AppLocalizations.of(context)!.inventoryTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 25,
                     fontWeight: FontWeight.w500,

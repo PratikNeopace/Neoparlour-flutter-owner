@@ -53,7 +53,7 @@ class OrderService {
       };
 
       if (mobile != null && mobile.isNotEmpty) {
-        queryParams['mobile'] = mobile;
+        queryParams['search'] = mobile; // Changed to 'search' to support both name and number
       }
       if (status != null && status.isNotEmpty && status != 'all') {
         queryParams['status'] = status;
@@ -86,6 +86,8 @@ class OrderService {
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Failed to update order status');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }

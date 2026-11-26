@@ -295,7 +295,7 @@ class _HomeServicesScreenState extends State<HomeServicesScreen> {
             decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage(
-                  "assets/Images/HomeServicesScreen/background_image.jpg",
+                  "assets/Images/Services/Services/female/hair_spa_female.jpeg",
                 ),
                 fit: BoxFit.cover,
               ),

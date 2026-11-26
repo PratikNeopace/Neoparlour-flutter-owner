@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neo_parlour_owner/modules/pages/splash_screen_three.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class SplashTwoScreen extends StatefulWidget {
   const SplashTwoScreen({super.key});
@@ -100,7 +101,7 @@ class _SplashTwoScreenState extends State<SplashTwoScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "Your",
+                    AppLocalizations.of(context)!.splashTwoTop,
                     style: GoogleFonts.habibi(
                       fontSize: topFontSize,
                       height: 1.0,
@@ -110,7 +111,7 @@ class _SplashTwoScreenState extends State<SplashTwoScreen> {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      "PARLOUR",
+                      AppLocalizations.of(context)!.splashTwoMid,
                       maxLines: 1,
                       softWrap: false,
                       style: GoogleFonts.imbue(
@@ -123,7 +124,7 @@ class _SplashTwoScreenState extends State<SplashTwoScreen> {
                     ),
                   ),
                   Text(
-                    "Platter",
+                    AppLocalizations.of(context)!.splashTwoBottom,
                     style: GoogleFonts.habibi(
                       fontSize: topFontSize,
                       color: const Color(0XFF626262),
@@ -141,7 +142,7 @@ class _SplashTwoScreenState extends State<SplashTwoScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Skip",
+                            AppLocalizations.of(context)!.skipSplash,
                             style: GoogleFonts.poppins(
                               color: skipColor,
                               fontSize: (size.width * 0.045).clamp(14.0, 20.0),
@@ -158,7 +159,7 @@ class _SplashTwoScreenState extends State<SplashTwoScreen> {
                     ),
                   ),
                    Text(
-                      "Version 1.0.0 | Powered By Neopaceinfotech LLP",
+                      AppLocalizations.of(context)!.versionFooter,
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         color: const Color(0XFF626262),

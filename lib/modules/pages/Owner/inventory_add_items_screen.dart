@@ -1,14 +1,12 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:neo_parlour_owner/core/utils/error_handler.dart';
-import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/data/models/inventory_model.dart';
 import 'package:neo_parlour_owner/providers/inventory_provider.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AddInventoryScreen extends StatefulWidget {
   const AddInventoryScreen({super.key});
@@ -23,9 +21,6 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
   final _costController = TextEditingController();
   ProductType? _selectedCategory;
   UnitType _selectedUnitType = UnitType.PIECE;
-  
-  XFile? _imageFile;
-  final ImagePicker _picker = ImagePicker();
   
   List<UnitType> _getAvailableUnits(ProductType? category) {
     if (category == null) return UnitType.values;
@@ -63,88 +58,6 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
     _quantityController.dispose();
     _costController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(source: source);
-      if (pickedFile != null) {
-        setState(() {
-          _imageFile = pickedFile;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        FlushbarHelper.show(context, "Error picking image: $e");
-      }
-    }
-  }
-
-  void _showImageSourcePicker() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Select Image Source",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                   _buildPickerOption(
-                    icon: "assets/Images/ServicesScreen/camera_icon.svg",
-                    label: "Camera",
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.camera);
-                    },
-                  ),
-                  _buildPickerOption(
-                    icon: "assets/Images/ServicesScreen/gallery_icon.svg",
-                    label: "Gallery",
-                    onTap: () {
-                      Navigator.pop(context);
-                      _pickImage(ImageSource.gallery);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPickerOption({required String icon, required String label, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: const Color(0XFF909090).withValues(alpha: 0.3)),
-            ),
-            child: SvgPicture.asset(icon, width: 30, height: 30),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
   }
 
   void _saveInventory() async {
@@ -193,12 +106,6 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
 
     final inventoryProvider = Provider.of<InventoryProvider>(context, listen: false);
 
-    String? imageBase64;
-    if (_imageFile != null) {
-      final bytes = await _imageFile!.readAsBytes();
-      imageBase64 = base64Encode(bytes);
-    }
-
     final request = InventoryRequest(
       name: _nameController.text.trim(),
       category: _selectedCategory,
@@ -206,7 +113,6 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
       currentStock: quantity,
       costPrice: cost,
       unitType: _selectedUnitType,
-      imageBase64: imageBase64,
     );
 
     try {
@@ -219,7 +125,6 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
         setState(() {
           _selectedCategory = null;
           _selectedUnitType = UnitType.PIECE;
-          _imageFile = null;
         });
       }
     } catch (e) {
@@ -244,56 +149,8 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ================= IMAGE UPLOAD =================
-          GestureDetector(
-            onTap: _showImageSourcePicker,
-            child: Container(
-              height: 120,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0XFF909090)),
-                borderRadius: BorderRadius.circular(9),
-                image: _imageFile != null
-                    ? DecorationImage(
-                        image: kIsWeb
-                            ? NetworkImage(_imageFile!.path)
-                            : FileImage(File(_imageFile!.path)) as ImageProvider,
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
-              child: _imageFile == null
-                  ? Center(
-                      child: SvgPicture.asset(
-                        "assets/Images/ServicesScreen/camera_inside.svg",
-                        width: 28,
-                        height: 28,
-                      ),
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildIconLabel(
-                "assets/Images/ServicesScreen/camera_icon.svg",
-                "Camera",
-                onTap: () => _pickImage(ImageSource.camera),
-              ),
-              const SizedBox(width: 40),
-              _buildIconLabel(
-                "assets/Images/ServicesScreen/gallery_icon.svg",
-                "Gallery",
-                onTap: () => _pickImage(ImageSource.gallery),
-              ),
-            ],
-          ),
-          const SizedBox(height: 25),
-
           // ================= FORM =================
-          _buildTextField("Item Name", "assets/Images/ServicesScreen/service_name_icon.svg", _nameController),
+          _buildTextField(AppLocalizations.of(context)!.itemNameLabel, "assets/Images/ServicesScreen/service_name_icon.svg", _nameController),
           const SizedBox(height: 20),
 
           _buildCategoryDropdown(),
@@ -302,10 +159,10 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
           _buildUnitTypeDropdown(),
           const SizedBox(height: 20),
 
-          _buildTextField("Quantity", "", _quantityController, keyboardType: TextInputType.number),
+          _buildTextField(AppLocalizations.of(context)!.quantityLabel, "", _quantityController, keyboardType: TextInputType.number),
           const SizedBox(height: 20),
 
-          _buildTextField("Cost", "", _costController, keyboardType: TextInputType.number),
+          _buildTextField(AppLocalizations.of(context)!.costLabel, "", _costController, keyboardType: TextInputType.number),
           const SizedBox(height: 30),
 
           // ================= BUTTONS =================
@@ -323,7 +180,7 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
                   ),
                   child: isLoading
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text("SAVE", style: TextStyle(color: Colors.white)),
+                      : Text(AppLocalizations.of(context)!.saveBtn, style: const TextStyle(color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 15),
@@ -336,24 +193,11 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
                       borderRadius: BorderRadius.circular(9),
                     ),
                   ),
-                  child: const Text("CANCEL", style: TextStyle(color: Color(0XFF909090))),
+                  child: Text(AppLocalizations.of(context)!.cancelBtn, style: const TextStyle(color: Color(0XFF909090))),
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIconLabel(String icon, String label, {VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Row(
-        children: [
-          SvgPicture.asset(icon, width: 18, height: 18),
-          const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -404,7 +248,7 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
             children: [
               SvgPicture.asset("assets/Images/ServicesScreen/category_icon.svg", width: 20, height: 20),
               const SizedBox(width: 10),
-              const Text("Category", style: TextStyle(color: Color(0xFFCBC8C8), fontSize: 14)),
+              Text(AppLocalizations.of(context)!.categoryLabel, style: const TextStyle(color: Color(0xFFCBC8C8), fontSize: 14)),
             ],
           ),
           items: ProductType.values.map((ProductType value) {
@@ -443,7 +287,7 @@ class _AddInventoryScreenState extends State<AddInventoryScreen> {
           value: _selectedUnitType,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down, color: Color(0XFF909090)),
-          hint: const Text("Unit Type", style: TextStyle(color: Color(0xFFCBC8C8), fontSize: 14)),
+          hint: Text(AppLocalizations.of(context)!.unitTypeLabel, style: const TextStyle(color: Color(0xFFCBC8C8), fontSize: 14)),
           items: _getAvailableUnits(_selectedCategory).map((UnitType type) {
             return DropdownMenuItem<UnitType>(
               value: type,

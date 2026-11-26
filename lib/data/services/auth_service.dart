@@ -103,7 +103,7 @@ class AuthService {
     }
   }
 
-  Future<void> sendRegisterOtp(String mobile) async {
+  Future<String?> sendRegisterOtp(String mobile) async {
     try {
       final response = await _apiClient.post(
         'auth/register/send-otp',
@@ -112,6 +112,18 @@ class AuthService {
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception('Failed to send registration OTP');
       }
+      
+      // Auto-extract OTP for autofill if provided by test backend
+      if (response.data is Map) {
+        final data = response.data as Map;
+        if (data.containsKey('otp')) return data['otp'].toString();
+        if (data.containsKey('data') && data['data'] != null) return data['data'].toString();
+      } else if (response.data != null) {
+        final str = response.data.toString();
+        if (str.length == 6 && int.tryParse(str) != null) return str;
+      }
+      
+      return null;
     } on DioException catch (e) {
       throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
@@ -176,16 +188,21 @@ class AuthService {
     }
   }
 
-  Future<void> deleteAccount(int id) async {
+  Future<String> deleteAccount(int id) async {
     try {
-      final response = await _apiClient.delete('auth/users/$id');
+      final response = await _apiClient.delete(
+        'auth/users/$id',
+        options: Options(responseType: ResponseType.plain),
+      );
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Failed to delete account');
       }
+      return response.data?.toString() ?? "Account has been deleted successfully.";
     } on DioException catch (e) {
+      if (e.response != null && (e.response!.statusCode == 200 || e.response!.statusCode == 204)) {
+        return e.response!.data?.toString() ?? "Account has been deleted successfully.";
+      }
       throw Exception(ApiClient.handleDioError(e));
-    } catch (e) {
-      rethrow;
     }
   }
 

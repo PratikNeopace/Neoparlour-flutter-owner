@@ -1,7 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
+import 'package:neo_parlour_owner/providers/locale_provider.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:neo_parlour_owner/firebase_options.dart';
 import 'package:neo_parlour_owner/data/services/notification_service.dart';
 import 'package:neo_parlour_owner/modules/pages/splash_screen_one.dart';
@@ -21,21 +27,36 @@ import 'package:neo_parlour_owner/providers/product_provider.dart';
 import 'package:neo_parlour_owner/providers/salon_provider.dart';
 import 'package:neo_parlour_owner/providers/order_provider.dart';
 
+
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   debugPrint("Background message received: ${message.messageId}");
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
+  GoogleFonts.config.allowRuntimeFetching = true;
+  
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     NotificationService().initFCM(); 
   } catch (e) {
@@ -46,6 +67,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => ServiceProvider()),
@@ -60,7 +82,6 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => SalonProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
-
       ],
       child: const MainApp(),
     ),
@@ -72,10 +93,27 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      navigatorObservers: [routeObserver],
-      home: const SplashOneScreen(),
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, child) {
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          debugShowCheckedModeBanner: false,
+          navigatorObservers: [routeObserver],
+          locale: localeProvider.locale,
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('en'),
+            Locale('hi'),
+            Locale('mr'),
+          ],
+          home: const SplashOneScreen(),
+        );
+      }
     );
   }
 }

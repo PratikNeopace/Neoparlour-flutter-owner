@@ -6,9 +6,11 @@ class ProductProvider with ChangeNotifier {
   final ProductService _productService = ProductService();
   List<ProductModel> _products = [];
   bool _isLoading = false;
+  String? _errorMessage;
 
   List<ProductModel> get products => _products;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   Future<void> fetchProducts() async {
     _isLoading = true;
@@ -25,6 +27,7 @@ class ProductProvider with ChangeNotifier {
 
   Future<bool> addProduct(ProductModel product) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     try {
       final newProduct = await _productService.addProduct(product);
@@ -33,6 +36,7 @@ class ProductProvider with ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error adding product: $e');
+      _errorMessage = e.toString().replaceAll('Exception: API Error: ', '').replaceAll('Exception: ', '');
       return false;
     } finally {
       _isLoading = false;
@@ -42,6 +46,7 @@ class ProductProvider with ChangeNotifier {
 
   Future<bool> updateProduct(ProductModel product) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     try {
       final updatedProduct = await _productService.updateProduct(product);
@@ -53,6 +58,7 @@ class ProductProvider with ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error updating product: $e');
+      _errorMessage = e.toString().replaceAll('Exception: API Error: ', '').replaceAll('Exception: ', '');
       return false;
     } finally {
       _isLoading = false;

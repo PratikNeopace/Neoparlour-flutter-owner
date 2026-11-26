@@ -39,6 +39,8 @@ class ProductService {
       } else {
         throw Exception('Failed to fetch products');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -60,6 +62,8 @@ class ProductService {
       } else {
         throw Exception('Failed to update product');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -71,6 +75,8 @@ class ProductService {
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Failed to delete product');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -84,6 +90,8 @@ class ProductService {
       if (response.statusCode != 200) {
         throw Exception('Failed to update product status');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }

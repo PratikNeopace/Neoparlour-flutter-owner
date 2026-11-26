@@ -58,12 +58,14 @@ class AppointmentService {
     String reason,
   ) async {
     try {
-      final queryParameters = {'newTime': newTime};
+      final queryParameters = {
+        'newTime': newTime,
+        'reason': reason,
+      };
 
       final response = await _apiClient.put(
         'appointments/$appointmentId/owner-reschedule',
         queryParameters: queryParameters,
-        data: reason,
       );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -236,15 +238,39 @@ class AppointmentService {
     }
   }
 
-  Future<List<dynamic>> getAvailableSlots(int staffId, DateTime date, int durationMinutes) async {
+  Future<Appointment> getAppointmentById(int appointmentId) async {
+    try {
+      final response = await _apiClient.get('appointments/$appointmentId');
+      return Appointment.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Future<List<dynamic>> getAvailableSlots(
+    int staffId, 
+    DateTime date, 
+    int durationMinutes, {
+    int? excludeAppointmentId,
+    int? overrideAppointmentId,
+    int? overrideDuration,
+  }) async {
     try {
       final String dateStr = '${date.toIso8601String().split('T')[0]}T00:00:00Z';
+      final queryParams = <String, dynamic>{
+        'selectedDate': dateStr,
+        'durationMinutes': durationMinutes,
+      };
+
+      if (excludeAppointmentId != null) queryParams['excludeAppointmentId'] = excludeAppointmentId;
+      if (overrideAppointmentId != null) queryParams['overrideAppointmentId'] = overrideAppointmentId;
+      if (overrideDuration != null) queryParams['overrideDuration'] = overrideDuration;
+
       final response = await _apiClient.get(
         'appointments/staff/$staffId/available-slots',
-        queryParameters: {
-          'selectedDate': dateStr,
-          'durationMinutes': durationMinutes,
-        },
+        queryParameters: queryParams,
       );
       if (response.data is List) {
         return response.data as List;

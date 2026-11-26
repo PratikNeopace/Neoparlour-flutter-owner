@@ -42,6 +42,7 @@ class ServiceProvider extends ChangeNotifier {
 
     try {
       _services = await _service.fetchServices();
+      _services.sort((a, b) => (a.displayOrder ?? 9999).compareTo(b.displayOrder ?? 9999));
     } catch (e) {
       _errorMessage = ErrorHandler.parseError(e);
     } finally {
@@ -63,7 +64,7 @@ class ServiceProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final List<String> serviceIds = _services.map((s) => s.id.toString()).toList();
+      final List<int> serviceIds = _services.where((s) => s.id != null).map((s) => s.id!).toList();
       await _service.reorderServices(serviceIds);
       return true;
     } catch (e) {
@@ -82,6 +83,7 @@ class ServiceProvider extends ChangeNotifier {
 
     try {
       _services = await _service.fetchActiveServices();
+      _services.sort((a, b) => (a.displayOrder ?? 9999).compareTo(b.displayOrder ?? 9999));
     } catch (e) {
       _errorMessage = ErrorHandler.parseError(e);
     } finally {

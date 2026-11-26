@@ -94,10 +94,24 @@ class PackageService {
         queryParameters: queryParams,
       );
       if (response.statusCode == 200) {
+        if (response.data is List) {
+          final content = (response.data as List)
+              .map((i) => ServicePackage.fromJson(i as Map<String, dynamic>))
+              .toList();
+          return PackagePaginatedResponse(
+            content: content,
+            last: true,
+            totalElements: content.length,
+            totalPages: 1,
+            number: 0,
+          );
+        }
         return PackagePaginatedResponse.fromJson(response.data);
       } else {
         throw Exception('Failed to fetch packages');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -133,6 +147,8 @@ class PackageService {
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Failed to delete package');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }
@@ -147,6 +163,8 @@ class PackageService {
       if (response.statusCode != 200) {
         throw Exception('Failed to update package status');
       }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
     } catch (e) {
       rethrow;
     }

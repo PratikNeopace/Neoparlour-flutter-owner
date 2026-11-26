@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class InvoiceSuccessScreen extends StatefulWidget {
   const InvoiceSuccessScreen({super.key});
@@ -29,10 +30,10 @@ class _InvoiceSuccessScreenState extends State<InvoiceSuccessScreen> {
                   const SizedBox(height: 20),
                   const Icon(Icons.check_circle, color: Colors.green, size: 60),
                   const SizedBox(height: 10),
-                  const Text("Invoice generated Successful",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const Text("Share this with your customer",
-                      style: TextStyle(color: Colors.grey)),
+                  Text(AppLocalizations.of(context)!.invoiceGeneratedSuccess,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(AppLocalizations.of(context)!.shareInvoiceHint,
+                      style: const TextStyle(color: Colors.grey)),
                   const SizedBox(height: 20),
                   SvgPicture.asset("assets/Images/CreateInvoiceScreen/receipt_image.jpg"),
                   // _buildInvoiceReceipt(),
@@ -97,8 +98,8 @@ class _InvoiceSuccessScreenState extends State<InvoiceSuccessScreen> {
                   colors: [Colors.black.withValues(alpha: 0.3), Colors.transparent, const Color(0XFFFF3502)],
                 ),
               ),
-              child: const Text("CREATE INVOICE",
-                  style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w500)),
+              child: Text(AppLocalizations.of(context)!.createInvoiceTitle,
+                  style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w500)),
             ),
           ),
         ),

@@ -11,6 +11,10 @@ import 'package:neo_parlour_owner/data/models/service_model.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/widgets/premium_service_card.dart';
+import 'package:neo_parlour_owner/providers/salon_provider.dart';
+import 'package:neo_parlour_owner/data/models/gst_breakdown_model.dart';
+import 'package:neo_parlour_owner/widgets/gst_breakdown_card_widget.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AddServiceScreen extends StatefulWidget {
   final bool showAsTab;
@@ -37,7 +41,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
    String? _selectedCommonService;
     bool _isCustomServiceName = false;
     int? _lastSyncedServiceId;
-    final ScrollController _scrollController = ScrollController();
+    final ScrollController _formScrollController = ScrollController();
+    final ScrollController _listScrollController = ScrollController();
     String _selectedGender = 'FEMALE';
 
     String? _getServiceImagePath(String serviceName, String gender) {
@@ -188,6 +193,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ServiceProvider>(context, listen: false).fetchServices();
       Provider.of<ServiceProvider>(context, listen: false).fetchCommonServices();
+      Provider.of<SalonProvider>(context, listen: false).fetchSalonProfile();
     });
   }
   
@@ -217,7 +223,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     _nameController.dispose();
     _priceController.dispose();
     _durationController.dispose();
-    _scrollController.dispose();
+    _formScrollController.dispose();
+    _listScrollController.dispose();
     _customCategoryController.dispose();
     super.dispose();
   }
@@ -252,8 +259,8 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     });
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
+      if (_formScrollController.hasClients) {
+        _formScrollController.animateTo(
           0,
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeOutQuart,
@@ -435,13 +442,16 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             Expanded(
               child: CustomRefreshIndicator(
                 onRefresh: () async {
-                  await Provider.of<ServiceProvider>(context, listen: false).fetchServices();
+                  await Future.wait([
+                    Provider.of<ServiceProvider>(context, listen: false).fetchServices(),
+                    Provider.of<SalonProvider>(context, listen: false).fetchSalonProfile(),
+                  ]);
                 },
                 color: const Color(0XFFFF0B01),
                 child: (!widget.showAsTab || widget.initialTabIndex == 0)
                   ? SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      controller: widget.showAsTab ? null : _scrollController,
+                      controller: _formScrollController,
                       child: Column(
                         children: [
                           if (!widget.showAsTab) _buildHeader(context, size),
@@ -460,7 +470,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                provider.editingService != null ? "EDITING SERVICE" : "ADD NEW SERVICE",
+                                provider.editingService != null ? AppLocalizations.of(context)!.editingServiceTitle : AppLocalizations.of(context)!.addNewServiceTitle,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
@@ -472,7 +482,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                 TextButton.icon(
                                   onPressed: _clearForm,
                                   icon: const Icon(Icons.close, size: 16),
-                                  label: const Text("Cancel Edit"),
+                                  label: Text(AppLocalizations.of(context)!.cancelEditBtn),
                                   style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
                                 ),
                               ],
@@ -489,7 +499,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                           // Standard category dropdown
                           if (!_isCustomCategory) ...[
                             _buildDropdownField(
-                              "Category",
+                              AppLocalizations.of(context)!.categoryLabel,
                               "assets/Images/ServicesScreen/category_icon.svg",
                               items: _categories,
                               value: _selectedCategory,
@@ -544,7 +554,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                             if (_selectedCategory != null && provider.editingService == null) ...[
                               if (!_isCustomServiceName) ...[
                                 _buildDropdownField(
-                                  "Select Service Name",
+                                  AppLocalizations.of(context)!.selectServiceNameLabel,
                                   "assets/Images/ServicesScreen/service_name_icon.svg",
                                   items: [
                                     ...(_categorySubCategories[_selectedCategory!] ?? []),
@@ -574,7 +584,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                     Expanded(
                                       child: _buildTextField(
                                         controller: _nameController,
-                                        hint: "Service Name",
+                                        hint: AppLocalizations.of(context)!.serviceNameLabel,
                                         icon: "assets/Images/ServicesScreen/service_name_icon.svg",
                                       ),
                                     ),
@@ -584,7 +594,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                         _selectedCommonService = null;
                                         _nameController.clear();
                                       }),
-                                      child: const Text("Select Preloaded", style: TextStyle(fontSize: 12)),
+                                      child: Text(AppLocalizations.of(context)!.selectPreloadedBtn, style: const TextStyle(fontSize: 12)),
                                     ),
                                   ],
                                 ),
@@ -593,7 +603,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                               // Editing mode – show text field directly
                               _buildTextField(
                                 controller: _nameController,
-                                hint: "Service Name",
+                                hint: AppLocalizations.of(context)!.serviceNameLabel,
                                 icon: "assets/Images/ServicesScreen/service_name_icon.svg",
                               ),
                             ] else ...[
@@ -609,7 +619,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                   children: [
                                     SvgPicture.asset("assets/Images/ServicesScreen/service_name_icon.svg", width: 20, height: 20),
                                     const SizedBox(width: 10),
-                                    const Text("Select a category first", style: TextStyle(fontSize: 14, color: Color(0XFFB0B0B0))),
+                                    Text(AppLocalizations.of(context)!.selectCategoryFirst, style: const TextStyle(fontSize: 14, color: Color(0XFFB0B0B0))),
                                   ],
                                 ),
                               ),
@@ -618,7 +628,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                             // Custom category selected – service name is always a text field
                             _buildTextField(
                               controller: _nameController,
-                              hint: "Service Name",
+                              hint: AppLocalizations.of(context)!.serviceNameLabel,
                               icon: "assets/Images/ServicesScreen/service_name_icon.svg",
                             ),
                           ],
@@ -626,18 +636,43 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
                           // ─── GENDER ─────────────────────────────────────────────────
                           _buildDropdownField(
-                            "Gender",
+                            AppLocalizations.of(context)!.genderLabel,
                             "assets/Images/AddStaffScreen/gender_icon.svg",
-                            items: ['MALE', 'FEMALE'],
+                            items: ['MALE', 'FEMALE', 'UNISEX'],
                             value: _selectedGender,
                             onChanged: (val) {
                               if (val != null) setState(() => _selectedGender = val);
                             },
                           ),
                           const SizedBox(height: 20),
-                          _buildTextField(controller: _priceController, hint: "Price", icon: "assets/Images/ServicesScreen/price_icon.svg", keyboardType: TextInputType.number),
+                          _buildTextField(
+                            controller: _priceController,
+                            hint: AppLocalizations.of(context)!.priceLabel,
+                            icon: "assets/Images/ServicesScreen/price_icon.svg",
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          Consumer<SalonProvider>(
+                            builder: (context, salonProvider, _) {
+                              final profile = salonProvider.salonProfile;
+                              final bool hasGst = (profile?.includeGstInInvoice ?? false) &&
+                                  (profile?.gstin != null && profile!.gstin!.trim().isNotEmpty);
+                              final double price = double.tryParse(_priceController.text.trim()) ?? 0.0;
+
+                              if (!hasGst || price <= 0) return const SizedBox.shrink();
+
+                              final breakdown = GstBreakdownModel.calculate(
+                                amount: price,
+                                isGstEnabled: true,
+                                isTaxInclusive: true,
+                                gstin: profile.gstin,
+                              );
+
+                              return GstBreakdownCardWidget(breakdown: breakdown);
+                            },
+                          ),
                           const SizedBox(height: 20),
-                          _buildTextField(controller: _durationController, hint: "Duration (min)", icon: "assets/Images/ServicesScreen/duration_icon.svg", keyboardType: TextInputType.number),
+                          _buildTextField(controller: _durationController, hint: AppLocalizations.of(context)!.durationMinLabel, icon: "assets/Images/ServicesScreen/duration_icon.svg", keyboardType: TextInputType.number),
                           const SizedBox(height: 30),
                           
                           Row(
@@ -653,7 +688,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                     ),
                                     child: provider.isLoading
                                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                        : Text(provider.editingService != null ? "UPDATE" : "SAVE", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        : Text(provider.editingService != null ? AppLocalizations.of(context)!.updateBtn : AppLocalizations.of(context)!.saveBtn, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                   );
                                 }),
                               ),
@@ -666,7 +701,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
                                     side: const BorderSide(color: Color(0XFF909090)),
                                   ),
-                                  child: const Text("CANCEL", style: TextStyle(color: Color(0XFF909090), fontWeight: FontWeight.bold)),
+                                  child: Text(AppLocalizations.of(context)!.cancelBtn, style: const TextStyle(color: Color(0XFF909090), fontWeight: FontWeight.bold)),
                                 ),
                               ),
                             ],
@@ -696,6 +731,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         
         return ReorderableListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
+          scrollController: _listScrollController,
           padding: EdgeInsets.fromLTRB(20, widget.showAsTab ? 0 : 20, 20, 100),
           proxyDecorator: (Widget child, int index, Animation<double> animation) {
             return AnimatedBuilder(
@@ -721,11 +757,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Service List (Customer Preview)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black)),
+                  Text(AppLocalizations.of(context)!.serviceListPreviewTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black)),
                 ],
               ),
               const SizedBox(height: 4),
-              const Text("Preview how customers will see your services.", style: TextStyle(color: Colors.grey, fontSize: 15)),
+              Text(AppLocalizations.of(context)!.serviceListPreviewSubtitle, style: const TextStyle(color: Colors.grey, fontSize: 15)),
               const SizedBox(height: 16),
               _buildCustomerPreview(),
               
@@ -733,11 +769,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Manage Services", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.black)),
+                  Text(AppLocalizations.of(context)!.manageServicesTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.black)),
                   OutlinedButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.swap_vert, size: 16),
-                    label: const Text("Reorder"),
+                    label: Text(AppLocalizations.of(context)!.reorderBtn),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.black87,
                       side: BorderSide(color: Colors.grey.shade300),
@@ -748,16 +784,16 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-              const Row(
+              Row(
                 children: [
-                  Text("ⓘ ", style: TextStyle(color: Colors.grey, fontSize: 13)),
-                  Text("Hold and drag services to change display order.", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const Text("ⓘ ", style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  Text(AppLocalizations.of(context)!.reorderHint, style: const TextStyle(color: Colors.grey, fontSize: 13)),
                 ],
               ),
               const SizedBox(height: 16),
               
               if (provider.services.isEmpty)
-                const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No services found."))),
+                Center(child: Padding(padding: const EdgeInsets.all(20), child: Text(AppLocalizations.of(context)!.noServicesFound))),
             ],
           ),
           itemCount: provider.services.length,
@@ -929,10 +965,17 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
 
 
 
-  Widget _buildTextField({required TextEditingController controller, required String hint, required String icon, TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required String icon,
+    TextInputType keyboardType = TextInputType.text,
+    ValueChanged<String>? onChanged,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hint,
         filled: true,

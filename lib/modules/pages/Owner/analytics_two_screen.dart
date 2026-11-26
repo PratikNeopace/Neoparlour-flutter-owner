@@ -8,6 +8,7 @@ import 'package:neo_parlour_owner/providers/appointment_provider.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AnalyticsTwoScreen extends StatefulWidget {
   const AnalyticsTwoScreen({super.key});
@@ -85,10 +86,10 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
                 }
 
                 final List<Map<String, dynamic>> analyticsData = [
-                  {"title": "Total Clients", "count": provider.totalClientsCount},
-                  {"title": "Total Services", "count": provider.totalServicesCount},
-                  {"title": "Employees", "count": provider.employeesCount},
-                  {"title": "Appointment", "count": provider.totalAppointmentsCount},
+                  {"title": AppLocalizations.of(context)!.totalClientsTitle, "count": provider.totalClientsCount},
+                  {"title": AppLocalizations.of(context)!.totalServicesTitle, "count": provider.totalServicesCount},
+                  {"title": AppLocalizations.of(context)!.employeesTitle, "count": provider.employeesCount},
+                  {"title": AppLocalizations.of(context)!.appointmentTitle, "count": provider.totalAppointmentsCount},
                 ];
 
                 return SingleChildScrollView(
@@ -114,7 +115,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
                       ),
                       const SizedBox(height: 30),
                       Text(
-                        "ALL BOOKINGS",
+                        AppLocalizations.of(context)!.allBookingsTitle,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
@@ -128,7 +129,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(40.0),
                             child: Text(
-                              "No bookings found",
+                              AppLocalizations.of(context)!.noBookingsFound,
                               style: GoogleFonts.poppins(color: Colors.grey),
                             ),
                           ),
@@ -192,7 +193,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              "View Details",
+              AppLocalizations.of(context)!.viewDetailsBtn,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w400,
                 fontSize: 10,
@@ -280,7 +281,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
                     const Icon(Icons.person_outline, size: 12, color: Color(0XFFFF0B01)),
                     const SizedBox(width: 4),
                     Text(
-                      "Staff: ${appointment.staffName}",
+                      "${AppLocalizations.of(context)!.staffPrefix}${appointment.staffName}",
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         color: const Color(0XFFFF0B01),
@@ -367,7 +368,7 @@ class _AnalyticsTwoScreenState extends State<AnalyticsTwoScreen> {
                 ),
               ),
               child: Text(
-                "ANALYTICS",
+                AppLocalizations.of(context)!.analyticsTitle,
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontSize: 26,

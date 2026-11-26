@@ -102,10 +102,14 @@ class _LeaveRequestStaffScreenState extends State<LeaveRequestStaffScreen> {
         _startDate = null;
         _endDate = null;
       });
-      Navigator.pop(
-        context,
-        true,
-      ); // Go back to the dashboard with success status
+      
+      FlushbarHelper.show(context, "Successfully applied for the leave waiting for Owners approval", isSuccess: true);
+      
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
+      });
     } else {
       final errorMsg =
           context.read<AttendanceProvider>().errorMessage ??

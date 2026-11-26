@@ -14,6 +14,7 @@ import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/providers/product_provider.dart';
 import 'package:neo_parlour_owner/data/models/product_model.dart';
 import 'package:neo_parlour_owner/widgets/premium_image.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AddProductScreen extends StatefulWidget {
   final bool showAsTab;
@@ -113,9 +114,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
     });
   }
 
+  static const int _maxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+
   Future<void> _pickMainImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
+      final fileSize = await pickedFile.length();
+      if (fileSize > _maxFileSizeBytes) {
+        final double sizeInMb = fileSize / (1024 * 1024);
+        if (mounted) {
+          FlushbarHelper.show(
+            context,
+            "Selected image is ${sizeInMb.toStringAsFixed(1)} MB. Maximum allowed size is 5 MB.",
+          );
+        }
+        return;
+      }
       final bytes = await pickedFile.readAsBytes();
       setState(() {
         _mainImageBytes = bytes;
@@ -126,6 +140,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Future<void> _pickAdditionalImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
+      final fileSize = await pickedFile.length();
+      if (fileSize > _maxFileSizeBytes) {
+        final double sizeInMb = fileSize / (1024 * 1024);
+        if (mounted) {
+          FlushbarHelper.show(
+            context,
+            "Selected image is ${sizeInMb.toStringAsFixed(1)} MB. Maximum allowed size is 5 MB.",
+          );
+        }
+        return;
+      }
       final bytes = await pickedFile.readAsBytes();
       setState(() {
         _additionalImagesBytes.add(bytes);
@@ -292,7 +317,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         }
       } else {
         if (mounted) {
-          _showError(editingProduct != null ? "Failed to update product" : "Failed to add product");
+          _showError(productProvider.errorMessage ?? (editingProduct != null ? "Failed to update product" : "Failed to add product"));
         }
       }
     } catch (e) {
@@ -373,7 +398,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         ],
                         if (!widget.showAsTab || widget.initialTabIndex == 1) ...[
                           if (widget.showAsTab) const SizedBox(height: 10),
-                          const Text("PRODUCT LIST", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                          Text(AppLocalizations.of(context)!.productListTab, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                           const Divider(color: Color(0XFFFF0B01), thickness: 2, endIndent: 220),
                           const SizedBox(height: 15),
                           _buildProductsList(),
@@ -408,7 +433,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                isEditing ? "EDITING PRODUCT" : "ADD PRODUCTS",
+                isEditing ? AppLocalizations.of(context)!.editingProductTitle : AppLocalizations.of(context)!.addProductsTitle,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -420,7 +445,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 TextButton.icon(
                   onPressed: _clearForm,
                   icon: const Icon(Icons.close, size: 16),
-                  label: const Text("Cancel Edit"),
+                  label: Text(AppLocalizations.of(context)!.cancelEditBtn),
                   style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
                 ),
               ],
@@ -437,9 +462,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
             children: [
               const Icon(Icons.edit_note_rounded, size: 24, color: Colors.blue),
               const SizedBox(width: 8),
-              const Text(
-                "EDITING PRODUCT",
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.editingProductTitle,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                   color: Colors.blue,
@@ -449,7 +474,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               TextButton.icon(
                 onPressed: _clearForm,
                 icon: const Icon(Icons.close, size: 16),
-                label: const Text("Cancel Edit"),
+                label: Text(AppLocalizations.of(context)!.cancelEditBtn),
                 style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
               ),
             ],
@@ -458,7 +483,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           const SizedBox(height: 20),
         ],
 
-        const Text("Main Product Image", style: TextStyle(fontWeight: FontWeight.w500)),
+        Text(AppLocalizations.of(context)!.mainProductImage, style: const TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 10),
         Container(
           height: (_mainImageBytes != null || (isEditing && ((productProvider.editingProduct!.imageUrl != null && productProvider.editingProduct!.imageUrl!.isNotEmpty) || (productProvider.editingProduct!.imageBase64 != null && productProvider.editingProduct!.imageBase64!.isNotEmpty)))) ? 150 : 70,
@@ -480,14 +505,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildIconLabel("assets/Images/AddProductScreen/camera_icon.svg", "Camera", onTap: () => _pickMainImage(ImageSource.camera)),
+            _buildIconLabel("assets/Images/AddProductScreen/camera_icon.svg", AppLocalizations.of(context)!.cameraBtn, onTap: () => _pickMainImage(ImageSource.camera)),
             const SizedBox(width: 20),
-            _buildIconLabel("assets/Images/AddProductScreen/gallery_icon.svg", "Gallery", onTap: () => _pickMainImage(ImageSource.gallery)),
+            _buildIconLabel("assets/Images/AddProductScreen/gallery_icon.svg", AppLocalizations.of(context)!.galleryBtn, onTap: () => _pickMainImage(ImageSource.gallery)),
           ],
         ),
 
         const SizedBox(height: 25),
-        const Text("Additional Images", style: TextStyle(fontWeight: FontWeight.w500)),
+        Text(AppLocalizations.of(context)!.additionalImages, style: const TextStyle(fontWeight: FontWeight.w500)),
         const SizedBox(height: 10),
         if (_additionalImagesBytes.isNotEmpty)
           SizedBox(
@@ -543,9 +568,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildIconLabel("assets/Images/AddProductScreen/camera_icon.svg", "Camera", onTap: () => _pickAdditionalImage(ImageSource.camera)),
+            _buildIconLabel("assets/Images/AddProductScreen/camera_icon.svg", AppLocalizations.of(context)!.cameraBtn, onTap: () => _pickAdditionalImage(ImageSource.camera)),
             const SizedBox(width: 20),
-            _buildIconLabel("assets/Images/AddProductScreen/gallery_icon.svg", "Gallery", onTap: () async {
+            _buildIconLabel("assets/Images/AddProductScreen/gallery_icon.svg", AppLocalizations.of(context)!.galleryBtn, onTap: () async {
               final List<XFile> pickedFiles = await _picker.pickMultiImage();
               if (pickedFiles.isNotEmpty) {
                 for (var file in pickedFiles) {
@@ -560,10 +585,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ),
 
         const SizedBox(height: 25),
-        _buildTextField("Product Name", "assets/Images/AddProductScreen/product_details_icon.svg", controller: _nameController),
+        _buildTextField(AppLocalizations.of(context)!.productNameLabel, "assets/Images/AddProductScreen/product_details_icon.svg", controller: _nameController),
         const SizedBox(height: 20),
         _buildDropdownField(
-          "Product Type",
+          AppLocalizations.of(context)!.productTypeLabel,
           "assets/Images/AddProductScreen/product_type_icon.svg",
           value: _productType,
           items: ['RETAIL', 'WHOLESALE'],
@@ -576,17 +601,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
           },
         ),
         const SizedBox(height: 20),
-        _buildTextField("Category", "assets/Images/AddProductScreen/product_type_icon.svg", controller: _categoryController),
+        _buildTextField(AppLocalizations.of(context)!.categoryLabel, "assets/Images/AddProductScreen/product_type_icon.svg", controller: _categoryController),
         const SizedBox(height: 20),
-        _buildTextField("Product Description", "assets/Images/AddProductScreen/product_description_icon.svg", controller: _descriptionController),
+        _buildTextField(AppLocalizations.of(context)!.productDescriptionLabel, "assets/Images/AddProductScreen/product_description_icon.svg", controller: _descriptionController),
         const SizedBox(height: 20),
-        _buildTextField("Stock", "assets/Images/AddProductScreen/product_quantity_icon.svg", controller: _stockController, keyboardType: TextInputType.number),
+        _buildTextField(AppLocalizations.of(context)!.stockLabel, "assets/Images/AddProductScreen/product_quantity_icon.svg", controller: _stockController, keyboardType: TextInputType.number),
         const SizedBox(height: 20),
-        _buildTextField("Restock Level", "assets/Images/AddProductScreen/product_quantity_icon.svg", controller: _restockLevelController, keyboardType: TextInputType.number),
+        _buildTextField(AppLocalizations.of(context)!.restockLevelLabel, "assets/Images/AddProductScreen/product_quantity_icon.svg", controller: _restockLevelController, keyboardType: TextInputType.number),
         const SizedBox(height: 20),
-        _buildTextField("Price", "assets/Images/AddProductScreen/rate_icon.svg", controller: _priceController, keyboardType: TextInputType.number),
+        _buildTextField(AppLocalizations.of(context)!.priceLabel, "assets/Images/AddProductScreen/rate_icon.svg", controller: _priceController, keyboardType: TextInputType.number),
         const SizedBox(height: 20),
-        _buildTextField("Discount Price", "assets/Images/AddProductScreen/rate_icon.svg", controller: _discountPriceController, keyboardType: TextInputType.number),
+        _buildTextField(AppLocalizations.of(context)!.discountPriceLabel, "assets/Images/AddProductScreen/rate_icon.svg", controller: _discountPriceController, keyboardType: TextInputType.number),
         const SizedBox(height: 20),
 
         const SizedBox(height: 10),
@@ -605,7 +630,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     ),
                     child: provider.isLoading
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : Text(provider.editingProduct != null ? "UPDATE" : "SAVE", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        : Text(provider.editingProduct != null ? AppLocalizations.of(context)!.updateBtn : AppLocalizations.of(context)!.saveBtn, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 15),
@@ -622,7 +647,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       padding: const EdgeInsets.all(15),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
                     ),
-                    child: const Text("CANCEL", style: TextStyle(color: Color(0XFF909090))),
+                    child: Text(AppLocalizations.of(context)!.cancelBtn, style: const TextStyle(color: Color(0XFF909090))),
                   ),
                 ),
               ],
@@ -640,7 +665,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (provider.products.isEmpty) {
-          return const Center(child: Text("No products found."));
+          return Center(child: Text(AppLocalizations.of(context)!.noProductsFound));
         }
         return ListView.builder(
           shrinkWrap: true,
@@ -710,7 +735,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  isActive ? "ACTIVE" : "INACTIVE",
+                                  isActive ? AppLocalizations.of(context)!.activeBadge : AppLocalizations.of(context)!.inactiveBadge,
                                   style: TextStyle(
                                     color: isActive ? Colors.green : Colors.red,
                                     fontSize: 9,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class SupportScreen extends StatelessWidget {
   const SupportScreen({super.key});
@@ -18,9 +19,9 @@ class SupportScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Could not open email client. Please email jeevan.j@neopaceinfotech.com."),
-            backgroundColor: Color(0XFFFF0B01),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.emailSupportError),
+            backgroundColor: const Color(0XFFFF0B01),
           ),
         );
       }
@@ -37,9 +38,9 @@ class SupportScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Could not open dialer. Please call 9119591956 directly."),
-            backgroundColor: Color(0XFFFF0B01),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.dialerSupportError),
+            backgroundColor: const Color(0XFFFF0B01),
           ),
         );
       }
@@ -53,7 +54,7 @@ class SupportScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         title: Text(
-          "SUPPORT",
+          AppLocalizations.of(context)!.supportTitle,
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -95,7 +96,7 @@ class SupportScreen extends StatelessWidget {
               
               // Friendly sub-text
               Text(
-                "We’re here to help you every step of the way.",
+                AppLocalizations.of(context)!.supportHelpText,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
@@ -128,7 +129,7 @@ class SupportScreen extends StatelessWidget {
                     _buildSupportItem(
                       context,
                       icon: Icons.mail_outline_rounded,
-                      title: "Email Support",
+                      title: AppLocalizations.of(context)!.emailSupportTitle,
                       value: "jeevan.j@neopaceinfotech.com",
                       onTap: () => _launchEmail(context),
                       isActionable: true,
@@ -139,7 +140,7 @@ class SupportScreen extends StatelessWidget {
                     _buildSupportItem(
                       context,
                       icon: Icons.phone_outlined,
-                      title: "Phone Support",
+                      title: AppLocalizations.of(context)!.phoneSupportTitle,
                       value: "9119591956",
                       onTap: () => _launchPhone(context),
                       isActionable: true,
@@ -150,8 +151,8 @@ class SupportScreen extends StatelessWidget {
                     _buildSupportItem(
                       context,
                       icon: Icons.access_time_rounded,
-                      title: "Working Hours",
-                      value: "10 am to 7pm",
+                      title: AppLocalizations.of(context)!.workingHoursTitle,
+                      value: AppLocalizations.of(context)!.workingHoursValue,
                       onTap: null,
                       isActionable: false,
                     ),
@@ -170,7 +171,7 @@ class SupportScreen extends StatelessWidget {
                   border: Border.all(color: const Color(0XFFFF0B01).withValues(alpha: 0.15)),
                 ),
                 child: Text(
-                  "We aim to provide fast, reliable, and friendly support to ensure your experience with Neo Parlour is always smooth and hassle-free.",
+                  AppLocalizations.of(context)!.supportFooterText,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 12,

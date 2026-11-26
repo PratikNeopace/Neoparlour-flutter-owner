@@ -1,9 +1,25 @@
 import 'package:dio/dio.dart';
 import 'package:neo_parlour_owner/core/api_client.dart';
 import 'package:neo_parlour_owner/data/models/staff_model.dart';
+import 'package:neo_parlour_owner/data/models/staff_referral_stats_model.dart';
 
 class StaffService {
   final ApiClient _apiClient = ApiClient();
+
+  Future<StaffReferralStatsModel> getStaffStats(int staffId) async {
+    try {
+      final response = await _apiClient.get('staff-invitations/stats/$staffId');
+      if (response.statusCode == 200) {
+        return StaffReferralStatsModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to fetch staff stats');
+      }
+    } on DioException catch (e) {
+      throw Exception(ApiClient.handleDioError(e));
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   Future<Staff> addStaff(Staff staff) async {
     try {

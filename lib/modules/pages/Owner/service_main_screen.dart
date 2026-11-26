@@ -7,6 +7,7 @@ import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:neo_parlour_owner/widgets/premium_segmented_control.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class ServiceMainScreen extends StatefulWidget {
   const ServiceMainScreen({super.key});
@@ -65,7 +66,7 @@ class _ServiceMainScreenState extends State<ServiceMainScreen> {
                           onValueChanged: (index) {
                             tabController.animateTo(index);
                           },
-                          labels: const ["Service List", "Add Service"],
+                          labels: [AppLocalizations.of(context)!.serviceListTab, AppLocalizations.of(context)!.addServiceTab],
                           icons: const [Icons.list_alt_rounded, Icons.add_circle_outline_rounded],
                         );
                       },
@@ -93,7 +94,7 @@ class _ServiceMainScreenState extends State<ServiceMainScreen> {
         ClipPath(
           clipper: HeaderCurveClipper(),
           child: Container(
-            height: 190,
+            height: 240,
             width: double.infinity,
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -140,15 +141,15 @@ class _ServiceMainScreenState extends State<ServiceMainScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Services",
-                style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+              Text(
+                AppLocalizations.of(context)!.servicesTitle,
+                style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.7,
                 child: Text(
-                  "Manage your salon services and preview how customers see them.",
+                  AppLocalizations.of(context)!.servicesSubtitle,
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13),
                   maxLines: 2,
                 ),

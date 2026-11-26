@@ -8,6 +8,7 @@ class SearchService {
     String query, {
     String featureClass = '',
     String cityName = '',
+    String stateName = '',
   }) async {
     if (query.trim().length < 2) return [];
 
@@ -22,8 +23,12 @@ class SearchService {
 
     try {
       String searchQuery = query;
-      if (cityName.isNotEmpty && featureClass == 'area') {
-        searchQuery = '$query $cityName';
+      if (featureClass == 'city' && stateName.isNotEmpty) {
+        searchQuery = '$query $stateName';
+      } else if (featureClass == 'area') {
+        searchQuery = '$query';
+        if (cityName.isNotEmpty) searchQuery += ' $cityName';
+        if (stateName.isNotEmpty) searchQuery += ' $stateName';
       }
 
       final dioClient = Dio();
@@ -49,6 +54,13 @@ class SearchService {
 
       for (final feature in features) {
         final Map<String, dynamic> props = feature['properties'] ?? {};
+
+        if (stateName.isNotEmpty) {
+          final String featureState = props['state'] ?? '';
+          if (featureState.toLowerCase() != stateName.toLowerCase() && !featureState.toLowerCase().contains(stateName.toLowerCase())) {
+            continue;
+          }
+        }
 
         final String city = props['city'] ?? props['town'] ?? props['district'] ?? props['state_district'] ?? props['county'] ?? '';
         final String rawName = props['name'] ?? '';
@@ -94,6 +106,7 @@ class SearchService {
               results.add({
                 'name': cleanName,
                 'city': displayCity,
+                'district': subLocality,
                 'type': 'area',
               });
             }
@@ -133,6 +146,134 @@ class SearchService {
     } catch (error) {
       debugPrint('Error searching external locations via Photon: $error');
       return [];
+    }
+  }
+
+  /// Search for landmarks using a multi-pass parallel strategy
+  Future<List<Map<String, dynamic>>> searchLandmarks(
+    String query, {
+    required String cityName,
+    required String stateName,
+    required String areaName,
+    String districtName = '',
+  }) async {
+    if (query.trim().length < 2) return [];
+
+    try {
+      final dioClient = Dio();
+      dioClient.options.headers['User-Agent'] = 'NeoParlourApp/1.0';
+
+      String combinedArea = areaName;
+      if (districtName.isNotEmpty && districtName.toLowerCase() != areaName.toLowerCase()) {
+        combinedArea = '$areaName $districtName';
+      }
+
+      final queries = [
+        '$query $combinedArea $cityName $stateName'.trim().replaceAll(RegExp(r'\s+'), ' '),
+        '$query $cityName $stateName'.trim().replaceAll(RegExp(r'\s+'), ' '),
+      ];
+
+      final futures = queries.map((q) => dioClient.get(
+            'https://photon.komoot.io/api',
+            queryParameters: {
+              'q': q,
+              'countrycode': 'in',
+              'limit': 15,
+            },
+          ));
+
+      final responses = await Future.wait(futures);
+      final List<Map<String, dynamic>> results = [];
+      final Set<String> seen = {};
+
+      for (var response in responses) {
+        var data = response.data;
+        if (data is String) data = jsonDecode(data);
+        final features = data['features'] ?? [];
+        
+        for (final feature in features) {
+          final props = feature['properties'] ?? {};
+          
+          if (stateName.isNotEmpty) {
+            final String featureState = props['state'] ?? '';
+            if (featureState.toLowerCase() != stateName.toLowerCase() && !featureState.toLowerCase().contains(stateName.toLowerCase())) {
+              continue;
+            }
+          }
+
+          final rawName = props['name'] ?? '';
+          if (rawName.isEmpty) continue;
+          
+          final cleanName = rawName.split(',').first.trim();
+          if (seen.contains(cleanName.toLowerCase())) continue;
+          
+          seen.add(cleanName.toLowerCase());
+          
+          int rankScore = 0;
+          final String propsStr = props.toString().toLowerCase();
+          
+          // Boost scores if they explicitly contain the city or area
+          if (areaName.isNotEmpty && propsStr.contains(areaName.toLowerCase())) rankScore += 10;
+          if (cityName.isNotEmpty && propsStr.contains(cityName.toLowerCase())) rankScore += 5;
+          
+          results.add({
+            'name': cleanName,
+            'city': props['city'] ?? props['district'] ?? cityName,
+            'rankScore': rankScore,
+          });
+        }
+      }
+
+      results.sort((a, b) => (b['rankScore'] as int).compareTo(a['rankScore'] as int));
+      return results;
+
+    } catch (error) {
+      debugPrint('Error searching landmarks via Photon: $error');
+      return [];
+    }
+  }
+
+  /// Reverse Geocoding to get City, Area, State from Coordinates
+  Future<Map<String, String>?> reverseGeocode(double lat, double lon) async {
+    try {
+      final dioClient = Dio();
+      dioClient.options.headers['User-Agent'] = 'NeoParlourApp/1.0';
+      final response = await dioClient.get(
+        'https://photon.komoot.io/reverse',
+        queryParameters: {
+          'lat': lat,
+          'lon': lon,
+        },
+      );
+      
+      var data = response.data;
+      if (data is String) data = jsonDecode(data);
+      
+      final features = data['features'] ?? [];
+      if (features.isEmpty) return null;
+      
+      final props = features.first['properties'] ?? {};
+      
+      String cleanCity = props['city'] ?? props['town'] ?? '';
+      if (cleanCity.isEmpty) {
+        final rawCounty = props['county'] ?? props['state_district'] ?? props['district'] ?? '';
+        cleanCity = rawCounty
+            .replaceAll(RegExp(r'\b(subdistrict|district|city|division|corporation|municipal)\b', caseSensitive: false), '')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+      }
+
+      String cleanArea = props['locality'] ?? props['suburb'] ?? props['district'] ?? props['name'] ?? props['street'] ?? '';
+      final String state = props['state'] ?? '';
+      
+      return {
+        'city': cleanCity,
+        'area': cleanArea,
+        'state': state,
+      };
+    } catch (error) {
+      debugPrint('Reverse Geocoding error: $error');
+      return null;
     }
   }
 }

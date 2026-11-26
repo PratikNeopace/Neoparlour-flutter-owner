@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -13,6 +14,7 @@ import 'package:neo_parlour_owner/data/models/staff_model.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/widgets/premium_image.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AddStaffScreen extends StatefulWidget {
   final bool showAsTab;
@@ -100,10 +102,23 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
     });
   }
 
+  static const int _maxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? pickedFile = await _picker.pickImage(source: source);
       if (pickedFile != null) {
+        final fileSize = await pickedFile.length();
+        if (fileSize > _maxFileSizeBytes) {
+          final double sizeInMb = fileSize / (1024 * 1024);
+          if (mounted) {
+            FlushbarHelper.show(
+              context,
+              "Selected image is ${sizeInMb.toStringAsFixed(1)} MB. Maximum allowed size is 5 MB.",
+            );
+          }
+          return;
+        }
         setState(() {
           _imageFile = pickedFile;
         });
@@ -127,9 +142,9 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "Select Image Source",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                AppLocalizations.of(context)!.selectImageSourceTitle,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Row(
@@ -137,7 +152,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                 children: [
                   _buildPickerOption(
                     icon: Icons.camera_alt_outlined,
-                    label: "Camera",
+                    label: AppLocalizations.of(context)!.cameraLabel,
                     onTap: () {
                       Navigator.pop(context);
                       _pickImage(ImageSource.camera);
@@ -145,7 +160,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                   ),
                   _buildPickerOption(
                     icon: Icons.photo_library_outlined,
-                    label: "Gallery",
+                    label: AppLocalizations.of(context)!.galleryLabel,
                     onTap: () {
                       Navigator.pop(context);
                       _pickImage(ImageSource.gallery);
@@ -406,7 +421,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _editingStaff != null ? "EDITING STAFF" : "ADD NEW STAFF",
+                                    _editingStaff != null ? AppLocalizations.of(context)!.editingStaffTitle : AppLocalizations.of(context)!.addNewStaffTitle,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
@@ -421,7 +436,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                                         _clearForm();
                                       },
                                       icon: const Icon(Icons.close, size: 16),
-                                      label: const Text("Cancel Edit"),
+                                      label: Text(AppLocalizations.of(context)!.cancelEditBtn),
                                       style: TextButton.styleFrom(
                                         foregroundColor: Colors.grey[600],
                                       ),
@@ -477,31 +492,46 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                                 ),
                               ),
                               const SizedBox(height: 25),
-                              _buildTextField(controller: _nameController, hint: "Full Name", icon: Icons.person_outline),
+                              _buildTextField(controller: _nameController, hint: AppLocalizations.of(context)!.fullNameLabel, icon: Icons.person_outline),
                               const SizedBox(height: 15),
-                              _buildTextField(controller: _phoneController, hint: "Phone Number", icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+                              _buildTextField(
+                                controller: _phoneController,
+                                hint: AppLocalizations.of(context)!.phoneNumberLabel,
+                                icon: Icons.phone_outlined,
+                                keyboardType: TextInputType.phone,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(10),
+                                ],
+                                maxLength: 10,
+                              ),
                               const SizedBox(height: 15),
-                              _buildTextField(controller: _emailController, hint: "Email Address", icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                              _buildTextField(controller: _emailController, hint: AppLocalizations.of(context)!.emailAddressLabel, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
                               const SizedBox(height: 15),
                               if (_editingStaff == null) ...[
-                                _buildTextField(controller: _passwordController, hint: "Password", icon: Icons.lock_outline, obscureText: true),
+                                _buildTextField(controller: _passwordController, hint: AppLocalizations.of(context)!.passwordLabel, icon: Icons.lock_outline, obscureText: true),
                                 const SizedBox(height: 15),
                               ],
-                              _buildTextField(controller: _addressController, hint: "Address", icon: Icons.location_on_outlined),
+                              _buildTextField(controller: _addressController, hint: AppLocalizations.of(context)!.addressLabel, icon: Icons.location_on_outlined),
                               const SizedBox(height: 15),
-                              _buildTextField(controller: _birthdateController, hint: "Birthdate", icon: Icons.cake_outlined, readOnly: true, onTap: _selectDate),
+                              _buildTextField(controller: _birthdateController, hint: AppLocalizations.of(context)!.birthdateLabel, icon: Icons.cake_outlined, readOnly: true, onTap: _selectDate),
                               const SizedBox(height: 15),
                               DropdownButtonFormField<String>(
+                                isExpanded: true,
                                 initialValue: _selectedGender,
                                 decoration: InputDecoration(
-                                  hintText: "Gender",
+                                  hintText: AppLocalizations.of(context)!.genderLabel,
                                   filled: true,
                                   fillColor: const Color(0XFFF8F8F8),
                                   prefixIcon: const Icon(Icons.person_pin_outlined, color: Color(0XFF909090), size: 20),
                                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: Color(0XFF909090))),
                                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: Color(0XFFFF0B01))),
                                 ),
-                                items: ['MALE', 'FEMALE', 'OTHER'].map((gender) => DropdownMenuItem(value: gender, child: Text(gender))).toList(),
+                                items: ['MALE', 'FEMALE', 'OTHER'].map((gender) => DropdownMenuItem(value: gender, child: Text(
+                                  gender == 'MALE' ? AppLocalizations.of(context)!.genderMale :
+                                  gender == 'FEMALE' ? AppLocalizations.of(context)!.genderFemale :
+                                  AppLocalizations.of(context)!.genderOther
+                                ))).toList(),
                                 onChanged: (value) {
                                   if (value != null) setState(() { _selectedGender = value; });
                                 },
@@ -513,7 +543,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                                     child: ElevatedButton(
                                       onPressed: staffProvider.isLoading ? null : _handleSave,
                                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0XFFFF0B01), padding: const EdgeInsets.all(15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9))),
-                                      child: staffProvider.isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(_editingStaff != null ? "UPDATE" : "SAVE", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      child: staffProvider.isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(_editingStaff != null ? AppLocalizations.of(context)!.updateBtn : AppLocalizations.of(context)!.saveBtn, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                   const SizedBox(width: 15),
@@ -521,7 +551,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                                     child: OutlinedButton(
                                       onPressed: () { staffProvider.clearEditingStaff(); _clearForm(); },
                                       style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)), side: const BorderSide(color: Color(0XFF909090))),
-                                      child: const Text("CANCEL", style: TextStyle(color: Color(0XFF909090), fontWeight: FontWeight.bold)),
+                                      child: Text(AppLocalizations.of(context)!.cancelBtn, style: const TextStyle(color: Color(0XFF909090), fontWeight: FontWeight.bold)),
                                     ),
                                   ),
                                 ],
@@ -529,7 +559,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                               const SizedBox(height: 40),
                             ],
                             if (!widget.showAsTab || widget.initialTabIndex == 1) ...[
-                              const Text("MANAGE STAFF", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                              Text(AppLocalizations.of(context)!.manageStaffTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                               const Divider(color: Color(0XFFFF0B01), thickness: 2, endIndent: 220),
                               const SizedBox(height: 15),
                               _buildStaffList(),
@@ -556,7 +586,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (provider.staffMembers.isEmpty) {
-          return const Center(child: Text("No staff members found."));
+          return Center(child: Text(AppLocalizations.of(context)!.noStaffFound));
         }
         return ListView.builder(
           shrinkWrap: true,
@@ -626,7 +656,7 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  isActive ? "ACTIVE" : "INACTIVE",
+                                  isActive ? AppLocalizations.of(context)!.activeBadge : AppLocalizations.of(context)!.inactiveBadge,
                                   style: TextStyle(
                                     color: isActive ? Colors.green : Colors.red,
                                     fontSize: 9,
@@ -699,6 +729,8 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
     required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    int? maxLength,
     bool obscureText = false,
     bool readOnly = false,
     VoidCallback? onTap,
@@ -706,6 +738,11 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      buildCounter: maxLength != null
+          ? (context, {required currentLength, required isFocused, maxLength}) => null
+          : null,
       obscureText: obscureText,
       readOnly: readOnly,
       onTap: onTap,
@@ -736,13 +773,13 @@ class _AddStaffScreenState extends State<AddStaffScreen> {
             decoration: const BoxDecoration(
               gradient: LinearGradient(colors: [Color(0xFF4A4A4A), Colors.red]),
             ),
-            child: const Padding(
-              padding: EdgeInsets.only(left: 25, bottom: 40),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 25, bottom: 40),
               child: Align(
                 alignment: Alignment.bottomLeft,
                 child: Text(
-                  "STAFF",
-                  style: TextStyle(
+                  AppLocalizations.of(context)!.staffTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 25,
                     fontWeight: FontWeight.w500,

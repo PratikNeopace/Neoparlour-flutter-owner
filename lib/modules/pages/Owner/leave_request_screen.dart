@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class LeaveRequestScreen extends StatefulWidget {
   const LeaveRequestScreen({super.key});
@@ -46,10 +47,10 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
 
                     if (selectedTab == 0) _pendingCard(),
                     if (selectedTab == 1)
-                      const Center(
+                      Center(
                         child: Text(
-                          "No Approved Requests",
-                          style: TextStyle(color: Colors.grey),
+                          AppLocalizations.of(context)!.noApprovedRequests,
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       ),
                   ],
@@ -92,9 +93,9 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                   ],
                 ),
               ),
-              child: const Text(
-                "LEAVE REQUEST",
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.leaveRequestTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 25,
                   fontWeight: FontWeight.w500,
@@ -146,10 +147,10 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           child: Column(
             children: [
               Text(
-                "PENDING",
+                AppLocalizations.of(context)!.pendingTab,
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  color: selectedTab == 0 ? Colors.black : Color(0XFFCBC8C8),
+                  color: selectedTab == 0 ? Colors.black : const Color(0XFFCBC8C8),
                 ),
               ),
               const SizedBox(height: 6),
@@ -164,10 +165,10 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           child: Column(
             children: [
               Text(
-                "APPROVED",
+                AppLocalizations.of(context)!.approvedTab,
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  color: selectedTab == 1 ? Colors.black : Color(0XFFCBC8C8),
+                  color: selectedTab == 1 ? Colors.black : const Color(0XFFCBC8C8),
                 ),
               ),
               const SizedBox(height: 6),
@@ -211,30 +212,30 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Row(
                       children: [
-                        Text(
+                        const Text(
                           "Pratik Ghodake",
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Spacer(),
+                        const Spacer(),
                         Text(
-                          "Leave Type - Paid",
-                          style: TextStyle(
+                          AppLocalizations.of(context)!.leaveTypePaid,
+                          style: const TextStyle(
                             fontSize: 11,
                             color: Color(0XFF8D8D8D),
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      "Duration : 01-04-2026 To 02-04-2026",
-                      style: TextStyle(fontSize: 11, color: Color(0XFF8D8D8D)),
+                      AppLocalizations.of(context)!.durationPlaceholder,
+                      style: const TextStyle(fontSize: 11, color: Color(0XFF8D8D8D)),
                     ),
                   ],
                 ),
@@ -256,9 +257,9 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       borderRadius: BorderRadius.circular(9),
                     ),
                   ),
-                  child: const Text(
-                    "APPROVE",
-                    style: TextStyle(
+                  child: Text(
+                    AppLocalizations.of(context)!.approveBtn,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -276,9 +277,9 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
                       borderRadius: BorderRadius.circular(9),
                     ),
                   ),
-                  child: const Text(
-                    "REJECT",
-                    style: TextStyle(color: Color(0XFF909090)),
+                  child: Text(
+                    AppLocalizations.of(context)!.rejectBtn,
+                    style: const TextStyle(color: Color(0XFF909090)),
                   ),
                 ),
               ),

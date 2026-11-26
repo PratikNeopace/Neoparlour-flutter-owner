@@ -14,7 +14,15 @@ class GuestBookingState {
 
   GuestBookingState({required this.salonId});
 
-  int get totalDuration => selectedServices.fold(0, (sum, s) => sum + s.duration);
+  int? _precalculatedDuration;
+
+  int get totalDuration {
+    if (selectedServices.isNotEmpty) {
+      return selectedServices.fold(0, (sum, s) => sum + s.duration);
+    }
+    return _precalculatedDuration ?? 0;
+  }
+
   double get totalPrice => selectedServices.fold(0.0, (sum, s) => sum + s.price);
 
   double get weekdayDiscountAmount {
@@ -33,6 +41,7 @@ class GuestBookingState {
     customerName = appointment.customerName;
     customerNumber = appointment.customerMobile ?? '';
     selectedDate = appointment.appointmentAt;
+    _precalculatedDuration = appointment.serviceDuration;
 
     if (appointment.services != null) {
       selectedServices = appointment.services!.map<NeoService>((s) => NeoService(

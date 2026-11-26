@@ -8,6 +8,7 @@ import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class SplashThreeScreen extends StatefulWidget {
   const SplashThreeScreen({super.key});
@@ -138,7 +139,7 @@ class _SplashThreeScreenState extends State<SplashThreeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "Smart Salon",
+                    AppLocalizations.of(context)!.splashThreeTop,
                     style: GoogleFonts.habibi(
                       fontSize: topFontSize,
                       height: 1.0,
@@ -148,7 +149,7 @@ class _SplashThreeScreenState extends State<SplashThreeScreen> {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      "SEAMLESS",
+                      AppLocalizations.of(context)!.splashThreeMid,
                       maxLines: 1,
                       softWrap: false,
                       style: GoogleFonts.imbue(
@@ -161,7 +162,7 @@ class _SplashThreeScreenState extends State<SplashThreeScreen> {
                     ),
                   ),
                   Text(
-                    "Experience",
+                    AppLocalizations.of(context)!.splashThreeBottom,
                     style: GoogleFonts.habibi(
                       fontSize: topFontSize,
                       color: const Color(0XFF626262),
@@ -179,7 +180,7 @@ class _SplashThreeScreenState extends State<SplashThreeScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Skip",
+                            AppLocalizations.of(context)!.skipSplash,
                             style: GoogleFonts.poppins(
                               color: skipColor,
                               fontSize: (size.width * 0.045).clamp(14.0, 20.0),
@@ -196,7 +197,7 @@ class _SplashThreeScreenState extends State<SplashThreeScreen> {
                     ),
                   ),
                    Text(
-                      "Version 1.0.0 | Powered By Neopaceinfotech LLP",
+                      AppLocalizations.of(context)!.versionFooter,
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         color: const Color(0XFF626262),

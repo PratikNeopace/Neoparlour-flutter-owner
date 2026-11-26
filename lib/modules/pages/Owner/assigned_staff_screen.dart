@@ -6,6 +6,7 @@ import 'package:neo_parlour_owner/data/models/inventory_model.dart';
 import 'package:neo_parlour_owner/providers/inventory_provider.dart';
 
 import 'package:neo_parlour_owner/widgets/usage_details_dialog.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AssignedStaffScreen extends StatefulWidget {
   final InventoryResponse inventory;
@@ -32,7 +33,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         title: Text(
-          "Staff Assignments - ${widget.inventory.name}",
+          "${AppLocalizations.of(context)!.staffAssignmentsPrefix}${widget.inventory.name}",
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         backgroundColor: Colors.white,
@@ -54,11 +55,11 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Error: ${provider.errorMessage}", style: const TextStyle(color: Colors.red)),
+                  Text("${AppLocalizations.of(context)!.errorPrefix}${provider.errorMessage}", style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () => provider.fetchStaffAssignments(widget.inventory.id),
-                    child: const Text("Retry"),
+                    child: Text(AppLocalizations.of(context)!.retryBtn),
                   ),
                 ],
               ),
@@ -66,8 +67,8 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
           }
 
           if (provider.staffAssignments.isEmpty) {
-            return const Center(
-              child: Text("No staff assigned to this item yet"),
+            return Center(
+              child: Text(AppLocalizations.of(context)!.noStaffAssignedItem),
             );
           }
 
@@ -88,7 +89,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
   Widget _buildAssignmentCard(StaffInventoryResponse assignment) {
     final assignedDate = assignment.assignedAt != null
         ? DateFormat('dd MMM yyyy, hh:mm a').format(assignment.assignedAt!.toLocal())
-        : 'Unknown Date';
+        : AppLocalizations.of(context)!.unknownDate;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -119,12 +120,12 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      assignment.staffName ?? "Unknown Staff",
+                      assignment.staffName ?? AppLocalizations.of(context)!.unknownStaff,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "Assigned by: ${assignment.assignedBy ?? 'System'}",
+                      "${AppLocalizations.of(context)!.assignedByPrefix}${assignment.assignedBy ?? AppLocalizations.of(context)!.systemLabel}",
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
@@ -133,7 +134,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
               IconButton(
                 onPressed: () => _showReassignDialog(assignment),
                 icon: const Icon(Icons.edit_note, color: Color(0XFFFF0B01)),
-                tooltip: "Reassign / Update Usage",
+                tooltip: AppLocalizations.of(context)!.reassignTooltip,
               ),
             ],
           ),
@@ -141,18 +142,18 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStat("Allocated", "${assignment.allocatedQuantity}"),
-              _buildStat("Used", "${assignment.usedQuantity ?? 0.0}"),
-              _buildStat("Remaining", "${assignment.remainingQuantity ?? assignment.allocatedQuantity}"),
-              _buildStat("Appointments", "${assignment.appointmentCount ?? 0}"),
-              _buildStat("Unit", widget.inventory.unitType.name),
+              _buildStat(AppLocalizations.of(context)!.allocatedLabel, "${assignment.allocatedQuantity}"),
+              _buildStat(AppLocalizations.of(context)!.usedLabel, "${assignment.usedQuantity ?? 0.0}"),
+              _buildStat(AppLocalizations.of(context)!.remainingLabel, "${assignment.remainingQuantity ?? assignment.allocatedQuantity}"),
+              _buildStat(AppLocalizations.of(context)!.appointmentsLabel, "${assignment.appointmentCount ?? 0}"),
+              _buildStat(AppLocalizations.of(context)!.unitLabel, widget.inventory.unitType.name),
             ],
           ),
           const SizedBox(height: 12),
           if (assignment.notes != null && assignment.notes!.isNotEmpty) ...[
-            const Text(
-              "Notes:",
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey),
+            Text(
+              AppLocalizations.of(context)!.notesLabel,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.grey),
             ),
             Text(
               assignment.notes!,
@@ -165,7 +166,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Assigned: $assignedDate",
+                "${AppLocalizations.of(context)!.assignedPrefix}$assignedDate",
                 style: const TextStyle(color: Color(0XFFFF0B01), fontSize: 11, fontWeight: FontWeight.w500),
               ),
               OutlinedButton(
@@ -178,7 +179,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text("View Usage", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                child: Text(AppLocalizations.of(context)!.viewUsageBtn, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -223,13 +224,13 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text("Update Assignment - ${assignment.staffName}"),
+          title: Text("${AppLocalizations.of(context)!.updateAssignmentPrefix}${assignment.staffName}"),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Total Used Quantity", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(AppLocalizations.of(context)!.totalUsedQuantity, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: usedQtyController,
@@ -243,25 +244,25 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text("New Total Allocated Quantity", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(AppLocalizations.of(context)!.newTotalAllocatedQuantity, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: newTotalQtyController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    hintText: "Enter total quantity",
+                    hintText: AppLocalizations.of(context)!.enterTotalQuantityHint,
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text("Notes", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(AppLocalizations.of(context)!.notesTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: notesController,
                   maxLines: 2,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    hintText: "Update notes...",
+                    hintText: AppLocalizations.of(context)!.updateNotesHint,
                   ),
                 ),
               ],
@@ -270,7 +271,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text("CANCEL"),
+              child: Text(AppLocalizations.of(context)!.cancelBtn),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -290,7 +291,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
                     Navigator.pop(dialogContext);
                   }
                   if (mounted) {
-                    FlushbarHelper.show(context, "Assignment updated successfully", isSuccess: true);
+                    FlushbarHelper.show(context, AppLocalizations.of(context)!.assignmentUpdatedSuccess, isSuccess: true);
                   }
                 } catch (e) {
                   if (mounted) {
@@ -299,7 +300,7 @@ class _AssignedStaffScreenState extends State<AssignedStaffScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0XFFFF0B01)),
-              child: const Text("UPDATE", style: TextStyle(color: Colors.white)),
+              child: Text(AppLocalizations.of(context)!.updateBtn, style: const TextStyle(color: Colors.white)),
             ),
           ],
         );

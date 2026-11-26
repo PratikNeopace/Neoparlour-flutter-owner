@@ -4,6 +4,14 @@ import 'package:neo_parlour_owner/data/models/appointment_response.dart';
 import 'package:neo_parlour_owner/data/services/appointment_service.dart';
 import 'package:neo_parlour_owner/core/utils/error_handler.dart';
 
+class OngoingConflictException implements Exception {
+  final Appointment conflictingApt;
+  OngoingConflictException(this.conflictingApt);
+  
+  @override
+  String toString() => "OngoingConflictException: ${conflictingApt.id}";
+}
+
 class AppointmentProvider extends ChangeNotifier {
   final AppointmentService _service = AppointmentService();
 
@@ -401,27 +409,29 @@ class AppointmentProvider extends ChangeNotifier {
       } catch (_) {}
     }
 
-    if (targetApt != null) {
-      final int aptStaffId = targetApt.staffId ?? staffId ?? 0;
-      
-      bool hasInProgress = false;
-      for (var list in [_appointments, _staffAppointments, _scheduleAppointments]) {
-        if (list.any((a) => a.staffId == aptStaffId && a.status.toLowerCase() == 'in_progress' && a.id != appointmentId)) {
-          hasInProgress = true;
-          break;
-        }
-      }
-
-      if (hasInProgress) {
-        throw Exception("Cannot start appointment. An ongoing appointment already exists.");
-      }
-    }
-
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      if (targetApt != null) {
+        final int aptStaffId = targetApt.staffId ?? staffId ?? 0;
+        if (aptStaffId != 0) {
+          final inProgressCheck = await _service.fetchAppointments(
+            staffId: aptStaffId,
+            status: 'in_progress',
+            size: 1,
+          );
+          
+          if (inProgressCheck.content.isNotEmpty) {
+            final conflictingApt = inProgressCheck.content.first;
+            if (conflictingApt.id != appointmentId) {
+              throw OngoingConflictException(conflictingApt);
+            }
+          }
+        }
+      }
+
       await _service.startAppointment(appointmentId);
       
       void updateLocalList(List<Appointment> list) {

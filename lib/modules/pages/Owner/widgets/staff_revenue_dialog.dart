@@ -6,6 +6,7 @@ import 'package:neo_parlour_owner/providers/staff_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'package:neo_parlour_owner/widgets/premium_image.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class StaffRevenueDialog extends StatelessWidget {
   const StaffRevenueDialog({super.key});
@@ -30,7 +31,7 @@ class StaffRevenueDialog extends StatelessWidget {
               children: [
                 Consumer<AnalyticsProvider>(
                   builder: (context, provider, child) => Text(
-                    provider.isRevenueMetric ? "Staff Revenue" : "Staff Appointment Details",
+                    provider.isRevenueMetric ? AppLocalizations.of(context)!.staffRevenueTitle : AppLocalizations.of(context)!.staffAppointmentDetailsTitle,
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -58,9 +59,9 @@ class StaffRevenueDialog extends StatelessWidget {
                   }
 
                   if (staffProvider.staffMembers.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(40.0),
-                      child: Text("No staff found"),
+                    return Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Text(AppLocalizations.of(context)!.noStaffFound),
                     );
                   }
 
@@ -160,7 +161,7 @@ class StaffRevenueDialog extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  analyticsProvider.isRevenueMetric ? "Revenue" : "Apps",
+                                  analyticsProvider.isRevenueMetric ? AppLocalizations.of(context)!.revenueLabel : AppLocalizations.of(context)!.appsLabel,
                                   style: const TextStyle(fontSize: 8, color: Colors.grey),
                                 ),
                               ],

@@ -16,6 +16,8 @@ import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neo_parlour_owner/providers/inventory_provider.dart';
 import 'package:neo_parlour_owner/data/models/inventory_model.dart';
+import 'package:neo_parlour_owner/core/widgets/reason_dialog.dart';
+import 'package:neo_parlour_owner/core/constants/reasons.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/inventory_staff_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_booking_state.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/guest_appointment/guest_select_date_time_screen.dart';
@@ -568,32 +570,13 @@ class _AppointmentStaffScreenState extends State<AppointmentStaffScreen> with Si
     final localContext = context;
     final authProvider = Provider.of<AuthProvider>(localContext, listen: false);
     final appointmentProvider = Provider.of<AppointmentProvider>(localContext, listen: false);
-    final TextEditingController reasonController = TextEditingController();
-
     final String? reason = await showDialog<String>(
       context: localContext,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("Cancellation Reason"),
-        content: TextField(
-          controller: reasonController,
-          decoration: const InputDecoration(
-            hintText: "Enter reason for cancellation",
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0XFFFF0B01)),
-            ),
-          ),
-          maxLines: 2,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("BACK", style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, reasonController.text),
-            child: const Text("CANCEL APPOINTMENT", style: TextStyle(color: Color(0XFFFF0B01))),
-          ),
-        ],
+      builder: (dialogContext) => ReasonDialog(
+        title: "Cancellation Reason",
+        hintText: "Enter reason for cancellation",
+        predefinedReasons: Reasons.cancellationReasons,
+        confirmText: "CANCEL APPOINTMENT",
       ),
     );
 

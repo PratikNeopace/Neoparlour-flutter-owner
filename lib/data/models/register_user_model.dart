@@ -34,6 +34,11 @@ class UserRegistrationRequest {
   final String role;
   final String? fcmToken;
   final String? address;
+  final String? specificAddress;
+  final String? landmark;
+  final String? state;
+  final bool includeGstInInvoice;
+  final String? gstin;
   final String? birthdate; // Expected format "yyyy-MM-dd"
   final double? latitude;
   final double? longitude;
@@ -59,6 +64,11 @@ class UserRegistrationRequest {
     this.role = 'SALON_OWNER',
     this.fcmToken,
     this.address,
+    this.specificAddress,
+    this.landmark,
+    this.state,
+    this.includeGstInInvoice = false,
+    this.gstin,
     this.birthdate,
     this.latitude,
     this.longitude,
@@ -86,6 +96,11 @@ class UserRegistrationRequest {
       'role': role,
       if (fcmToken != null) 'fcmToken': fcmToken,
       if (address != null) 'address': address,
+      if (specificAddress != null) 'specificAddress': specificAddress,
+      if (landmark != null) 'landmark': landmark,
+      if (state != null) 'state': state,
+      'includeGstInInvoice': includeGstInInvoice,
+      if (gstin != null && gstin!.isNotEmpty) 'gstin': gstin,
       if (birthdate != null) 'birthdate': birthdate,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,

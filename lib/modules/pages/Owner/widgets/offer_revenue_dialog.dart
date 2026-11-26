@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:neo_parlour_owner/providers/analytics_provider.dart';
 import 'package:neo_parlour_owner/providers/offer_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class OfferRevenueDialog extends StatelessWidget {
   const OfferRevenueDialog({super.key});
@@ -26,7 +27,7 @@ class OfferRevenueDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Offer Revenue Details",
+                  AppLocalizations.of(context)!.offerRevenueDetailsTitle,
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -53,9 +54,9 @@ class OfferRevenueDialog extends StatelessWidget {
                   }
 
                   if (offerProvider.offers.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(40.0),
-                      child: Text("No offers found"),
+                    return Padding(
+                      padding: const EdgeInsets.all(40.0),
+                      child: Text(AppLocalizations.of(context)!.noOffersFound),
                     );
                   }
 
@@ -88,7 +89,7 @@ class OfferRevenueDialog extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    offer.description ?? "No description available",
+                                    offer.description ?? AppLocalizations.of(context)!.noDescriptionAvailable,
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       color: const Color(0XFF8B8989),

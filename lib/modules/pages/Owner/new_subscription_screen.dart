@@ -1,12 +1,14 @@
 import 'package:neo_parlour_owner/core/utils/flushbar_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/data/services/subscription_service.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
-import 'package:neo_parlour_owner/core/utils/error_handler.dart';
+import 'package:neo_parlour_owner/data/services/subscription_redirect_service.dart';
+import 'package:neo_parlour_owner/data/services/salon_service.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
+
 class NewSubscriptionScreen extends StatefulWidget {
   const NewSubscriptionScreen({super.key});
 
@@ -14,22 +16,41 @@ class NewSubscriptionScreen extends StatefulWidget {
   State<NewSubscriptionScreen> createState() => _NewSubscriptionScreenState();
 }
 
-class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
-  late Razorpay _razorpay;
+class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> with WidgetsBindingObserver {
   final SubscriptionService _subscriptionService = SubscriptionService();
   bool _isLoading = false;
   List<dynamic> _plans = [];
   bool _isLoadingPlans = true;
-  final Map<String, TextEditingController> _couponControllers = {};
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fetchPlans();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _handleSubscriptionResume();
+    }
+  }
+
+  Future<void> _handleSubscriptionResume() async {
+    // Refresh plans list
+    _fetchPlans();
+    
+    // Fetch updated token reflecting new subscription status
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.refreshUserToken();
+    
+    if (success && mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const OwnerHomeScreen()),
+        (route) => false,
+      );
+    }
   }
 
   Future<void> _fetchPlans() async {
@@ -44,7 +65,7 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingPlans = false);
-        _showTopFlushBar('Failed to load plans: $e');
+        _showTopFlushBar('${AppLocalizations.of(context)!.failedToLoadPlans}$e');
       }
     }
   }
@@ -55,137 +76,30 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
 
   @override
   void dispose() {
-    for (var controller in _couponControllers.values) {
-      controller.dispose();
-    }
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-    _razorpay.clear();
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+  Future<void> _launchSubscriptionUrl() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.id;
-    if (userId == null) return;
+    final user = authProvider.user;
+
+    setState(() => _isLoading = true);
     try {
-      final verifyResponse = await _subscriptionService.verifyPayment(
-        razorpayOrderId: response.orderId ?? '',
-        razorpayPaymentId: response.paymentId ?? '',
-        razorpaySignature: response.signature ?? '',
-        userId: userId,
+      final salonProfile = await SalonService().getSalonProfile();
+      final salonId = salonProfile.salonId.toString();
+
+      await SubscriptionRedirectService.launchSubscriptionPortal(
+        token: user?.token ?? '',
+        salonId: salonId,
+        ownerName: user?.name ?? '',
+        ownerEmail: user?.email ?? '',
+        ownerPhone: user?.phone ?? '',
       );
-      
-      if (mounted) {
-        await authProvider.refreshToken();
-        if (!mounted) return;
-        
-        _showTopFlushBar(verifyResponse['message'] ?? 'Subscription activated successfully!', isSuccess: true);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const OwnerHomeScreen()),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        _showTopFlushBar('Verification failed: $e');
-      }
-    }
-  }
-
-  void _handlePaymentError(PaymentFailureResponse response) {
-    _showTopFlushBar('Payment failed: ${response.message}');
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    _showTopFlushBar('External Wallet: ${response.walletName}');
-  }
-
-  Future<void> _startSubscription(String planCode) async {
-    final userId = Provider.of<AuthProvider>(context, listen: false).user?.id;
-    if (userId == null) {
-      _showTopFlushBar('User not logged in.');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      final orderData = await _subscriptionService.createOrder(planCode: planCode, userId: userId);
-      
-      var options = {
-        'key': orderData['key'],
-        'amount': orderData['amount'],
-        'currency': orderData['currency'] ?? 'INR',
-        'name': 'NeoParlour',
-        'description': 'Subscription',
-        'order_id': orderData['id'],
-        'prefill': {
-          'contact': '9999999999',
-          'email': 'test@example.com'
-        },
-      };
-
-      _razorpay.open(options);
-    } catch (e) {
-      _showTopFlushBar('Failed to create order: $e');
+      _showTopFlushBar('${AppLocalizations.of(context)!.failedToOpenPricingPortal}$e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _redeemCoupon(String planCode, String couponCode) async {
-    if (couponCode.trim().isEmpty) {
-      _showTopFlushBar('Please enter a coupon code.');
-      return;
-    }
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.id;
-    if (userId == null) {
-      _showTopFlushBar('User not logged in.');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      final orderData = await _subscriptionService.createOrder(
-          planCode: planCode, userId: userId, couponCode: couponCode.trim());
-      
-      if (orderData['status']?.toString().toLowerCase() == 'active') {
-        await authProvider.refreshToken();
-        if (mounted) {
-          _showTopFlushBar('Coupon applied! Subscription activated successfully!', isSuccess: true);
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const OwnerHomeScreen()),
-            (route) => false,
-          );
-        }
-      } else {
-        if (orderData['key'] == null || orderData['key'].toString().isEmpty) {
-          throw Exception('Invalid coupon code or missing payment key from server.');
-        }
-        var options = {
-          'key': orderData['key'],
-          'amount': orderData['amount'],
-          'currency': orderData['currency'] ?? 'INR',
-          'name': 'NeoParlour',
-          'description': 'Subscription',
-          'order_id': orderData['id'],
-          'prefill': {
-            'contact': '9999999999',
-            'email': 'test@example.com'
-          },
-        };
-        _razorpay.open(options);
-      }
-    } catch (e) {
-      if (mounted) {
-        _showTopFlushBar(ErrorHandler.parseError(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -222,14 +136,12 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
                             MaterialPageRoute(builder: (_) => const OwnerHomeScreen()),
                           );
                         },
-                        child: const Text(
-                          'Skip For Now',
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(context)!.skipForNow,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
                           ),
                         ),
                       ),
@@ -274,13 +186,7 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
   Widget _buildSubscriptionCard(dynamic plan) {
     final double amount = (plan['amountInPaise'] ?? 0) / 100;
     final String amountText = "₹${amount.toStringAsFixed(0)}";
-    final String planCode = plan['planCode'] ?? '';
     final String planName = plan['planName'] ?? '';
-
-    if (!_couponControllers.containsKey(planCode)) {
-      _couponControllers[planCode] = TextEditingController();
-    }
-    final controller = _couponControllers[planCode]!;
 
     return Container(
       padding: const EdgeInsets.all(24.0),
@@ -309,14 +215,17 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                'What You Can Get?',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.whatYouCanGet,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               RichText(
                 text: TextSpan(
                   style: const TextStyle(fontFamily: 'Poppins', color: Colors.black),
@@ -343,17 +252,16 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
           const SizedBox(height: 20),
 
           // Features List
-          _buildFeatureRow('Staff Management'),
+          _buildFeatureRow(AppLocalizations.of(context)!.staffManagement),
           const SizedBox(height: 12),
-          _buildFeatureRow('Inventory Management'),
+          _buildFeatureRow(AppLocalizations.of(context)!.inventoryManagement),
           const SizedBox(height: 32),
 
-          // Subscribe Button
           SizedBox(
             width: double.infinity,
             height: 54,
             child: ElevatedButton(
-              onPressed: () => _startSubscription(planCode),
+              onPressed: _launchSubscriptionUrl,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF0B01),
                 shape: RoundedRectangleBorder(
@@ -361,9 +269,9 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                'SUBSCRIBE',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.subscribeOnWebsite,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -371,33 +279,6 @@ class _NewSubscriptionScreenState extends State<NewSubscriptionScreen> {
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    hintText: 'Enter Coupon Code',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () => _redeemCoupon(planCode, controller.text),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-                  ),
-                  child: const Text('Redeem', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-            ],
           ),
         ],
       ),

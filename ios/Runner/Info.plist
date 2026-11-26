@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>NeoParlour needs access to your location to automatically detect your salon address and city.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>NeoParlour needs access to your location to automatically detect your salon address and city.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -66,5 +70,38 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>MainActivityDiwali</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>ic_launcher_diwali</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>MainActivityChristmas</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>ic_launcher_christmas</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+			<key>MainActivityNewYear</key>
+			<dict>
+				<key>CFBundleIconFiles</key>
+				<array>
+					<string>ic_launcher_newyear</string>
+				</array>
+				<key>UIPrerenderedIcon</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>

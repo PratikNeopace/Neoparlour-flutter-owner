@@ -8,7 +8,7 @@ class SubscriptionService {
     try {
       final response = await _apiClient.get('subscriptions/plans');
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data as List<dynamic>;
+        return List<dynamic>.from(response.data);
       } else {
         throw Exception('Failed to fetch plans: ${response.statusCode}');
       }
@@ -23,7 +23,7 @@ class SubscriptionService {
     try {
       final response = await _apiClient.get('subscriptions/salon/$salonId');
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data as List<dynamic>;
+        return List<dynamic>.from(response.data);
       } else {
         throw Exception('Failed to fetch subscriptions: ${response.statusCode}');
       }

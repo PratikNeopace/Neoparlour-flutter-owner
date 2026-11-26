@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -39,26 +40,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Present Employees",
-                        style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+                    Text(AppLocalizations.of(context)!.presentEmployeesTitle,
+                        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
                     const SizedBox(height: 12),
 
                     Row(
                       children: [
-                        _attendanceProgressCard(),
-                        _statCard("assets/Images/AttendanceScreen/total_employee_icon.svg","20","Total Employee"),
-                        _statCard("assets/Images/AttendanceScreen/on_leave_icon.svg","3","On Leave"),
+                        _attendanceProgressCard(context),
+                        _statCard("assets/Images/AttendanceScreen/total_employee_icon.svg","20",AppLocalizations.of(context)!.totalEmployeeTitle),
+                        _statCard("assets/Images/AttendanceScreen/on_leave_icon.svg","3",AppLocalizations.of(context)!.onLeaveTitle),
                       ],
                     ),
 
                     const SizedBox(height: 20),
-                    _staffDropdown(),
+                    _staffDropdown(context),
                     const SizedBox(height: 25),
 
-                    _buildCalendar(),
+                    _buildCalendar(context),
                     const SizedBox(height: 18),
 
-                    _attendanceDetailCard(),
+                    _attendanceDetailCard(context),
                   ],
                 ),
               ),
@@ -97,8 +98,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   end: Alignment.bottomCenter,
                 ),
               ),
-              child: const Text("ATTENDANCE",
-                  style: TextStyle(color: Colors.white,fontSize: 24,fontWeight: FontWeight.w600)),
+              child: Text(AppLocalizations.of(context)!.attendanceTitle,
+                  style: const TextStyle(color: Colors.white,fontSize: 24,fontWeight: FontWeight.w600)),
             ),
           ),
         ),
@@ -107,7 +108,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   //================ PROGRESS CARD =================
-  Widget _attendanceProgressCard() {
+  Widget _attendanceProgressCard(BuildContext context) {
     return Expanded(
       child: Container(
         height: 100,
@@ -115,8 +116,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         decoration: _cardDecoration(),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            SizedBox(
+          children: [
+            const SizedBox(
               height: 45,
               width: 45,
               child: CircularProgressIndicator(
@@ -126,9 +127,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 color: Color(0XFFFF3B30),
               ),
             ),
-            SizedBox(height: 5),
-            Text("Total Attendance",
-                style: TextStyle(fontSize: 11, color: Color(0XFF909090)))
+            const SizedBox(height: 5),
+            Text(AppLocalizations.of(context)!.totalAttendanceTitle,
+                style: const TextStyle(fontSize: 11, color: Color(0XFF909090)))
           ],
         ),
       ),
@@ -162,30 +163,38 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       );
 
   //================ STAFF DROPDOWN =================
-  Widget _staffDropdown() {
+  Widget _staffDropdown(BuildContext context) {
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: _cardDecoration(),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.person_outline,color: Color(0XFF8D8D8D)),
-          SizedBox(width: 8),
-          Expanded(child: Text("Staff Name",style: TextStyle(color: Color(0XFF8D8D8D)))),
-          Icon(Icons.keyboard_arrow_down,color: Color(0XFF8D8D8D)),
+          const Icon(Icons.person_outline,color: Color(0XFF8D8D8D)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(AppLocalizations.of(context)!.staffNameHint,style: const TextStyle(color: Color(0XFF8D8D8D)))),
+          const Icon(Icons.keyboard_arrow_down,color: Color(0XFF8D8D8D)),
         ],
       ),
     );
   }
 
   //================ CALENDAR =================
-  Widget _buildCalendar() {
-    final days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  Widget _buildCalendar(BuildContext context) {
+    final days = [
+      AppLocalizations.of(context)!.monShort,
+      AppLocalizations.of(context)!.tueShort,
+      AppLocalizations.of(context)!.wedShort,
+      AppLocalizations.of(context)!.thuShort,
+      AppLocalizations.of(context)!.friShort,
+      AppLocalizations.of(context)!.satShort,
+      AppLocalizations.of(context)!.sunShort,
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("DATE",style: TextStyle(fontWeight: FontWeight.w600)),
+        Text(AppLocalizations.of(context)!.dateTitle,style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 15),
 
         Container(
@@ -231,15 +240,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   //================ DETAIL CARD =================
-  Widget _attendanceDetailCard() {
+  Widget _attendanceDetailCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
 
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Pravin Ithape",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w700)),
@@ -247,32 +256,32 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             ],
           ),
 
-          SizedBox(height: 12),
-          Divider(),
-          SizedBox(height: 10),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 10),
 
           Row(
             children: [
-              Expanded(child: Text("Total Hours\n240h : 01m : 12s\nPresent - 30 Days")),
-              VerticalDivider(),
-              Expanded(child: Text("Leaves\nPaid Leave -\nHalf day -\nSick Leave -\nCasual Leave -")),
+              Expanded(child: Text("${AppLocalizations.of(context)!.totalHoursLabel}\n240h : 01m : 12s\n${AppLocalizations.of(context)!.presentLabel} - 30 ${AppLocalizations.of(context)!.daysLabel}")),
+              const VerticalDivider(),
+              Expanded(child: Text("${AppLocalizations.of(context)!.leavesLabel}\n${AppLocalizations.of(context)!.paidLeaveLabel} -\n${AppLocalizations.of(context)!.halfDayLabel} -\n${AppLocalizations.of(context)!.sickLeaveLabel} -\n${AppLocalizations.of(context)!.casualLeaveLabel} -")),
             ],
           ),
 
-          SizedBox(height: 15),
-          Divider(),
-          SizedBox(height: 10),
+          const SizedBox(height: 15),
+          const Divider(),
+          const SizedBox(height: 10),
 
-          Text("Inventory Used",style: TextStyle(fontWeight: FontWeight.w600)),
-          SizedBox(height: 8),
+          Text(AppLocalizations.of(context)!.inventoryUsedTitle,style: const TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Item type - Tools"),
-              Text("Shampoo - 15"),
-              Text("Used - 05"),
-              Text("Return - 10"),
+              Text("${AppLocalizations.of(context)!.itemTypeLabel} - ${AppLocalizations.of(context)!.toolsLabel}"),
+              Text("${AppLocalizations.of(context)!.shampooLabel} - 15"),
+              Text("${AppLocalizations.of(context)!.usedLabel} - 05"),
+              Text("${AppLocalizations.of(context)!.returnLabel} - 10"),
             ],
           ),
         ],

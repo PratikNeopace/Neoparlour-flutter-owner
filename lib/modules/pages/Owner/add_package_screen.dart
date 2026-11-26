@@ -12,6 +12,7 @@ import 'package:neo_parlour_owner/data/models/service_model.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
 import 'package:neo_parlour_owner/widgets/custom_refresh_indicator.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class AddPackageScreen extends StatefulWidget {
   final bool showAsTab;
@@ -75,6 +76,15 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
 
   void _clearForm() {
     context.read<PackageProvider>().setEditingPackage(null);
+    _lastEditingPackageId = null;
+    _nameController.clear();
+    _descriptionController.clear();
+    _priceController.clear();
+    _usageLimitController.clear();
+    _totalUsageLimitController.clear();
+    setState(() {
+      _selectedServices.clear();
+    });
   }
 
   Future<void> _handleEditPress(ServicePackage packageListModel) async {
@@ -259,7 +269,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                         ],
                         if (!widget.showAsTab || widget.initialTabIndex == 1) ...[
                           if (widget.showAsTab) const SizedBox(height: 10),
-                          const Text("PACKAGE LIST", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                          Text(AppLocalizations.of(context)!.packageListTab, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                           const Divider(color: Color(0XFFFF0B01), thickness: 2, endIndent: 220),
                           const SizedBox(height: 15),
                           _buildPackagesList(),
@@ -290,7 +300,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
             ),
             const SizedBox(width: 4),
             Text(
-              _lastEditingPackageId != null ? "EDITING PACKAGE" : "ADD NEW PACKAGE",
+              _lastEditingPackageId != null ? AppLocalizations.of(context)!.editingPackageTitle : AppLocalizations.of(context)!.addNewPackageTitle,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
@@ -302,7 +312,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
               TextButton.icon(
                 onPressed: _clearForm,
                 icon: const Icon(Icons.close, size: 16),
-                label: const Text("Cancel Edit"),
+                label: Text(AppLocalizations.of(context)!.cancelEditBtn),
                 style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
               ),
             ],
@@ -314,15 +324,15 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           endIndent: _lastEditingPackageId != null ? 100 : 200,
         ),
         const SizedBox(height: 20),
-        _buildInputField(_nameController, "Package Name", "assets/Images/AddPackageScreen/package_details_icon.svg"),
+        _buildInputField(_nameController, AppLocalizations.of(context)!.packageNameLabel, "assets/Images/AddPackageScreen/package_details_icon.svg"),
         const SizedBox(height: 15),
-        _buildInputField(_descriptionController, "Description", "assets/Images/AddPackageScreen/package_details_icon.svg", maxLines: 3),
+        _buildInputField(_descriptionController, AppLocalizations.of(context)!.descriptionLabel, "assets/Images/AddPackageScreen/package_details_icon.svg", maxLines: 3),
         const SizedBox(height: 15),
-        _buildInputField(_priceController, "Package Price", "assets/Images/AddPackageScreen/rate_icon.svg", keyboardType: TextInputType.number),
+        _buildInputField(_priceController, AppLocalizations.of(context)!.packagePriceLabel, "assets/Images/AddPackageScreen/rate_icon.svg", keyboardType: TextInputType.number),
         const SizedBox(height: 15),
-        _buildInputField(_usageLimitController, "Usage Limit Per Customer", "assets/Images/AddPackageScreen/coupon_icon.svg", keyboardType: TextInputType.number),
+        _buildInputField(_usageLimitController, AppLocalizations.of(context)!.usageLimitPerCustomerLabel, "assets/Images/AddPackageScreen/coupon_icon.svg", keyboardType: TextInputType.number),
         const SizedBox(height: 15),
-        _buildInputField(_totalUsageLimitController, "Total Usage Limit", "assets/Images/AddPackageScreen/coupon_icon.svg", keyboardType: TextInputType.number),
+        _buildInputField(_totalUsageLimitController, AppLocalizations.of(context)!.totalUsageLimitLabel, "assets/Images/AddPackageScreen/coupon_icon.svg", keyboardType: TextInputType.number),
         const SizedBox(height: 20),
         _buildServiceSelection(),
         const SizedBox(height: 30),
@@ -337,7 +347,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
               ),
               child: provider.isLoading
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text("SAVE PACKAGE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  : Text(AppLocalizations.of(context)!.savePackageBtn, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             );
           },
         ),
@@ -376,7 +386,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("SELECT SERVICES", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(AppLocalizations.of(context)!.selectServicesLabel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 10),
         InkWell(
           onTap: _showServicePicker,
@@ -392,7 +402,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                 const Icon(Icons.add_circle_outline, color: Color(0XFFFF0B01)),
                 const SizedBox(width: 10),
                 Text(
-                  _selectedServices.isEmpty ? "Tap to add services" : "${_selectedServices.length} services selected",
+                  _selectedServices.isEmpty ? AppLocalizations.of(context)!.tapToAddServices : AppLocalizations.of(context)!.servicesSelectedCount(_selectedServices.length),
                   style: const TextStyle(color: Color(0XFF909090)),
                 ),
               ],
@@ -428,9 +438,9 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
         expand: false,
         builder: (context, scrollController) => Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text("Select Services", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(AppLocalizations.of(context)!.selectServicesTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
             Expanded(
               child: Consumer<ServiceProvider>(
@@ -476,7 +486,7 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (provider.packages.isEmpty) {
-          return const Center(child: Text("No packages found."));
+          return Center(child: Text(AppLocalizations.of(context)!.noPackagesFound));
         }
         return Column(
           children: [
@@ -526,10 +536,10 @@ class _AddPackageScreenState extends State<AddPackageScreen> {
                             if (package.usageLimitPerCustomer != null)
                               Padding(
                                 padding: const EdgeInsets.only(right: 8),
-                                child: Text("Per Cust: ${package.usageLimitPerCustomer}", style: const TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.w600)),
+                                child: Text("${AppLocalizations.of(context)!.perCustLabel}${package.usageLimitPerCustomer}", style: const TextStyle(color: Colors.blue, fontSize: 10, fontWeight: FontWeight.w600)),
                               ),
                             if (package.totalUsageLimit != null)
-                              Text("Limit: ${package.usedCount}/${package.totalUsageLimit}", style: TextStyle(color: (package.totalUsageLimit != null && package.usedCount >= package.totalUsageLimit!) ? Colors.red : Colors.green, fontSize: 10, fontWeight: FontWeight.w600)),
+                              Text("${AppLocalizations.of(context)!.limitLabel}${package.usedCount}/${package.totalUsageLimit}", style: TextStyle(color: (package.totalUsageLimit != null && package.usedCount >= package.totalUsageLimit!) ? Colors.red : Colors.green, fontSize: 10, fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 4),

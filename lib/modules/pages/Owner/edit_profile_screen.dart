@@ -5,15 +5,17 @@ import 'package:provider/provider.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/providers/salon_provider.dart';
 import 'package:neo_parlour_owner/core/utils/download_helper.dart';
-import 'package:neo_parlour_owner/modules/pages/email_login_screen.dart';
+import 'package:neo_parlour_owner/modules/pages/Owner/owner_login.dart';
 import 'package:neo_parlour_owner/widgets/premium_image.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
 import 'dart:convert';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:neo_parlour_owner/core/data/services/search_service.dart';
+import 'package:neo_parlour_owner/data/models/salon_profile_model.dart';
+import 'package:neo_parlour_owner/widgets/salon_location_card.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
+
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -30,8 +32,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _areaController = TextEditingController();
   final TextEditingController _homeChargesController = TextEditingController();
+  
+  // Salon Location & Entrance
+  double? _salonLatitude;
+  double? _salonLongitude;
+  final TextEditingController _salonSpecificAddressController = TextEditingController();
+  final TextEditingController _salonLandmarkController = TextEditingController();
+  final TextEditingController _salonCityController = TextEditingController();
+  final TextEditingController _salonAreaController = TextEditingController();
+  String _salonShopOrFlatNo = '';
+  String _salonBuildingName = '';
+  List<String> _salonNearbyLandmarks = [];
+  
+  // Discount Controllers
   final TextEditingController _weekdayDiscountController = TextEditingController();
-  String _selectedGender = 'Select Gender';
+  final TextEditingController _morningController = TextEditingController();
+  final TextEditingController _afternoonController = TextEditingController();
+  final TextEditingController _eveningController = TextEditingController();
+  final TextEditingController _nightController = TextEditingController();
+  
+  DiscountMode _selectedDiscountMode = DiscountMode.NONE;
+  
+  String _selectedGender = 'Select Gender'; // Initial state can be just a string, we'll update it later if needed or in build where we have context.
   String _selectedWeeklyOff = 'NONE';
   String _openingTime = '09:00';
   String _closingTime = '21:00';
@@ -46,6 +68,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   List<dynamic> _salonGalleryImageUrls = [];
   final List<String> _salonGalleryImagesBase64 = [];
   String? _selectedDocumentType;
+
+  Uint8List? _decodeBase64(String? input) {
+    if (input == null || input.isEmpty) return null;
+    try {
+      String clean = input;
+      if (clean.contains(',')) {
+        clean = clean.split(',').last;
+      }
+      return base64Decode(clean.trim());
+    } catch (_) {
+      try {
+        return base64Decode(input.replaceAll(RegExp(r'\s+'), ''));
+      } catch (e) {
+        debugPrint("Error decoding base64 image: $e");
+        return null;
+      }
+    }
+  }
 
   final SearchService _searchService = SearchService();
   final FocusNode _cityFocusNode = FocusNode();
@@ -91,7 +131,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         } else {
           _dobController.text = '';
         }
-        _selectedGender = user.gender ?? 'Select Gender';
+        _selectedGender = user.gender ?? AppLocalizations.of(context)!.selectGender;
         _addressController.text = user.address ?? '';
         _cityController.text = user.cityName ?? '';
         _areaController.text = user.areaName ?? '';
@@ -99,8 +139,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         // Salon Profile Data
         if (salon != null) {
           _salonNameController.text = salon.salonName ?? '';
+          _salonLatitude = salon.latitude ?? user.latitude;
+          _salonLongitude = salon.longitude ?? user.longitude;
+          final rawSpecific = (salon.specificAddress ?? salon.address ?? '').trim();
+          _salonSpecificAddressController.text = rawSpecific;
+          if (rawSpecific.isNotEmpty) {
+            if (rawSpecific.contains(',')) {
+              final parts = rawSpecific.split(',');
+              _salonShopOrFlatNo = parts[0].trim();
+              _salonBuildingName = parts.sublist(1).join(',').trim();
+            } else {
+              _salonBuildingName = rawSpecific;
+              _salonShopOrFlatNo = '';
+            }
+          } else {
+            _salonShopOrFlatNo = '';
+            _salonBuildingName = '';
+          }
+          _salonLandmarkController.text = salon.landmark ?? '';
+          _salonCityController.text = salon.city ?? user.cityName ?? '';
+          _salonAreaController.text = salon.area ?? user.areaName ?? '';
           _homeChargesController.text = salon.homeServiceCharges?.toString() ?? '0';
           _weekdayDiscountController.text = salon.weekdayDiscount?.toString() ?? '0';
+          _morningController.text = salon.morningDiscount?.toString() ?? '0';
+          _afternoonController.text = salon.afternoonDiscount?.toString() ?? '0';
+          _eveningController.text = salon.eveningDiscount?.toString() ?? '0';
+          _nightController.text = salon.nightDiscount?.toString() ?? '0';
+          _selectedDiscountMode = salon.activeDiscountMode;
           _selectedWeeklyOff = salon.weeklyOffDay ?? 'NONE';
           _openingTime = salon.openingTime ?? '09:00';
           _closingTime = salon.closingTime ?? '21:00';
@@ -114,8 +179,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         } else {
           // Fallback to user data if salon profile fetch fails
           _salonNameController.text = user.salonName ?? '';
+          _salonLatitude = user.latitude;
+          _salonLongitude = user.longitude;
+          final rawUserAddress = (user.address ?? '').trim();
+          _salonSpecificAddressController.text = rawUserAddress;
+          if (rawUserAddress.isNotEmpty) {
+            if (rawUserAddress.contains(',')) {
+              final parts = rawUserAddress.split(',');
+              _salonShopOrFlatNo = parts[0].trim();
+              _salonBuildingName = parts.sublist(1).join(',').trim();
+            } else {
+              _salonBuildingName = rawUserAddress;
+              _salonShopOrFlatNo = '';
+            }
+          } else {
+            _salonShopOrFlatNo = '';
+            _salonBuildingName = '';
+          }
+          _salonCityController.text = user.cityName ?? '';
+          _salonAreaController.text = user.areaName ?? '';
           _homeChargesController.text = user.homeServiceCharges?.toString() ?? '0';
           _weekdayDiscountController.text = '0';
+          _morningController.text = '0';
+          _afternoonController.text = '0';
+          _eveningController.text = '0';
+          _nightController.text = '0';
+          _selectedDiscountMode = DiscountMode.NONE;
           _selectedWeeklyOff = user.weeklyOffDay ?? 'NONE';
           _openingTime = user.openingTime ?? '09:00';
           _closingTime = user.closingTime ?? '21:00';
@@ -144,7 +233,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'birthdate': _dobController.text.isNotEmpty 
           ? (_dobController.text.contains('T') ? _dobController.text : "${_dobController.text}T00:00:00.000Z")
           : null,
-      'gender': _selectedGender == 'Select Gender' ? null : _selectedGender,
+      'gender': _selectedGender == AppLocalizations.of(context)!.selectGender ? null : _selectedGender,
       'salonId': user.salonId,
       'salonName': _salonNameController.text,
       'address': _addressController.text.isEmpty ? null : _addressController.text,
@@ -153,8 +242,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'role': user.role,
       'active': user.active,
       'imageBase64': user.imageBase64,
-      'latitude': user.latitude,
-      'longitude': user.longitude,
+      'latitude': _salonLatitude ?? user.latitude,
+      'longitude': _salonLongitude ?? user.longitude,
       'password': null,
       'fcmToken': user.fcmToken,
     };
@@ -165,6 +254,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       data['openingTime'] = null;
       data['closingTime'] = null;
     } else {
+      final openMin = _timeToMinutes(_openingTime);
+      final closeMin = _timeToMinutes(_closingTime);
+      if (openMin == closeMin) {
+        FlushbarHelper.show(context, "Opening time and closing time cannot be the same.");
+        return;
+      }
+      if (openMin > closeMin) {
+        FlushbarHelper.show(context, "Closing time must be after opening time.");
+        return;
+      }
       data['homeServiceCharges'] = double.tryParse(_homeChargesController.text) ?? 0;
       data['weeklyOffDay'] = _selectedWeeklyOff;
       data['salonCode'] = _salonCode;
@@ -192,18 +291,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = authProvider.user;
     if (salon == null) return;
 
+    final openMin = _timeToMinutes(_openingTime);
+    final closeMin = _timeToMinutes(_closingTime);
+    if (openMin == closeMin) {
+      FlushbarHelper.show(context, "Opening time and closing time cannot be the same.");
+      return;
+    }
+    if (openMin > closeMin) {
+      FlushbarHelper.show(context, "Closing time must be after opening time.");
+      return;
+    }
+
     final Map<String, dynamic> data = {
       'salonId': salon.salonId,
       'name': null,
       'phone': salon.phone,
       'email': salon.email,
       'salonName': _salonNameController.text,
-      'cityName': salon.city,
-      'areaName': salon.area,
-      'address': _addressController.text,
+      'cityName': _salonCityController.text.isNotEmpty ? _salonCityController.text : salon.city,
+      'areaName': _salonAreaController.text.isNotEmpty ? _salonAreaController.text : salon.area,
+      'address': _salonSpecificAddressController.text.isNotEmpty
+          ? _salonSpecificAddressController.text
+          : (_addressController.text.isNotEmpty ? _addressController.text : salon.address),
+      'specificAddress': _salonSpecificAddressController.text.isNotEmpty
+          ? _salonSpecificAddressController.text
+          : salon.specificAddress,
+      'landmark': _salonLandmarkController.text.isNotEmpty
+          ? _salonLandmarkController.text
+          : salon.landmark,
       'birthdate': null,
-      'latitude': user?.latitude,
-      'longitude': user?.longitude,
+      'latitude': _salonLatitude ?? salon.latitude ?? user?.latitude,
+      'longitude': _salonLongitude ?? salon.longitude ?? user?.longitude,
       'role': null,
       'active': salon.active,
       'createdAt': salon.createdAt,
@@ -214,7 +332,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'openingTime': _openingTime,
       'closingTime': _closingTime,
       'homeServiceCharges': double.tryParse(_homeChargesController.text),
-      'weekdayDiscount': double.tryParse(_weekdayDiscountController.text),
+      'weekdayDiscount': _selectedDiscountMode == DiscountMode.WEEKDAY ? (double.tryParse(_weekdayDiscountController.text) ?? 0.0) : 0.0,
+      'morningDiscount': _selectedDiscountMode == DiscountMode.CATEGORY ? (double.tryParse(_morningController.text) ?? 0.0) : 0.0,
+      'afternoonDiscount': _selectedDiscountMode == DiscountMode.CATEGORY ? (double.tryParse(_afternoonController.text) ?? 0.0) : 0.0,
+      'eveningDiscount': _selectedDiscountMode == DiscountMode.CATEGORY ? (double.tryParse(_eveningController.text) ?? 0.0) : 0.0,
+      'nightDiscount': _selectedDiscountMode == DiscountMode.CATEGORY ? (double.tryParse(_nightController.text) ?? 0.0) : 0.0,
       'weeklyOffDay': _selectedWeeklyOff,
       'rating': null,
       'salonImages': _salonGalleryImageUrls,
@@ -249,13 +371,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
-              final success = await authProvider.deleteAccount();
-              if (success && mounted) {
-                // Return to login or splash
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const EmailLoginScreen()),
+              final successMessage = await authProvider.deleteAccount();
+              if (successMessage != null && mounted) {
+                final nav = Navigator.of(context);
+                // Return to owner login first
+                nav.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const SalonOwnerLoginScreen()),
                   (route) => false,
                 );
+                // Show flushbar after screen transition starts
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  FlushbarHelper.show(nav.context, successMessage, isSuccess: true);
+                });
               } else if (mounted) {
                 final error = authProvider.errorMessage ?? "Deletion failed";
                 FlushbarHelper.show(context, error);
@@ -279,6 +406,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _areaController.dispose();
     _homeChargesController.dispose();
     _weekdayDiscountController.dispose();
+    _salonSpecificAddressController.dispose();
+    _salonLandmarkController.dispose();
+    _salonCityController.dispose();
+    _salonAreaController.dispose();
     _cityFocusNode.dispose();
     _areaFocusNode.dispose();
     super.dispose();
@@ -315,9 +446,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         child: isLoading
             ? const CircularProgressIndicator(color: Colors.white)
-            : const Text(
-                "SAVE CHANGES",
-                style: TextStyle(
+            : Text(
+                AppLocalizations.of(context)!.saveChanges,
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -331,12 +462,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _buildDeleteAccountLink() {
     return GestureDetector(
       onTap: _confirmDeleteAccount,
-      child: const Text(
-        "Delete Account",
-        style: TextStyle(
+      child: Text(
+        AppLocalizations.of(context)!.deleteAccount,
+        style: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
-          decoration: TextDecoration.underline,
+          fontWeight: FontWeight.w600,
           color: Color(0XFFFF0B01),
         ),
       ),
@@ -350,16 +480,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
       body: SafeArea(
-        bottom: true,
+        bottom: false,
         child: authProvider.isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0XFFFF0B01)))
             : SingleChildScrollView(
                 padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom +
-                      MediaQuery.of(context).viewPadding.bottom +
-                      60,
+                  bottom: MediaQuery.of(context).padding.bottom + 60,
                 ),
                 child: Column(
                   children: [
@@ -393,9 +520,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   ],
                                 ),
                               ),
-                              child: const Text(
-                                "EDIT PROFILE",
-                                style: TextStyle(
+                              child: Text(
+                                AppLocalizations.of(context)!.editProfileTitle,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
                                   fontWeight: FontWeight.w500,
@@ -448,7 +575,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                _isEditing ? "CANCEL" : "EDIT",
+                                _isEditing ? AppLocalizations.of(context)!.cancelBtn : AppLocalizations.of(context)!.editBtn,
                                 style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -491,9 +618,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             unselectedLabelColor: Colors.grey,
                             labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             tabs: [
-                              Tab(text: (authProvider.user?.role == 'SALON_OWNER' || authProvider.user?.role == 'OWNER') ? "OWNER PROFILE" : "STAFF PROFILE"),
+                              Tab(text: (authProvider.user?.role == 'SALON_OWNER' || authProvider.user?.role == 'OWNER') ? AppLocalizations.of(context)!.ownerProfileTab : AppLocalizations.of(context)!.staffProfileTab),
                               if (authProvider.user?.role == 'SALON_OWNER' || authProvider.user?.role == 'OWNER')
-                                const Tab(text: "SALON PROFILE"),
+                                Tab(text: AppLocalizations.of(context)!.salonProfileTab),
                             ],
                           ),
                           SizedBox(
@@ -505,17 +632,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   padding: const EdgeInsets.fromLTRB(25, 20, 25, 120),
                                   child: Column(
                                     children: [
-                                      _buildSectionHeader("Personal Details"),
+                                      _buildSectionHeader(AppLocalizations.of(context)!.personalDetails),
                                       const SizedBox(height: 15),
                                       _buildInputField(
                                         "assets/Images/EditProfileScreen/enter_name_icon.svg",
-                                        "Full Name",
+                                        AppLocalizations.of(context)!.fullName,
                                         _nameController,
                                       ),
                                       const SizedBox(height: 15),
                                       _buildInputField(
                                         "assets/Images/EditProfileScreen/dob_icon.svg",
-                                        "Date Of Birth",
+                                        AppLocalizations.of(context)!.dob,
                                         _dobController,
                                         readOnly: true,
                                         onTap: !_isEditing ? null : () async {
@@ -535,21 +662,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       const SizedBox(height: 15),
                                       _buildDropdownField(
                                         "assets/Images/EditProfileScreen/gender_icon.svg",
-                                        _selectedGender,
+                                        _selectedGender == 'Select Gender' ? AppLocalizations.of(context)!.selectGender : _selectedGender,
                                       ),
                                       const SizedBox(height: 15),
                                       _buildInputField(
                                         "assets/Images/EditProfileScreen/mobile_number_icon.svg",
-                                        "Mobile Number",
+                                        AppLocalizations.of(context)!.mobileNumber,
                                         _phoneController,
                                         keyboardType: TextInputType.phone,
                                       ),
                                       const SizedBox(height: 25),
-                                      _buildSectionHeader("Contact Info"),
+                                      _buildSectionHeader(AppLocalizations.of(context)!.contactInfo),
                                       const SizedBox(height: 15),
                                       _buildInputField(
                                         "assets/Images/EditProfileScreen/enter_name_icon.svg",
-                                        "Address",
+                                        AppLocalizations.of(context)!.address,
                                         _addressController,
                                         maxLines: 2,
                                       ),
@@ -569,7 +696,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                        const SizedBox(height: 35),
                                        if (authProvider.user?.role == 'STAFF')
                                           _buildQRCodeSection(),
-                                       const SizedBox(height: 40),
+                                       const SizedBox(height: 120),
                                     ],
                                   ),
                                 ),
@@ -579,79 +706,185 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     padding: const EdgeInsets.fromLTRB(25, 20, 25, 120),
                                     child: Column(
                                       children: [
-                                        _buildSectionHeader("Salon Details"),
+                                        _buildSectionHeader(AppLocalizations.of(context)!.salonDetails),
                                         const SizedBox(height: 15),
                                         _buildInputField(
                                           "assets/Images/AddPackageScreen/package_details_icon.svg",
-                                          "Salon Name",
+                                          AppLocalizations.of(context)!.salonName,
                                           _salonNameController,
                                         ),
                                         const SizedBox(height: 15),
                                         _buildInputField(
                                           "assets/Images/RegisterScreen/username.svg",
-                                          "Salon Code",
+                                          AppLocalizations.of(context)!.salonCode,
                                           TextEditingController(text: _salonCode),
                                           readOnly: true,
                                         ),
                                         const SizedBox(height: 15),
                                         _buildInputField(
                                           "assets/Images/EditProfileScreen/mobile_number_icon.svg",
-                                          "Salon Phone",
+                                          AppLocalizations.of(context)!.salonPhone,
                                           TextEditingController(text: _salonPhone),
                                           readOnly: true,
                                         ),
                                         const SizedBox(height: 25),
-                                        _buildSectionHeader("Business Hours & Fees"),
-                                         if (authProvider.user?.role == 'SALON_OWNER' || authProvider.user?.role == 'OWNER')
-                                         Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildTimePickerField("Opening Time", _openingTime, (t) => setState(() => _openingTime = t)),
-                                            ),
-                                            const SizedBox(width: 15),
-                                            Expanded(
-                                              child: _buildTimePickerField("Closing Time", _closingTime, (t) => setState(() => _closingTime = t)),
-                                            ),
-                                          ],
+                                        _buildSectionHeader("Salon Location & Entrance"),
+                                        const SizedBox(height: 15),
+                                        SalonLocationCard(
+                                          latitude: _salonLatitude,
+                                          longitude: _salonLongitude,
+                                          shopOrFlatNo: _salonShopOrFlatNo,
+                                          buildingName: _salonBuildingName,
+                                          specificAddress: _salonSpecificAddressController.text,
+                                          landmark: _salonLandmarkController.text,
+                                          areaName: _salonAreaController.text.isNotEmpty ? _salonAreaController.text : _areaController.text,
+                                          cityName: _salonCityController.text.isNotEmpty ? _salonCityController.text : _cityController.text,
+                                          nearbyLandmarks: _salonNearbyLandmarks,
+                                          onBeforeEdit: () {
+                                            if (!_isEditing) {
+                                              setState(() => _isEditing = true);
+                                            }
+                                          },
+                                          onLocationChanged: (details) {
+                                            setState(() {
+                                              _isEditing = true;
+                                              _salonLatitude = details.latitude;
+                                              _salonLongitude = details.longitude;
+                                              _salonShopOrFlatNo = details.shopOrFlatNo;
+                                              _salonBuildingName = details.buildingName;
+                                              _salonSpecificAddressController.text = details.specificAddress;
+                                              if (details.formattedAddress.isNotEmpty) {
+                                                _addressController.text = details.formattedAddress;
+                                              }
+                                              _salonLandmarkController.text = details.landmark;
+                                              if (details.areaName.isNotEmpty) {
+                                                _salonAreaController.text = details.areaName;
+                                                _areaController.text = details.areaName;
+                                              }
+                                              if (details.cityName.isNotEmpty) {
+                                                _salonCityController.text = details.cityName;
+                                                _cityController.text = details.cityName;
+                                              }
+                                              _salonNearbyLandmarks = details.nearbyLandmarks;
+                                            });
+                                          },
                                         ),
                                         const SizedBox(height: 15),
+                                        _buildInputField(
+                                          "assets/Images/RegisterScreen/username.svg",
+                                          "Shop / Building / Specific Address",
+                                          _salonSpecificAddressController,
+                                        ),
+                                        const SizedBox(height: 15),
+                                        _buildInputField(
+                                          "assets/Images/RegisterScreen/username.svg",
+                                          "Landmark (e.g. Near Karishma Society)",
+                                          _salonLandmarkController,
+                                        ),
+                                        const SizedBox(height: 15),
+                                        _buildInputField(
+                                          "assets/Images/RegisterScreen/username.svg",
+                                          "Area",
+                                          _salonAreaController,
+                                          onChanged: (val) {
+                                            setState(() {
+                                              _salonSpecificAddressController.clear();
+                                              _salonShopOrFlatNo = '';
+                                              _salonBuildingName = '';
+                                              _salonLandmarkController.clear();
+                                              _salonNearbyLandmarks = [];
+                                            });
+                                          },
+                                        ),
+                                        const SizedBox(height: 15),
+                                        _buildInputField(
+                                          "assets/Images/RegisterScreen/username.svg",
+                                          "City",
+                                          _salonCityController,
+                                          onChanged: (val) {
+                                            setState(() {
+                                              _salonSpecificAddressController.clear();
+                                              _salonShopOrFlatNo = '';
+                                              _salonBuildingName = '';
+                                              _salonAreaController.clear();
+                                              _salonLandmarkController.clear();
+                                              _salonNearbyLandmarks = [];
+                                            });
+                                          },
+                                        ),
+                                        const SizedBox(height: 25),
+                                        _buildSectionHeader(AppLocalizations.of(context)!.businessHours),
+                                         if (authProvider.user?.role == 'SALON_OWNER' || authProvider.user?.role == 'OWNER') ...[
+                                           Row(
+                                             children: [
+                                               Expanded(
+                                                 child: _buildTimePickerField(
+                                                   AppLocalizations.of(context)!.openingTime,
+                                                   _openingTime,
+                                                   (t) => setState(() => _openingTime = t),
+                                                   compareTime: _closingTime,
+                                                   isOpening: true,
+                                                 ),
+                                               ),
+                                               const SizedBox(width: 15),
+                                               Expanded(
+                                                 child: _buildTimePickerField(
+                                                   AppLocalizations.of(context)!.closingTime,
+                                                   _closingTime,
+                                                   (t) => setState(() => _closingTime = t),
+                                                   compareTime: _openingTime,
+                                                   isOpening: false,
+                                                 ),
+                                               ),
+                                             ],
+                                           ),
+                                           if (_isEditing && _timeToMinutes(_openingTime) == _timeToMinutes(_closingTime)) ...[
+                                             const SizedBox(height: 6),
+                                             const Row(
+                                               children: [
+                                                 Icon(Icons.error_outline, size: 14, color: Color(0XFFFF0B01)),
+                                                 SizedBox(width: 4),
+                                                 Text(
+                                                   "Opening time and closing time cannot be the same.",
+                                                   style: TextStyle(color: Color(0XFFFF0B01), fontSize: 11, fontWeight: FontWeight.w500),
+                                                 ),
+                                               ],
+                                             ),
+                                           ] else if (_isEditing && _timeToMinutes(_openingTime) > _timeToMinutes(_closingTime)) ...[
+                                             const SizedBox(height: 6),
+                                             const Row(
+                                               children: [
+                                                 Icon(Icons.error_outline, size: 14, color: Color(0XFFFF0B01)),
+                                                 SizedBox(width: 4),
+                                                 Text(
+                                                   "Closing time must be after opening time.",
+                                                   style: TextStyle(color: Color(0XFFFF0B01), fontSize: 11, fontWeight: FontWeight.w500),
+                                                 ),
+                                               ],
+                                             ),
+                                           ],
+                                         ],
                                         const SizedBox(height: 15),
                                          _buildWeeklyOffDropdown(),
                                          const SizedBox(height: 15),
-                                         Row(
-                                           children: [
-                                             Expanded(
-                                               child: _buildLabeledField(
-                                                 "Home Service Charges (₹)",
-                                                 _buildInputField(
-                                                   "assets/Images/HomeScreen/revenue_icon.svg",
-                                                   "Home Service Charges",
-                                                   _homeChargesController,
-                                                   keyboardType: TextInputType.number,
-                                                 ),
-                                               ),
-                                             ),
-                                             const SizedBox(width: 15),
-                                             Expanded(
-                                               child: _buildLabeledField(
-                                                 "Weekday Discount (%)",
-                                                 _buildInputField(
-                                                   "assets/Images/HomeScreen/revenue_icon.svg",
-                                                   "Weekday Discount",
-                                                   _weekdayDiscountController,
-                                                   keyboardType: TextInputType.number,
-                                                 ),
-                                               ),
-                                             ),
-                                           ],
+                                         _buildLabeledField(
+                                           AppLocalizations.of(context)!.homeServiceCharges,
+                                           _buildInputField(
+                                             "assets/Images/HomeScreen/revenue_icon.svg",
+                                             AppLocalizations.of(context)!.homeServiceCharges,
+                                             _homeChargesController,
+                                             keyboardType: TextInputType.number,
+                                           ),
                                          ),
+                                         const SizedBox(height: 35),
+                                         _buildDiscountSettings(),
                                          const SizedBox(height: 35),
                                          _buildSalonMediaSection(),
                                          const SizedBox(height: 35),
                                         _buildSaveButton(Provider.of<SalonProvider>(context).isLoading, _saveSalonProfile),
                                         const SizedBox(height: 35),
                                         _buildQRCodeSection(),
-                                        const SizedBox(height: 40),
+                                        const SizedBox(height: 120),
                                       ],
                                     ),
                                   ),
@@ -701,9 +934,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         final qr = provider.qrCode!;
         return Column(
           children: [
-            const Text(
-              "SALON QR CODE",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Text(
+              AppLocalizations.of(context)!.salonQrCodeTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 10),
             Container(
@@ -760,7 +993,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       }
                     },
                     icon: const Icon(Icons.download, size: 18),
-                    label: const Text("DOWNLOAD QR"),
+                    label: Text(AppLocalizations.of(context)!.downloadQr),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
@@ -777,13 +1010,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildInputField(String icon, String hint, TextEditingController controller, {bool readOnly = false, VoidCallback? onTap, TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
+  Widget _buildInputField(String icon, String hint, TextEditingController controller, {bool readOnly = false, VoidCallback? onTap, ValueChanged<String>? onChanged, TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
     final bool effectiveReadOnly = readOnly || !_isEditing;
     
     return TextField(
       controller: controller,
       readOnly: effectiveReadOnly,
       onTap: !_isEditing ? null : onTap,
+      onChanged: onChanged,
       keyboardType: keyboardType,
       maxLines: maxLines,
       style: TextStyle(
@@ -876,7 +1110,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildTimePickerField(String label, String currentTime, Function(String) onTimeSelected) {
+  int _timeToMinutes(String timeStr) {
+    final parts = timeStr.split(':');
+    if (parts.length >= 2) {
+      final hour = int.tryParse(parts[0]) ?? 0;
+      final minute = int.tryParse(parts[1]) ?? 0;
+      return hour * 60 + minute;
+    }
+    return 0;
+  }
+
+  Widget _buildTimePickerField(
+    String label,
+    String currentTime,
+    Function(String) onTimeSelected, {
+    String? compareTime,
+    bool isOpening = true,
+  }) {
+    final hasSameTimeConflict = compareTime != null && _timeToMinutes(currentTime) == _timeToMinutes(compareTime);
+    final hasOrderConflict = compareTime != null &&
+        (isOpening
+            ? _timeToMinutes(currentTime) > _timeToMinutes(compareTime)
+            : _timeToMinutes(compareTime) > _timeToMinutes(currentTime));
+    final hasError = _isEditing && (hasSameTimeConflict || hasOrderConflict);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -892,7 +1149,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             );
             if (picked != null) {
-              final formattedTime = "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+              final formattedTime =
+                  "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+              if (compareTime != null) {
+                final pickedMinutes = picked.hour * 60 + picked.minute;
+                final compareMinutes = _timeToMinutes(compareTime);
+                if (pickedMinutes == compareMinutes) {
+                  if (mounted) {
+                    FlushbarHelper.show(
+                      context,
+                      "Opening time and closing time cannot be the same.",
+                    );
+                  }
+                  return;
+                }
+                if (isOpening && pickedMinutes > compareMinutes) {
+                  if (mounted) {
+                    FlushbarHelper.show(
+                      context,
+                      "Opening time cannot be after closing time ($compareTime).",
+                    );
+                  }
+                  return;
+                }
+                if (!isOpening && pickedMinutes < compareMinutes) {
+                  if (mounted) {
+                    FlushbarHelper.show(
+                      context,
+                      "Closing time cannot be before opening time ($compareTime).",
+                    );
+                  }
+                  return;
+                }
+              }
               onTimeSelected(formattedTime);
             }
           },
@@ -902,8 +1191,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               color: _isEditing ? const Color(0XFFF9F9F9) : Colors.white,
               borderRadius: BorderRadius.circular(9),
               border: Border.all(
-                color: !_isEditing ? const Color(0XFFE0E0E0) : const Color(0XFF909090),
-                width: !_isEditing ? 0.5 : 0.8,
+                color: hasError
+                    ? const Color(0XFFFF0B01)
+                    : (!_isEditing ? const Color(0XFFE0E0E0) : const Color(0XFF909090)),
+                width: hasError ? 1.5 : (!_isEditing ? 0.5 : 0.8),
               ),
             ),
             child: Row(
@@ -912,11 +1203,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Text(
                   currentTime, 
                   style: TextStyle(
-                    color: _isEditing ? Colors.black : Colors.black87, 
+                    color: hasError
+                        ? const Color(0XFFFF0B01)
+                        : (_isEditing ? Colors.black : Colors.black87), 
                     fontSize: 14,
+                    fontWeight: hasError ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
-                Icon(Icons.access_time, color: _isEditing ? const Color(0XFFFF0B01) : const Color(0XFF909090), size: 18),
+                Icon(
+                  Icons.access_time,
+                  color: hasError
+                      ? const Color(0XFFFF0B01)
+                      : (_isEditing ? const Color(0XFFFF0B01) : const Color(0XFF909090)),
+                  size: 18,
+                ),
               ],
             ),
           ),
@@ -945,6 +1245,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             });
           },
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            PopupMenuItem<String>(value: AppLocalizations.of(context)!.selectGender, child: Text(AppLocalizations.of(context)!.selectGender)),
             const PopupMenuItem<String>(value: 'MALE', child: Text('MALE')),
             const PopupMenuItem<String>(value: 'FEMALE', child: Text('FEMALE')),
             const PopupMenuItem<String>(value: 'OTHER', child: Text('OTHER')),
@@ -989,101 +1290,164 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         const SizedBox(height: 15),
         const Text("SALON GALLERY", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            ..._salonGalleryImageUrls.map((url) {
-              return Stack(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      image: DecorationImage(
-                        image: NetworkImage(url.toString()),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  if (_isEditing)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: GestureDetector(
-                        onTap: () => setState(() => _salonGalleryImageUrls.remove(url)),
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                          child: const Icon(Icons.close, size: 16, color: Colors.red),
+        Builder(
+          builder: (context) {
+            final totalImages = _salonGalleryImageUrls.length + _salonGalleryImagesBase64.length;
+            
+            Widget buildSlot(int index) {
+              if (index < totalImages) {
+                final isUrl = index < _salonGalleryImageUrls.length;
+                final imageSrc = isUrl 
+                    ? _salonGalleryImageUrls[index] 
+                    : _salonGalleryImagesBase64[index - _salonGalleryImageUrls.length];
+                    
+                String label = "";
+                if (index == 0) label = "1. EXTERIOR VIEW";
+                else if (index == 1) label = "2. INTERIOR VIEW 1";
+                else if (index == 2) label = "3. INTERIOR VIEW 2";
+                else label = "OPTIONAL VIEW";
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 6),
+                    Stack(
+                      children: [
+                        Container(
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            color: const Color(0XFFF9F9F9),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0XFFE0E0E0), width: 1.2),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(11),
+                            child: isUrl
+                                ? Image.network(
+                                    imageSrc,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => const Center(
+                                      child: Icon(Icons.broken_image, color: Colors.grey, size: 24),
+                                    ),
+                                  )
+                                : (_decodeBase64(imageSrc) != null
+                                    ? Image.memory(
+                                        _decodeBase64(imageSrc)!,
+                                        fit: BoxFit.cover,
+                                        cacheWidth: 300,
+                                        errorBuilder: (_, __, ___) => const Center(
+                                          child: Icon(Icons.broken_image, color: Colors.grey, size: 24),
+                                        ),
+                                      )
+                                    : const Center(
+                                        child: Icon(Icons.broken_image, color: Colors.grey, size: 24),
+                                      )),
+                          ),
                         ),
-                      ),
+                        if (_isEditing)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  if (isUrl) {
+                                    _salonGalleryImageUrls.remove(imageSrc);
+                                  } else {
+                                    _salonGalleryImagesBase64.remove(imageSrc);
+                                  }
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                child: const Icon(Icons.close, size: 16, color: Colors.red),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              );
-            }),
-            ..._salonGalleryImagesBase64.map((base64Image) {
-              return Stack(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      image: DecorationImage(
-                        image: MemoryImage(base64Decode(base64Image)),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  if (_isEditing)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: GestureDetector(
-                        onTap: () => setState(() => _salonGalleryImagesBase64.remove(base64Image)),
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                          child: const Icon(Icons.close, size: 16, color: Colors.red),
+                  ],
+                );
+              } else {
+                 return Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   mainAxisSize: MainAxisSize.min,
+                   children: [
+                     const Text("ADD MORE", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.transparent)),
+                     const SizedBox(height: 6),
+                     GestureDetector(
+                      onTap: () {
+                         _selectedDocumentType = "SALON_GALLERY";
+                         _showUploadOptions(context);
+                      },
+                      child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: const Color(0XFFF9F9F9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0XFFE0E0E0), width: 1.2),
                         ),
+                        child: const Center(child: Icon(Icons.add, color: Colors.grey)),
                       ),
-                    ),
-                ],
-              );
-            }),
-            if (_isEditing)
-               GestureDetector(
-                onTap: () {
-                   _selectedDocumentType = "SALON_GALLERY";
-                   _showUploadOptions(context);
-                },
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: const Color(0XFFF9F9F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0XFFE0E0E0), width: 1.2),
-                  ),
-                  child: const Center(child: Icon(Icons.add, color: Colors.grey)),
+                    )
+                   ]
+                 );
+              }
+            }
+
+            final List<Widget> primarySlots = [];
+            for (int i = 0; i < 3; i++) {
+              if (i < totalImages) {
+                primarySlots.add(buildSlot(i));
+              } else if (i == totalImages && _isEditing) {
+                primarySlots.add(buildSlot(i));
+              }
+            }
+
+            final List<Widget> optionalSlots = [];
+            for (int i = 3; i < 5; i++) {
+              if (i < totalImages) {
+                optionalSlots.add(buildSlot(i));
+              } else if (i == totalImages && _isEditing) {
+                optionalSlots.add(buildSlot(i));
+              }
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 15,
+                  runSpacing: 15,
+                  children: primarySlots,
                 ),
-              ),
-          ],
+                if (optionalSlots.isNotEmpty) ...[
+                  const SizedBox(height: 25),
+                  const Text("ADDITIONAL GALLERY IMAGES (OPTIONAL - MAX 2)", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 15,
+                    runSpacing: 15,
+                    children: optionalSlots,
+                  ),
+                ]
+              ],
+            );
+          }
         ),
       ],
     );
   }
 
   Widget _buildImageUploadBox(String docType, String? currentBase64, String? currentUrl) {
-    bool hasImage = currentBase64 != null || (currentUrl != null && currentUrl.isNotEmpty);
-    ImageProvider? imageProvider;
-    if (currentBase64 != null) {
-      imageProvider = MemoryImage(base64Decode(currentBase64));
-    } else if (currentUrl != null && currentUrl.isNotEmpty) {
-      imageProvider = NetworkImage(currentUrl);
-    }
+    final Uint8List? imageBytes = _decodeBase64(currentBase64);
+    final bool hasUrl = currentUrl != null && currentUrl.isNotEmpty;
+    final bool hasImage = imageBytes != null || hasUrl;
 
     return GestureDetector(
       onTap: () {
@@ -1098,30 +1462,62 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           color: const Color(0XFFF9F9F9),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: hasImage ? const Color(0XFFFF0B01) : const Color(0XFFE0E0E0), width: 1.2),
-          image: hasImage
-              ? DecorationImage(image: imageProvider!, fit: BoxFit.cover)
-              : null,
         ),
-        child: !hasImage
-            ? const Center(child: Icon(Icons.add_photo_alternate, color: Colors.grey, size: 30))
-            : (_isEditing ? Align(
-                alignment: Alignment.topRight,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (docType == "MAIN_SALON_IMAGE") {
-                        _mainSalonImageBase64 = null;
-                        _mainSalonImageUrl = null;
-                      }
-                    });
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: const Icon(Icons.close, size: 18, color: Colors.red),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(11),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (imageBytes != null)
+                Image.memory(
+                  imageBytes,
+                  fit: BoxFit.cover,
+                  cacheWidth: 300,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(Icons.broken_image, color: Colors.grey, size: 28),
+                  ),
+                )
+              else if (hasUrl)
+                Image.network(
+                  currentUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(Icons.broken_image, color: Colors.grey, size: 28),
+                  ),
+                )
+              else
+                const Center(
+                  child: Icon(Icons.add_photo_alternate, color: Colors.grey, size: 30),
+                ),
+              if (hasImage && _isEditing)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (docType == "MAIN_SALON_IMAGE") {
+                          _mainSalonImageBase64 = null;
+                          _mainSalonImageUrl = null;
+                        }
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Colors.black26, blurRadius: 4),
+                        ],
+                      ),
+                      child: const Icon(Icons.close, size: 16, color: Colors.red),
+                    ),
                   ),
                 ),
-              ) : null),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1169,29 +1565,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  static const int _maxFileSizeBytes = 5 * 1024 * 1024; // 5 MB
+
   Future<void> _pickDocumentFromGallery() async {
     try {
-      FilePickerResult? result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png'],
-      );
-      if (result != null) {
-        final file = result.files.single;
-        Uint8List? bytes;
-        try {
-          bytes = await file.readAsBytes();
-        } catch (_) {
-          if (file.path != null && !kIsWeb) {
-            final localFile = File(file.path!);
-            bytes = await localFile.readAsBytes();
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final int fileSize = await image.length();
+        if (fileSize > _maxFileSizeBytes) {
+          final double sizeInMb = fileSize / (1024 * 1024);
+          if (mounted) {
+            FlushbarHelper.show(
+              context,
+              "Selected image is ${sizeInMb.toStringAsFixed(1)} MB. Maximum allowed size is 5 MB.",
+            );
           }
+          return;
         }
-
-        if (bytes != null) {
-          _handleUploadedFile(file.name, base64Encode(bytes));
-        } else {
-          if (mounted) FlushbarHelper.show(context, "Could not retrieve file content.");
-        }
+        final bytes = await image.readAsBytes();
+        _handleUploadedFile(image.name, base64Encode(bytes));
       }
     } catch (e) {
       if (mounted) FlushbarHelper.show(context, "Error picking file: $e");
@@ -1201,8 +1594,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _takePhoto() async {
     try {
       final ImagePicker picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
       if (photo != null) {
+        final int fileSize = await photo.length();
+        if (fileSize > _maxFileSizeBytes) {
+          final double sizeInMb = fileSize / (1024 * 1024);
+          if (mounted) {
+            FlushbarHelper.show(
+              context,
+              "Captured photo is ${sizeInMb.toStringAsFixed(1)} MB. Maximum allowed size is 5 MB.",
+            );
+          }
+          return;
+        }
         final bytes = await photo.readAsBytes();
         _handleUploadedFile(photo.name, base64Encode(bytes));
       }
@@ -1213,6 +1617,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   void _handleUploadedFile(String name, String base64Content) {
     if (_selectedDocumentType == null) return;
+
+    final decoded = _decodeBase64(base64Content);
+    if (decoded != null && decoded.lengthInBytes > _maxFileSizeBytes) {
+      if (mounted) FlushbarHelper.show(context, "File size must not exceed 5 MB.");
+      return;
+    }
 
     if (_selectedDocumentType == "MAIN_SALON_IMAGE") {
       setState(() {
@@ -1436,6 +1846,180 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildDiscountSettings() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Discount Settings",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2D3142),
+          ),
+        ),
+        const SizedBox(height: 6),
+        const Divider(color: Color(0xFFE5E7EB)),
+        const SizedBox(height: 16),
+        const Text(
+          "Active Discount Mode",
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF4B5563),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _buildDiscountModeOption(DiscountMode.NONE, 'No Discount', 'Disable all', Icons.block),
+            const SizedBox(width: 8),
+            _buildDiscountModeOption(DiscountMode.WEEKDAY, 'Weekday', 'Same discount', Icons.calendar_today),
+            const SizedBox(width: 8),
+            _buildDiscountModeOption(DiscountMode.CATEGORY, 'Time Slotted', 'Varying slots', Icons.access_time),
+          ],
+        ),
+        const SizedBox(height: 24),
+        if (_selectedDiscountMode == DiscountMode.NONE)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: const Center(
+              child: Text(
+                'Slot discounts are currently disabled.',
+                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        if (_selectedDiscountMode == DiscountMode.WEEKDAY)
+          _buildLabeledField(
+            "Weekday Discount (%)",
+            _buildInputField(
+              "assets/Images/HomeScreen/revenue_icon.svg",
+              "Weekday Discount",
+              _weekdayDiscountController,
+              keyboardType: TextInputType.number,
+            ),
+          ),
+        if (_selectedDiscountMode == DiscountMode.CATEGORY)
+          Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildLabeledField(
+                      "Morning (06 AM - 12 PM)",
+                      _buildInputField(
+                        "assets/Images/HomeScreen/revenue_icon.svg",
+                        "Morning %",
+                        _morningController,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: _buildLabeledField(
+                      "Afternoon (12 PM - 04 PM)",
+                      _buildInputField(
+                        "assets/Images/HomeScreen/revenue_icon.svg",
+                        "Afternoon %",
+                        _afternoonController,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildLabeledField(
+                      "Evening (04 PM - 08 PM)",
+                      _buildInputField(
+                        "assets/Images/HomeScreen/revenue_icon.svg",
+                        "Evening %",
+                        _eveningController,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: _buildLabeledField(
+                      "Night (08 PM - 06 AM)",
+                      _buildInputField(
+                        "assets/Images/HomeScreen/revenue_icon.svg",
+                        "Night %",
+                        _nightController,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDiscountModeOption(DiscountMode mode, String title, String subtitle, IconData icon) {
+    final isSelected = _selectedDiscountMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (!_isEditing) return;
+          setState(() {
+            _selectedDiscountMode = mode;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0XFFFF0B01).withOpacity(0.05) : Colors.grey[50],
+            border: Border.all(
+              color: isSelected ? const Color(0XFFFF0B01) : Colors.grey[300]!,
+              width: isSelected ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 20, color: isSelected ? const Color(0XFFFF0B01) : Colors.grey[600]),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  color: isSelected ? const Color(0XFFFF0B01) : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

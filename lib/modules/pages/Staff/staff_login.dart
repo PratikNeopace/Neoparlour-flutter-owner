@@ -6,6 +6,8 @@ import 'package:neo_parlour_owner/modules/pages/forgot_password_screen.dart';
 import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
+import 'package:neo_parlour_owner/widgets/language_selector_button.dart';
 
 class StaffLoginScreen extends StatefulWidget {
   const StaffLoginScreen({super.key});
@@ -30,11 +32,11 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
 
   Future<void> _handleLogin() async {
     debugPrint("Staff Login Attempt: ${accountController.text}");
-    FlushbarHelper.show(context, "Logging in...");
+    FlushbarHelper.show(context, AppLocalizations.of(context)!.loggingIn);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (accountController.text.isEmpty || passwordController.text.isEmpty) {
-      FlushbarHelper.show(context, "Please enter both Account and Password");
+      FlushbarHelper.show(context, AppLocalizations.of(context)!.pleaseEnterAccountAndPassword);
       return;
     }
 
@@ -57,11 +59,11 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        FlushbarHelper.show(context, "Access Denied: Current role is $role");
+        FlushbarHelper.show(context, AppLocalizations.of(context)!.accessDeniedRole(role ?? ''));
       }
     } else {
       if (!mounted) return;
-      FlushbarHelper.show(context, authProvider.errorMessage ?? "Login Failed");
+      FlushbarHelper.show(context, authProvider.errorMessage ?? AppLocalizations.of(context)!.loginFailed);
     }
   }
 
@@ -84,6 +86,17 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
             ),
           ),
 
+          // 🔹 Language Selector
+          const SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: EdgeInsets.only(right: 20, top: 10),
+                child: LanguageSelectorButton(),
+              ),
+            ),
+          ),
+          
           //  FLOATING LOGIN CARD
           Positioned(
             left: 0,
@@ -121,7 +134,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                       /// Tabs
                       Row(
                         children: [
-                          _buildTabItem("SALON OWNER", false, () {
+                          _buildTabItem(AppLocalizations.of(context)!.salonOwnerTab, false, () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -131,7 +144,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                             );
                           }),
                           SizedBox(width: w * 0.1),
-                          _buildTabItem("STAFF", true, () {
+                          _buildTabItem(AppLocalizations.of(context)!.staffTab, true, () {
                             // Already on staff screen
                           }),
                         ],
@@ -142,14 +155,15 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                       /// Inputs
                       _customInputField(
                         imageIcon: "assets/Images/LoginScreen/call.svg",
-                        hint: 'Email Or Mobile Number',
+                        hint: AppLocalizations.of(context)!.emailOrMobile,
                         controller: accountController,
                         h: h,
+                        isAccountField: true,
                       ),
 
                       _customInputField(
                         imageIcon: "assets/Images/LoginScreen/password.svg",
-                        hint: 'Password',
+                        hint: AppLocalizations.of(context)!.password,
                         controller: passwordController,
                         obscure: !isPasswordVisible,
                         h: h,
@@ -194,9 +208,9 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                              : const Text(
-                            "LOGIN",
-                            style: TextStyle(
+                              : Text(
+                            AppLocalizations.of(context)!.loginTitle,
+                            style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
                               fontSize: 14,
@@ -225,9 +239,9 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            "Remember me next time",
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context)!.rememberMeNextTime,
+                            style: const TextStyle(
                               color: Color(0XFF909090),
                               fontSize: 11,
                             ),
@@ -246,9 +260,9 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                             ),
                           );
                         },
-                        child: const Text(
-                          "Forgot Password?",
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(context)!.forgotPassword,
+                          style: const TextStyle(
                             color: Color(0XFFFF0B01),
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -303,43 +317,55 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     required double h,
     bool obscure = false,
     Widget? suffixIcon,
+    bool isAccountField = false,
   }) {
     return Container(
       margin: EdgeInsets.only(bottom: h * 0.02),
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        decoration: InputDecoration(
-          prefixIcon: Padding(
-            padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              height: 22,
-              width: 22,
-              child: SvgPicture.asset(
-                imageIcon,
-                colorFilter: const ColorFilter.mode(
-                  Color(0XFF909090),
-                  BlendMode.srcIn,
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, child) {
+          final text = value.text;
+          final isNumber = RegExp(r'^[0-9]*$').hasMatch(text);
+          final maxLength = isNumber ? 10 : 50;
+
+          return TextField(
+            controller: controller,
+            obscureText: obscure,
+            maxLength: isAccountField ? maxLength : null,
+            decoration: InputDecoration(
+              counterText: "", // Hide the length counter
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: SvgPicture.asset(
+                    imageIcon,
+                    colorFilter: const ColorFilter.mode(
+                      Color(0XFF909090),
+                      BlendMode.srcIn,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          suffixIcon: suffixIcon,
+              suffixIcon: suffixIcon,
 
-          hintText: hint,
-          hintStyle: const TextStyle(color: Color(0XFFADADAD), fontSize: 13),
-          filled: true,
-          fillColor: const Color(0XFFF9F9F9),
-          contentPadding: const EdgeInsets.symmetric(vertical: 18),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0XFFE0E0E0)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0XFFFF0B01)),
-          ),
-        ),
+              hintText: hint,
+              hintStyle: const TextStyle(color: Color(0XFFADADAD), fontSize: 13),
+              filled: true,
+              fillColor: const Color(0XFFF9F9F9),
+              contentPadding: const EdgeInsets.symmetric(vertical: 18),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0XFFE0E0E0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0XFFFF0B01)),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -49,12 +49,18 @@ class Offer {
       applicableServiceIds: (json['applicableServiceIds'] as List<dynamic>?)
               ?.map((e) => e as int)
               .toList() ?? 
+              (json['services'] as List<dynamic>?)
+              ?.map((e) => e['id'] as int)
+              .toList() ??
               (json['applicableServices'] as List<dynamic>?)
               ?.map((e) => e['id'] as int)
               .toList() ?? [],
       serviceNames: (json['serviceNames'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ?? 
+              (json['services'] as List<dynamic>?)
+              ?.map((e) => e['name'].toString())
+              .toList() ??
               (json['applicableServiceNames'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ?? 

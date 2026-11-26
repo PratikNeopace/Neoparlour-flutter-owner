@@ -15,6 +15,7 @@ import 'package:neo_parlour_owner/providers/auth_provider.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/owner_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Staff/staff_home_screen.dart';
 import 'package:neo_parlour_owner/modules/pages/Owner/subscription_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class ManageScreen extends StatelessWidget {
   const ManageScreen({super.key});
@@ -85,11 +86,11 @@ class ManageScreen extends StatelessWidget {
                             ),
                           ),
                           padding: const EdgeInsets.only(left: 23, bottom: 40),
-                          child: const Align(
+                          child: Align(
                             alignment: Alignment.bottomLeft,
                             child: Text(
-                              "MANAGE",
-                              style: TextStyle(
+                              AppLocalizations.of(context)!.manageTitle,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 26,
                                 fontWeight: FontWeight.w600,
@@ -136,32 +137,38 @@ class ManageScreen extends StatelessWidget {
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/schedule.svg",
-                  "Schedule",
+                  AppLocalizations.of(context)!.manageSchedule,
+                  "Schedule"
                 ),
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/service.svg",
-                  "Service",
+                  AppLocalizations.of(context)!.manageService,
+                  "Service"
                 ),
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/inventory.svg",
-                  "Inventory",
+                  AppLocalizations.of(context)!.manageInventory,
+                  "Inventory"
                 ),
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/staff.svg",
-                  "Staff",
+                  AppLocalizations.of(context)!.manageStaff,
+                  "Staff"
                 ),
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/feedback.svg",
-                  "Feedback",
+                  AppLocalizations.of(context)!.manageFeedback,
+                  "Feedback"
                 ),
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/home_service.svg",
-                  "Home Services",
+                  AppLocalizations.of(context)!.manageHomeServices,
+                  "Home Services"
                 ),
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
@@ -173,24 +180,28 @@ class ManageScreen extends StatelessWidget {
                     return _manageOptionItem(
                       context,
                       "assets/Images/ManageScreen/subscription.svg",
-                      "Subscription",
+                      AppLocalizations.of(context)!.manageSubscription,
+                      "Subscription"
                     );
                   },
                 ),
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/add_offers.svg",
-                  "Add Offers",
+                  AppLocalizations.of(context)!.manageAddOffers,
+                  "Add Offers"
                 ),
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/add_products.svg",
-                  "Add Products",
+                  AppLocalizations.of(context)!.manageAddProducts,
+                  "Add Products"
                 ),
                 _manageOptionItem(
                   context,
                   "assets/Images/ManageScreen/add_packages.svg",
-                  "Add Packages",
+                  AppLocalizations.of(context)!.manageAddPackages,
+                  "Add Packages"
                 ),
                 const SizedBox(height: 100),
               ],
@@ -218,57 +229,57 @@ class ManageScreen extends StatelessWidget {
     );
   }
 
-  Widget _manageOptionItem(BuildContext context, String icon, String title) {
+  Widget _manageOptionItem(BuildContext context, String icon, String title, String originalTitle) {
     return GestureDetector(
       onTap: () {
-        if (title == "Schedule") {
+        if (originalTitle == "Schedule") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ScheduleScreen()),
           );
-        } else if (title == "Service") {
+        } else if (originalTitle == "Service") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ServiceMainScreen()),
           );
-        } else if (title == "Staff") {
+        } else if (originalTitle == "Staff") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const StaffMainScreen()),
           );
-        } else if (title == "Feedback") {
+        } else if (originalTitle == "Feedback") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const FeedbackScreen()),
           );
-        } else if (title == "Add Offers") {
+        } else if (originalTitle == "Add Offers") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddOffersScreen()),
           );
-        } else if (title == "Inventory") {
+        } else if (originalTitle == "Inventory") {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const InventoryMainScreen(),
             ),
           );
-        } else if (title == "Add Packages") {
+        } else if (originalTitle == "Add Packages") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const PackageMainScreen()),
           );
-        } else if (title == "Add Products") {
+        } else if (originalTitle == "Add Products") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ProductMainScreen()),
           );
-        } else if (title == "Home Services") {
+        } else if (originalTitle == "Home Services") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const HomeServicesScreen()),
           );
-        } else if (title == "Subscription") {
+        } else if (originalTitle == "Subscription") {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const SubscriptionScreen()),

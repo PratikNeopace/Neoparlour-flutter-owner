@@ -11,6 +11,7 @@ import 'package:neo_parlour_owner/providers/service_provider.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
 import 'package:intl/intl.dart';
 import 'package:neo_parlour_owner/widgets/pagination_widget.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 import '../../../data/models/service_model.dart';
 
@@ -89,10 +90,15 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
   }
 
   Future<void> _selectDate(BuildContext context, bool isFrom) async {
+    final initialDate = isFrom ? validFrom : validTo;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final firstDate = initialDate.isBefore(today) ? initialDate : today;
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isFrom ? validFrom : validTo,
-      firstDate: DateTime(2000),
+      initialDate: initialDate,
+      firstDate: firstDate,
       lastDate: DateTime(2101),
     );
     if (picked != null) {
@@ -280,7 +286,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          editingOfferId != null ? "EDITING OFFER" : "CREATE NEW OFFER",
+                          editingOfferId != null ? AppLocalizations.of(context)!.editingOfferTitle : AppLocalizations.of(context)!.createNewOfferTitle,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
@@ -292,7 +298,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                           TextButton.icon(
                             onPressed: _clearForm,
                             icon: const Icon(Icons.close, size: 16),
-                            label: const Text("Cancel Edit"),
+                            label: Text(AppLocalizations.of(context)!.cancelEditBtn),
                             style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
                           ),
                         ],
@@ -307,7 +313,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
 
                     // Name
                     _buildTextField(
-                      "Offer Name",
+                      AppLocalizations.of(context)!.offerNameLabel,
                       "assets/Images/AddOffersScreen/offers_details_icon.svg",
                       nameController,
                     ),
@@ -315,7 +321,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
 
                     // Description
                     _buildTextField(
-                      "Description (Optional)",
+                      AppLocalizations.of(context)!.descriptionOptionalLabel,
                       "assets/Images/AddOffersScreen/offers_details_icon.svg",
                       descriptionController,
                     ),
@@ -327,8 +333,8 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                         Expanded(
                           child: _buildTextField(
                             selectedDiscountType == DiscountType.PERCENTAGE
-                                ? "Percentage Off (%)"
-                                : "Fixed Discount Amount",
+                                ? AppLocalizations.of(context)!.percentageOffLabel
+                                : AppLocalizations.of(context)!.fixedDiscountLabel,
                             "assets/Images/AddPackageScreen/percentage_icon.svg",
                             valueController,
                             keyboardType: TextInputType.number,
@@ -361,7 +367,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                       children: [
                         Expanded(
                           child: _buildTextField(
-                            "Total Usage Limit",
+                            AppLocalizations.of(context)!.totalUsageLimitLabel,
                             "assets/Images/AddOffersScreen/offers_details_icon.svg",
                             totalUsageLimitController,
                             keyboardType: TextInputType.number,
@@ -370,7 +376,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: _buildTextField(
-                            "Limit Per Customer",
+                            AppLocalizations.of(context)!.limitPerCustomerLabel,
                             "assets/Images/AddOffersScreen/offers_details_icon.svg",
                             usageLimitPerCustomerController,
                             keyboardType: TextInputType.number,
@@ -385,7 +391,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                       children: [
                         Expanded(
                           child: _dateButton(
-                            "Valid From",
+                            AppLocalizations.of(context)!.validFromLabel,
                             validFrom,
                             () => _selectDate(context, true),
                           ),
@@ -393,7 +399,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                         const SizedBox(width: 15),
                         Expanded(
                           child: _dateButton(
-                            "Valid To",
+                            AppLocalizations.of(context)!.validToLabel,
                             validTo,
                             () => _selectDate(context, false),
                           ),
@@ -403,9 +409,9 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                     const SizedBox(height: 20),
 
                     // Service Selection
-                    const Text(
-                      "Applicable Services",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Text(
+                      AppLocalizations.of(context)!.applicableServicesLabel,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
                     _buildServiceSelector(),
@@ -429,9 +435,9 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                               ? const CircularProgressIndicator(
                                   color: Colors.white,
                                 )
-                              : const Text(
-                                  "CREATE OFFER",
-                                  style: TextStyle(
+                              : Text(
+                                  AppLocalizations.of(context)!.createOfferBtn,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -443,9 +449,9 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                     const SizedBox(height: 40),
 
                     // Existing Offers List
-                    const Text(
-                      "EXISTING OFFERS",
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context)!.existingOffersTitle,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
@@ -508,7 +514,7 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
           return Text("Error: ${offerProvider.errorMessage}", style: const TextStyle(color: Colors.red));
         }
         if (offerProvider.offers.isEmpty) {
-          return const Text("No offers created yet.");
+          return Text(AppLocalizations.of(context)!.noOffersFound);
         }
         return Column(
           children: [
@@ -579,10 +585,10 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
                           if (offer.usageLimitPerCustomer != null)
                             Padding(
                               padding: const EdgeInsets.only(right: 12),
-                              child: Text("Per Cust: ${offer.usageLimitPerCustomer}", style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.w600)),
+                              child: Text("${AppLocalizations.of(context)!.perCustLabel}${offer.usageLimitPerCustomer}", style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.w600)),
                             ),
                           if (offer.totalUsageLimit != null)
-                            Text("Total Limit: ${offer.totalUsageLimit}", style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w600)),
+                            Text("${AppLocalizations.of(context)!.totalLimitLabel}${offer.totalUsageLimit}", style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ],
@@ -707,12 +713,12 @@ class _AddOffersScreenState extends State<AddOffersScreen> {
             ),
           ),
         ),
-        const Positioned(
+        Positioned(
           bottom: 30,
           left: 23,
           child: Text(
-            "OFFERS",
-            style: TextStyle(
+            AppLocalizations.of(context)!.offersTitle,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 26,
               fontWeight: FontWeight.w500,

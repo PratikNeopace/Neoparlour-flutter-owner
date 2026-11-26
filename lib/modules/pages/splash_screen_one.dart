@@ -2,7 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:neo_parlour_owner/modules/pages/splash_screen_two.dart';
+import 'package:neo_parlour_owner/core/api_client.dart';
+import 'package:neo_parlour_owner/data/models/maintenance_status.dart';
+import 'package:neo_parlour_owner/modules/pages/owner_maintenance_screen.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
+import 'package:neo_parlour_owner/core/data/services/app_icon_service.dart';
 
 class SplashOneScreen extends StatefulWidget {
   const SplashOneScreen({super.key});
@@ -19,13 +25,62 @@ class _SplashOneScreenState extends State<SplashOneScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppIconService.checkAndApplySeasonalIcon(context);
+    });
     _timer = Timer(const Duration(seconds: 3), _navigateToNext);
   }
 
-  void _navigateToNext() {
-    if (_isNavigated) return;
+  Future<void> _checkMaintenanceOnLaunch() async {
+    try {
+      final dio = ApiClient().dio;
+      final response = await dio.get('${ApiClient.baseUrl}v1/maintenance/status');
+      final status = MaintenanceStatus.fromJson(response.data);
+      
+      if (status.enabled) {
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => OwnerMaintenanceScreen(status: status)),
+            (route) => false,
+          );
+        }
+      }
+    } catch (e) {
+      // Continue normal startup flow if check fails or no maintenance
+    }
+  }
+
+  Future<bool> _checkForUpdate() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        if (info.immediateUpdateAllowed) {
+          await InAppUpdate.performImmediateUpdate();
+          return true;
+        } else if (info.flexibleUpdateAllowed) {
+          await InAppUpdate.startFlexibleUpdate();
+          await InAppUpdate.completeFlexibleUpdate();
+          return false;
+        }
+      }
+    } catch (e) {
+      debugPrint("InAppUpdate Error: \$e");
+    }
+    return false;
+  }
+
+  Future<void> _navigateToNext() async {
     _isNavigated = true;
     _timer?.cancel();
+    
+    await _checkMaintenanceOnLaunch();
+    // If we navigated to maintenance, we shouldn't proceed
+    if (!mounted) return;
+
+    bool isUpdating = await _checkForUpdate();
+    if (isUpdating) return;
+    
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
@@ -107,7 +162,7 @@ class _SplashOneScreenState extends State<SplashOneScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    "Your",
+                    AppLocalizations.of(context)!.splashOneTop,
                     style: GoogleFonts.habibi(
                       fontSize: topFontSize,
                       height: 1.0,
@@ -117,7 +172,7 @@ class _SplashOneScreenState extends State<SplashOneScreen> {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      "EXCLUSIVE SALON",
+                      AppLocalizations.of(context)!.splashOneMid,
                       maxLines: 1,
                       softWrap: false,
                       style: GoogleFonts.imbue(
@@ -130,7 +185,7 @@ class _SplashOneScreenState extends State<SplashOneScreen> {
                     ),
                   ),
                   Text(
-                    "Management App",
+                    AppLocalizations.of(context)!.splashOneBottom,
                     style: GoogleFonts.habibi(
                       fontSize: topFontSize,
                       color: const Color(0XFF626262),
@@ -148,7 +203,7 @@ class _SplashOneScreenState extends State<SplashOneScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Skip",
+                            AppLocalizations.of(context)!.skipSplash,
                             style: GoogleFonts.poppins(
                               color: skipColor,
                               fontSize: (size.width * 0.045).clamp(14.0, 20.0),
@@ -165,7 +220,7 @@ class _SplashOneScreenState extends State<SplashOneScreen> {
                     ),
                   ),
                    Text(
-                      "Version 1.0.0 | Powered By Neopaceinfotech LLP",
+                      AppLocalizations.of(context)!.versionFooter,
                       style: GoogleFonts.poppins(
                         fontSize: 10,
                         color: const Color(0XFF626262),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:neo_parlour_owner/widgets/nav_bars/owner_bottom_nav_bar.dart';
+import 'package:neo_parlour_owner/l10n/generated/app_localizations.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   const CreateInvoiceScreen({super.key});
@@ -41,15 +42,15 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("BILL TO (OPTIONAL)", style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(AppLocalizations.of(context)!.billToOptionalTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  _buildTextField(hint: "Search By Name, Number", imagePath: "assets/Images/CreateInvoiceScreen/name_icon.svg"),
+                  _buildTextField(hint: AppLocalizations.of(context)!.searchByNameNumberHint, imagePath: "assets/Images/CreateInvoiceScreen/name_icon.svg"),
                   const SizedBox(height: 15),
-                  _buildDropdown(hint: "Select Service", items: ["Hair Cut", "Spa", "Facial"], imagePath: "assets/Images/CreateInvoiceScreen/service_icon.svg"),
+                  _buildDropdown(hint: AppLocalizations.of(context)!.selectServiceHint, items: ["Hair Cut", "Spa", "Facial"], imagePath: "assets/Images/CreateInvoiceScreen/service_icon.svg"),
                   const SizedBox(height: 15),
                   Row(
                     children: [
-                      Expanded(child: _buildTextField(hint: "Amount", imagePath: "assets/Images/CreateInvoiceScreen/amount_icon.svg")),
+                      Expanded(child: _buildTextField(hint: AppLocalizations.of(context)!.amountHint, imagePath: "assets/Images/CreateInvoiceScreen/amount_icon.svg")),
                       const SizedBox(width: 15),
                       _buildQuantitySelector(),
                     ],
@@ -57,9 +58,9 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                   const SizedBox(height: 15),
                   Row(
                     children: [
-                      Expanded(child: _buildDropdown(hint: "Discount", imagePath: "assets/Images/CreateInvoiceScreen/discount_icon.svg", items: ["10%", "20%"])),
+                      Expanded(child: _buildDropdown(hint: AppLocalizations.of(context)!.discountHint, imagePath: "assets/Images/CreateInvoiceScreen/discount_icon.svg", items: ["10%", "20%"])),
                       const SizedBox(width: 5),
-                      Expanded(child: _buildDropdown(hint: "Taxes", imagePath: "assets/Images/CreateInvoiceScreen/tax_icon.svg", items: ["GST 5%", "GST 18%"])),
+                      Expanded(child: _buildDropdown(hint: AppLocalizations.of(context)!.taxesHint, imagePath: "assets/Images/CreateInvoiceScreen/tax_icon.svg", items: ["GST 5%", "GST 18%"])),
                     ],
                   ),
                   const Divider(height: 40, color: Colors.grey),
@@ -73,12 +74,12 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     ],
                   ),
                   const SizedBox(height: 15),
-                  const Text("INVOICE NOTE"),
+                  Text(AppLocalizations.of(context)!.invoiceNoteTitle),
                   const SizedBox(height: 10),
                   TextField(
                     controller: _noteController,
                     maxLines: 3,
-                    decoration: _inputDecoration("Note"),
+                    decoration: _inputDecoration(AppLocalizations.of(context)!.noteHint),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -86,7 +87,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                     child: ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(backgroundColor: _focusedColor, padding: const EdgeInsets.symmetric(vertical: 16)),
-                      child: const Text("SUBMIT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: Text(AppLocalizations.of(context)!.submitBtn, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 100),
@@ -183,7 +184,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               padding: const EdgeInsets.only(left: 25, bottom: 20),
               alignment: Alignment.bottomLeft,
               decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black.withValues(alpha: 0.3), Colors.transparent, const Color(0XFFFF3502).withValues(alpha: 0.7)])),
-              child: const Text("CREATE INVOICE", style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w500)),
+              child: Text(AppLocalizations.of(context)!.createInvoiceTitle, style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w500)),
             ),
           ),
         ),
@@ -214,7 +215,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text("AMOUNT PAYABLE", style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context)!.amountPayableTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
         Text("₹${450 * _quantity}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: _focusedColor)),
       ],
     );
